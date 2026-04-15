@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+frontend/dist/
+frontend/.vite/
+
+# Logs
+*.log
+backend/backend.log
+frontend/frontend.log
+
+# Environment
+backend/.env
+
+# Upload files (user-generated)
+backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
