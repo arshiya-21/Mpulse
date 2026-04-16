@@ -3,6 +3,145 @@ const db = require('./config/db');
 module.exports = async function migrate() {
   console.log('🔄 Running migrations...');
   try {
+    // ── Core tables (safe on fresh DB — CREATE IF NOT EXISTS) ─────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS departments (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS roles (
+        id          SERIAL PRIMARY KEY,
+        name        VARCHAR(50)  NOT NULL UNIQUE,
+        description TEXT,
+        created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS employees (
+        id                      SERIAL PRIMARY KEY,
+        name                    VARCHAR(200) NOT NULL,
+        email                   VARCHAR(200) NOT NULL UNIQUE,
+        password_hash           VARCHAR(255),
+        status                  VARCHAR(20)  NOT NULL DEFAULT 'active'
+                                  CHECK (status IN ('active','inactive')),
+        invite_status           VARCHAR(20)  NOT NULL DEFAULT 'accepted'
+                                  CHECK (invite_status IN ('pending','accepted')),
+        department_id           INT REFERENCES departments(id) ON DELETE SET NULL,
+        secondary_department_id INT REFERENCES departments(id) ON DELETE SET NULL,
+        role_id                 INT REFERENCES roles(id) ON DELETE SET NULL,
+        manager_id              INT REFERENCES employees(id) ON DELETE SET NULL,
+        created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS licenses (
+        id          SERIAL PRIMARY KEY,
+        name        VARCHAR(100) NOT NULL UNIQUE,
+        price       NUMERIC(12,2) NOT NULL DEFAULT 0,
+        description TEXT,
+        created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS customers (
+        id                 SERIAL PRIMARY KEY,
+        name               VARCHAR(200) NOT NULL,
+        email              VARCHAR(200),
+        phone              VARCHAR(50),
+        company            VARCHAR(200),
+        license_id         INT REFERENCES licenses(id) ON DELETE SET NULL,
+        license_start_date DATE,
+        license_end_date   DATE,
+        notes              TEXT,
+        status             VARCHAR(20)  NOT NULL DEFAULT 'active'
+                             CHECK (status IN ('active','inactive')),
+        created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        updated_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS projects (
+        id            SERIAL PRIMARY KEY,
+        name          VARCHAR(200) NOT NULL,
+        status        VARCHAR(30)  NOT NULL DEFAULT 'Not Started'
+                        CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled')),
+        start_date    DATE,
+        end_date      DATE,
+        closed_at     TIMESTAMPTZ,
+        description   TEXT,
+        created_by    INT REFERENCES employees(id) ON DELETE SET NULL,
+        department_id INT REFERENCES departments(id) ON DELETE SET NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS tasks (
+        id          SERIAL PRIMARY KEY,
+        task_date   DATE         NOT NULL DEFAULT CURRENT_DATE,
+        employee_id INT          NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        project_id  INT          NOT NULL REFERENCES projects(id)  ON DELETE CASCADE,
+        category    VARCHAR(100),
+        work_type   VARCHAR(100),
+        spent_mins  INT          NOT NULL DEFAULT 0 CHECK (spent_mins >= 0),
+        tat_days    INT          NOT NULL DEFAULT 0,
+        status      VARCHAR(30)  NOT NULL DEFAULT 'In Progress'
+                      CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled')),
+        utilization NUMERIC(6,2) NOT NULL DEFAULT 0,
+        created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_tasks_employee ON tasks(employee_id);
+      CREATE INDEX IF NOT EXISTS idx_tasks_project  ON tasks(project_id);
+      CREATE INDEX IF NOT EXISTS idx_tasks_date     ON tasks(task_date);
+
+      CREATE TABLE IF NOT EXISTS customer_visits (
+        id               SERIAL PRIMARY KEY,
+        customer_id      INT          NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        assigned_to      INT          REFERENCES employees(id) ON DELETE SET NULL,
+        created_by       INT          REFERENCES employees(id) ON DELETE SET NULL,
+        planned_date     DATE         NOT NULL,
+        contact_person   VARCHAR(200),
+        channel          VARCHAR(50)  NOT NULL DEFAULT 'Email'
+                           CHECK (channel IN ('Email','WhatsApp','Phone Call','SMS','On-Site Request')),
+        agenda           TEXT         NOT NULL DEFAULT '',
+        duration         INT          NOT NULL DEFAULT 60,
+        status           VARCHAR(30)  NOT NULL DEFAULT 'Planned'
+                           CHECK (status IN ('Planned','In Progress','Completed','Pending','Rescheduled','Cancelled')),
+        proof_file       VARCHAR(500),
+        work_done        TEXT,
+        issues_resolved  TEXT,
+        additional_reqs  TEXT,
+        created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_visits_customer    ON customer_visits(customer_id);
+      CREATE INDEX IF NOT EXISTS idx_visits_assigned_to ON customer_visits(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_visits_date        ON customer_visits(planned_date);
+
+      CREATE TABLE IF NOT EXISTS system_settings (
+        id                      SERIAL PRIMARY KEY,
+        company_name            VARCHAR(200) NOT NULL DEFAULT 'My Company',
+        daily_target_mins       INT          NOT NULL DEFAULT 510,
+        work_days               VARCHAR(50)  NOT NULL DEFAULT 'Mon-Fri',
+        timezone                VARCHAR(100) NOT NULL DEFAULT 'Asia/Kolkata',
+        tat_alert_days          INT          NOT NULL DEFAULT 2,
+        email_notif             BOOLEAN      NOT NULL DEFAULT TRUE,
+        auto_close              BOOLEAN      NOT NULL DEFAULT FALSE,
+        session_timeout         INT          NOT NULL DEFAULT 30,
+        admin_email             VARCHAR(200),
+        visit_reminder_enabled  BOOLEAN      NOT NULL DEFAULT TRUE,
+        work_categories         TEXT,
+        work_formulas           TEXT
+      );
+
+      INSERT INTO system_settings
+        (id, company_name, daily_target_mins, work_days, timezone, tat_alert_days,
+         email_notif, auto_close, session_timeout, admin_email, visit_reminder_enabled)
+      VALUES
+        (1, 'MPulse', 510, 'Mon-Fri', 'Asia/Kolkata', 2, TRUE, FALSE, 30, NULL, TRUE)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+    console.log('✅ Core tables ready');
+
     // ── Multi-manager support ──────────────────────────────────
     await db.query(`
       CREATE TABLE IF NOT EXISTS employee_managers (
@@ -149,7 +288,8 @@ module.exports = async function migrate() {
       ALTER TABLE system_settings
         ADD COLUMN IF NOT EXISTS admin_email            VARCHAR(200),
         ADD COLUMN IF NOT EXISTS visit_reminder_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-        ADD COLUMN IF NOT EXISTS work_categories        TEXT;
+        ADD COLUMN IF NOT EXISTS work_categories        TEXT,
+        ADD COLUMN IF NOT EXISTS work_formulas          TEXT;
     `);
 
     // ── Add closed_at to projects ─────────────────────────────

@@ -31,7 +31,7 @@ services:
     restart: always
     environment:
       PORT:          4000
-      DATABASE_URL:  postgresql://${DB_USER:-tracker_ user}:${DB_PASS}@db:5432/${DB_NAME:-task_tracker}
+      DATABASE_URL:  postgresql://${DB_USER:-tracker_user}:${DB_PASS}@db:5432/${DB_NAME:-task_tracker}
       JWT_SECRET:    ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       CORS_ORIGIN:   ${CORS_ORIGIN:-http://localhost}
