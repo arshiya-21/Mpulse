@@ -244,7 +244,7 @@ function Login({onLogin}){
           <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:16}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={{color:"#a5b4fc",fontSize:12}}>Email Address</label>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="arshiya@mpminfosoft.com" onKeyDown={e=>e.key==="Enter"&&go()} style={iS}/>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Enter your email" autoComplete="off" onKeyDown={e=>e.key==="Enter"&&go()} style={iS}/>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={{color:"#a5b4fc",fontSize:12}}>Password</label>

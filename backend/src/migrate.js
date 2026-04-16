@@ -304,6 +304,13 @@ module.exports = async function migrate() {
         ADD COLUMN IF NOT EXISTS license_end_date   DATE;
     `);
 
+    // ── employees: add invite_token + invite_expires columns ─────
+    await db.query(`
+      ALTER TABLE employees
+        ADD COLUMN IF NOT EXISTS invite_token   TEXT,
+        ADD COLUMN IF NOT EXISTS invite_expires TIMESTAMPTZ;
+    `);
+
     // ── Add admin_email + visit_reminder_enabled to system_settings ──
     await db.query(`
       ALTER TABLE system_settings
