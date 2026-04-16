@@ -216,9 +216,14 @@ function Employees(){
     try{
       if(editing){await empApi.update(editing.id,form);show("Employee updated");setModal(false);}
       else{
-        await empApi.create(form);
-        show("Employee created");
+        const r=await empApi.create(form);
+        const result=r.data;
         setModal(false);
+        if(result.emailError){
+          show("Employee created but email failed: "+result.emailError);
+        } else {
+          show("Employee created — credentials sent to "+form.email);
+        }
       }
       await load();
     }catch(e){show(e?.response?.data?.error||"Error");}
