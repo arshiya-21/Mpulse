@@ -184,7 +184,7 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
   const mailOptions = {
     from: `"MPulse" <${fromEmail}>`,
     to:   toEmail,
-    cc:   ccEmails.length ? ccEmails.join(', ') : undefined,
+    cc:   ccEmails.length ? ccEmails : undefined,
     subject,
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">

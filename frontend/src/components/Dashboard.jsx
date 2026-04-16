@@ -7,7 +7,7 @@ import * as empApi   from "../api/employees.js";
 import * as deptApi  from "../api/departments.js";
 import * as projApi  from "../api/projects.js";
 import * as tasksApi from "../api/tasks.js";
-import { useToast, Toast, Pb, Spinner, selS, COLORS, PIE_CLR, SC2, SC2C } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Dashboard(){
@@ -174,7 +174,7 @@ function UserDashboard({user}){
                 <tbody>
                   {recentTasks.map((t,i)=>(
                     <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
-                      <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{t.task_date}</td>
+                      <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",color:"#4b5563",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name||"—"}</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
@@ -469,7 +469,7 @@ function AdminManagerDashboard(){
                   <tbody>
                     {drillTasks.map((t,i)=>(
                       <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
-                        <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{String(t.task_date).slice(0,10)}</td>
+                        <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontWeight:600,color:"#111827"}}>{t.employee_name}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                           <span onClick={()=>{ const p=projects.find(x=>x.id===t.project_id); if(p){setSelProjId(p.id);setSelMember(null);} }}
@@ -573,7 +573,7 @@ function AdminManagerDashboard(){
                           {projMembers.map((m,mi)=>{
                             const uc=m.avgUtil>=85?"#059669":m.avgUtil>=65?"#d97706":"#dc2626";
                             const isSelected=selMember===m.name;
-                            const lastDate=m.lastDate?String(m.lastDate).slice(5).replace("-"," "):"-";
+                            const lastDate=fmtDate(m.lastDate);
                             return(
                               <tr key={mi} onClick={()=>setSelMember(isSelected?null:m.name)}
                                 style={{background:isSelected?"#eef2ff":mi%2===0?"#fff":"#fafafa",cursor:"pointer",transition:"background .1s"}}>
@@ -624,7 +624,7 @@ function AdminManagerDashboard(){
                             <tbody>
                               {empTasks.map((t,i)=>(
                                 <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
-                                  <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:11,color:"#4b5563"}}>{String(t.task_date).slice(0,10)}</td>
+                                  <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:11,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",color:"#6b7280"}}>{t.category}</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace"}}>{t.spent_mins}m</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>

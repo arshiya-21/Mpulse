@@ -37,6 +37,17 @@ export const STATUS_STYLE = {
 // ── Work log types ─────────────────────────────────────────────
 export const WTYPES = ['All','Development','Testing','Meeting','Support','Design','Documentation','Other'];
 
+// ── Shared date formatter → dd-mm-yyyy ────────────────────────
+export function fmtDate(d) {
+  if (!d) return '—';
+  try {
+    const dt = new Date(d);
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    return `${dd}-${mm}-${dt.getUTCFullYear()}`;
+  } catch { return String(d).slice(0, 10); }
+}
+
 // ── Common style helpers ───────────────────────────────────────
 export const inputS = {
   width:'100%', padding:'8px 11px', fontSize:13,

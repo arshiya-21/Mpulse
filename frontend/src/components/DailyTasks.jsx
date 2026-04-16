@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-const fmtDate=d=>{if(!d)return"—";try{const dt=new Date(d);const dd=String(dt.getUTCDate()).padStart(2,"0");const mm=String(dt.getUTCMonth()+1).padStart(2,"0");return`${dd}-${mm}-${dt.getUTCFullYear()}`;}catch{return String(d).slice(0,10);}};
 import * as empApi      from "../api/employees.js";
 import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, Modal, selS, inputS, labelS, WTYPES, PSTATS, SC2, SC2C } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, Modal, selS, inputS, labelS, WTYPES, PSTATS, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -42,7 +41,11 @@ export default function DailyTasks(){
       .then(([eR,dR,pR,sR])=>{
         setEmployees(eR.data||[]);setDepartments(dR.data||[]);setProjects(pR.data||[]);
         const raw=sR.data?.work_categories;
-        if(raw) try{ setCats([...JSON.parse(raw)].sort((a,b)=>a.localeCompare(b))); }catch{}
+        if(raw) try{
+          let val=raw;
+          for(let i=0;i<3;i++){ if(Array.isArray(val)) break; if(typeof val==='string') val=JSON.parse(val); else break; }
+          if(Array.isArray(val)) setCats(val.sort((a,b)=>a.localeCompare(b)));
+        }catch{}
         if(sR.data?.daily_target_mins) setDailyTarget(sR.data.daily_target_mins);
       });
   },[]);
@@ -234,7 +237,7 @@ export default function DailyTasks(){
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={labelS}>Minutes Spent</label>
-              <input type="number" value={form.spent_mins} min={1} max={720} placeholder="e.g. 480" onChange={e=>setForm({...form,spent_mins:+e.target.value})} style={inputS}/>
+              <input type="number" value={form.spent_mins} min={1} max={720} placeholder="e.g. 400" onChange={e=>setForm({...form,spent_mins:+e.target.value})} style={inputS}/>
               {form.spent_mins>0&&<span style={{fontSize:12,color:"#9ca3af"}}>Utilization: {Math.round((form.spent_mins/dailyTarget)*100)}%</span>}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Status</label>

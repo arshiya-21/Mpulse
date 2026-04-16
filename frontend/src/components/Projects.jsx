@@ -2,19 +2,9 @@ import { useState, useEffect } from "react";
 import * as projApi from "../api/projects.js";
 import * as deptApi from "../api/departments.js";
 import * as empApi  from "../api/employees.js";
-import { useToast, Toast, Spinner, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES } from "./shared.jsx";
+import { useToast, Toast, Spinner, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
-function fmtDate(d){
-  if(!d) return "—";
-  try{
-    const dt=new Date(d);
-    const dd=String(dt.getUTCDate()).padStart(2,"0");
-    const mm=String(dt.getUTCMonth()+1).padStart(2,"0");
-    const yyyy=dt.getUTCFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  }catch{return String(d).slice(0,10);}
-}
 
 export default function Projects(){
   const {user}=useAuth();
@@ -278,7 +268,7 @@ export default function Projects(){
                 {/* Due Date */}
                 <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 16px"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Due Date</div>
-                  <div style={{fontSize:15,fontWeight:700,color:isOverdue?"#c2410c":"#d97706"}}>{pv.end_date||"—"}</div>
+                  <div style={{fontSize:15,fontWeight:700,color:isOverdue?"#c2410c":"#d97706"}}>{fmtDate(pv.end_date)}</div>
                   {tat>0&&<div style={{fontSize:11,color:"#c2410c",marginTop:2}}>+{tat}d overdue</div>}
                 </div>
                 {/* Team Size */}

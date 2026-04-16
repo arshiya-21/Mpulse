@@ -4,7 +4,7 @@ import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
-import { useToast, Toast, Spinner, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE } from "./shared.jsx";
+import { useToast, Toast, Spinner, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate } from "./shared.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -62,12 +62,11 @@ export default function CustomerVisits(){
     try{
       if(editing){
         await visitsApi.update(editing.id, form);
-        show("Visit updated");
-        await loadAll();
         setModal(false);
+        show("Visit updated");
+        loadAll();
       } else {
         const res = await visitsApi.create(form);
-        await loadAll();
         setModal(false);
         // Build preview for notification popup
         const cust = customers.find(c=>String(c.id)===String(form.customer_id));
@@ -104,14 +103,14 @@ export default function CustomerVisits(){
     if(!closeForm.work_done){ show("Work done is required"); return; }
     try{
       await visitsApi.close(editing.id, closeForm);
-      show("Outcome updated");
-      await loadAll();
       setCloseModal(false);
+      show("Outcome updated");
+      loadAll();
     }catch{ show("Update failed"); }
   }
 
   async function del(){
-    try{ await visitsApi.remove(delId); show("Deleted"); setDelId(null); await loadAll(); }
+    try{ await visitsApi.remove(delId); setDelId(null); show("Deleted"); loadAll(); }
     catch(e){ show(e?.response?.data?.error||"Cannot delete"); }
   }
 
@@ -248,7 +247,7 @@ export default function CustomerVisits(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12}}>{v.contact_person||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontSize:12}}>{chIcon[v.channel]||"📋"} {v.channel}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#374151",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{v.agenda}</td>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12,whiteSpace:"nowrap"}}>{String(v.planned_date||"").slice(0,10)||"—"}</td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12,whiteSpace:"nowrap"}}>{fmtDate(v.planned_date)}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12}}>{v.duration||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontSize:12}}>{v.assigned_to_name||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:ss.bg,color:ss.c}}>{v.status}</span></td>
@@ -303,7 +302,7 @@ export default function CustomerVisits(){
               <input type="date" value={form.planned_date} onChange={e=>setForm({...form,planned_date:e.target.value})} style={inputS}/>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Duration</label>
-              <input value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})} placeholder="e.g. 1 Day, 2 Days" style={inputS}/>
+              <input type="text" value={form.duration ?? ""} onChange={e=>setForm({...form,duration:e.target.value})} placeholder="e.g. 1 Day, 2 Days" style={inputS}/>
             </div>
           </div>
 

@@ -99,8 +99,8 @@ router.put('/', async (req, res) => {
       session_timeout,
       admin_email ? admin_email.trim() : null,
       visit_reminder_enabled ?? true,
-      work_categories ? JSON.stringify(work_categories) : null,
-      work_formulas ? JSON.stringify(work_formulas) : null
+      work_categories ? (Array.isArray(work_categories) ? JSON.stringify(work_categories) : work_categories) : null,
+      work_formulas ? (Array.isArray(work_formulas) ? JSON.stringify(work_formulas) : work_formulas) : null
     ]);
 
     console.log('✅ System settings updated');
