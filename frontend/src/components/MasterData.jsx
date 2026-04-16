@@ -16,6 +16,7 @@ function Departments(){
   const isAdmin=user?.role==="Admin";
   const [depts,setDepts]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [form,setForm]=useState({name:"",status:"active"});
@@ -28,11 +29,14 @@ function Departments(){
     finally{setLoading(false);}
   }
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{
       if(editing){await deptApi.update(editing.id,form);show("Updated");}
       else{await deptApi.create(form);show("Created");}
       await load();setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error");}
+    finally{setSaving(false);}
   }
   async function del(id){
     try{await deptApi.remove(id);show("Deleted");await load();}
@@ -88,8 +92,8 @@ function Departments(){
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Create"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create")}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -103,6 +107,7 @@ function Roles(){
   const isAdmin=user?.role==="Admin";
   const [roles,setRoles]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState({name:"",description:""});
   const {msg,show}=useToast();
@@ -116,8 +121,11 @@ function Roles(){
     finally{setLoading(false);}
   }
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{await rolesApi.create(form);show("Role created");await load();setModal(false);}
     catch(e){show(e?.response?.data?.error||"Error");}
+    finally{setSaving(false);}
   }
   async function del(id){
     try{await rolesApi.remove(id);show("Deleted");await load();}
@@ -158,8 +166,8 @@ function Roles(){
           <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Description</label><input value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description" style={inputS}/></div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Create Role</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Create Role"}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -175,6 +183,7 @@ function Employees(){
   const [roles,setRoles]=useState([]);
   const [allMgrs,setAllMgrs]=useState([]);  // All Admin/Manager employees org-wide
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
@@ -213,6 +222,8 @@ function Employees(){
     setForm({...form,manager_ids:ids.includes(mgrId)?ids.filter(i=>i!==mgrId):[...ids,mgrId]});
   }
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{
       if(editing){
         await empApi.update(editing.id,form);
@@ -222,13 +233,13 @@ function Employees(){
       } else {
         const r = await empApi.create(form);
         const newEmp = r.data.data || r.data;
-        // Add to list immediately, close popup, then sync in background
         setEmps(prev => [...prev, newEmp]);
         setModal(false);
         show("Employee created");
         load(); // background refresh for full data
       }
     }catch(e){show(e?.response?.data?.error||"Error");}
+    finally{setSaving(false);}
   }
   async function del(){
     try{await empApi.remove(delId);show("Removed");setDelId(null);await load();}
@@ -364,8 +375,8 @@ function Employees(){
 
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Create Employee"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create Employee")}</button>
         </div>
       </Modal>
       {inviteEmp&&(
@@ -406,6 +417,7 @@ function Employees(){
 function Licenses(){
   const [licenses,setLicenses]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [form,setForm]=useState({name:"",description:"",status:"active"});
@@ -418,11 +430,14 @@ function Licenses(){
     finally{setLoading(false);}
   }
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{
       if(editing){await licApi.update(editing.id,form);show("Updated");}
       else{await licApi.create(form);show("License created");}
       await load();setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error");}
+    finally{setSaving(false);}
   }
   async function del(id){
     try{await licApi.remove(id);show("Deleted");await load();}
@@ -478,8 +493,8 @@ function Licenses(){
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Add License"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add License")}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -492,6 +507,7 @@ function CustomerMaster(){
   const [customers,setCustomers]=useState([]);
   const [licenses,setLicenses]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
@@ -511,11 +527,14 @@ function CustomerMaster(){
     finally{setLoading(false);}
   }
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{
       if(editing){await custApi.update(editing.id,form);show("Updated");}
       else{await custApi.create(form);show("Customer added");}
       await load();setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error");}
+    finally{setSaving(false);}
   }
   async function del(){
     try{await custApi.remove(delId);show("Deleted");setDelId(null);await load();}
@@ -627,8 +646,8 @@ function CustomerMaster(){
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Add Customer"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add Customer")}</button>
         </div>
       </Modal>
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Delete Customer" width={360}>
@@ -868,8 +887,11 @@ function AccessConfig(){
   async function save(){
     setSaving(true);
     try{
-      await permApi.update(cfg);
-      localStorage.setItem(ACCESS_KEY,JSON.stringify(cfg));
+      // Always enforce: Admin can never be team-only restricted
+      const toSave={...cfg,Admin:{...cfg.Admin,_team_only:{view:false,create:false,update:false,delete:false}}};
+      await permApi.update(toSave);
+      localStorage.setItem(ACCESS_KEY,JSON.stringify(toSave));
+      setCfg(toSave);
       window.dispatchEvent(new Event("mpulse-access-change"));
       show("Saved & applied to all sessions");
       setDirty(false);

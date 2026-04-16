@@ -20,6 +20,8 @@ export default function Library() {
   const [vidModal, setVidModal] = useState(false);
   const [editSec, setEditSec]   = useState(null);
   const [editVid, setEditVid]   = useState(null);
+  const [savingSec, setSavingSec] = useState(false);
+  const [savingVid, setSavingVid] = useState(false);
   const [secForm, setSecForm]   = useState({ title: '', sort_order: 0 });
   const [vidForm, setVidForm]   = useState({ label: '', caption: '', video_id: '', section_id: '', sort_order: 0 });
 
@@ -51,11 +53,14 @@ export default function Library() {
   function openAddSection() { setEditSec(null); setSecForm({ title: '', sort_order: sections.length }); setSecModal(true); }
   function openEditSection(s, e) { e.stopPropagation(); setEditSec(s); setSecForm({ title: s.title, sort_order: s.sort_order }); setSecModal(true); }
   async function saveSec() {
+    if(savingSec) return;
+    setSavingSec(true);
     try {
       if (editSec) await api.put(`/library/sections/${editSec.id}`, secForm);
       else await api.post('/library/sections', secForm);
       show('Saved'); setSecModal(false); await loadAll();
     } catch (e) { show(e?.response?.data?.error || 'Failed'); }
+    finally { setSavingSec(false); }
   }
   async function deleteSec(id, e) {
     e.stopPropagation();
@@ -78,11 +83,14 @@ export default function Library() {
     setVidModal(true);
   }
   async function saveVid() {
+    if(savingVid) return;
+    setSavingVid(true);
     try {
       if (editVid) await api.put(`/library/videos/${editVid.id}`, vidForm);
       else await api.post('/library/videos', vidForm);
       show('Saved'); setVidModal(false); await loadAll();
     } catch (e) { show(e?.response?.data?.error || 'Failed'); }
+    finally { setSavingVid(false); }
   }
   async function deleteVid(id, e) {
     e.stopPropagation();
@@ -124,11 +132,15 @@ export default function Library() {
               onClick={() => setActiveSection(s.id)}
             />
             {isAdmin && (
-              <div style={{ display: 'flex', gap: 0, marginLeft: 2 }}>
+              <div style={{ display: 'flex', gap: 2, marginLeft: 3 }}>
                 <button onClick={e => openEditSection(s, e)} title="Edit section"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, padding: '2px 3px', lineHeight: 1 }}>✏️</button>
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:5, border:'1px solid #e4e7ec', background:'#fff', cursor:'pointer', padding:0 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
                 <button onClick={e => deleteSec(s.id, e)} title="Delete section"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 12, padding: '2px 3px', lineHeight: 1 }}>🗑</button>
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:5, border:'1px solid #fee2e2', background:'#fff5f5', cursor:'pointer', padding:0 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
               </div>
             )}
           </div>
@@ -204,8 +216,8 @@ export default function Library() {
           <div><label style={labelS}>Section Title</label><input value={secForm.title} onChange={e => setSecForm(f => ({ ...f, title: e.target.value }))} style={inputS} placeholder="e.g. Green Sand Testing"/></div>
           <div><label style={labelS}>Sort Order</label><input type="number" value={secForm.sort_order} onChange={e => setSecForm(f => ({ ...f, sort_order: +e.target.value }))} style={inputS}/></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button onClick={() => setSecModal(false)} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={saveSec} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#4f46e5', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+            <button onClick={() => setSecModal(false)} disabled={savingSec} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={saveSec} disabled={savingSec} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingSec?'#818cf8':'#4f46e5', color: '#fff', fontWeight: 600, cursor: savingSec?'not-allowed':'pointer' }}>{savingSec?'Saving…':'Save'}</button>
           </div>
         </div>
       </Modal>
@@ -235,8 +247,8 @@ export default function Library() {
           </div>
           <div><label style={labelS}>Sort Order</label><input type="number" value={vidForm.sort_order} onChange={e => setVidForm(f => ({ ...f, sort_order: +e.target.value }))} style={inputS}/></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button onClick={() => setVidModal(false)} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={saveVid} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: '#4f46e5', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+            <button onClick={() => setVidModal(false)} disabled={savingVid} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={saveVid} disabled={savingVid} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingVid?'#818cf8':'#4f46e5', color: '#fff', fontWeight: 600, cursor: savingVid?'not-allowed':'pointer' }}>{savingVid?'Saving…':'Save'}</button>
           </div>
         </div>
       </Modal>
@@ -267,6 +279,7 @@ function Tab({ label, count, active, onClick }) {
 
 // ── ListThumb component ───────────────────────────────────────
 function ListThumb({ videoId, label }) {
+  const [src, setSrc] = useState(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
   const [err, setErr] = useState(false);
   if (err) return (
     <div style={{ width: 80, height: 46, borderRadius: 6, flexShrink: 0, background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -274,9 +287,12 @@ function ListThumb({ videoId, label }) {
     </div>
   );
   return (
-    <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt={label}
+    <img src={src} alt={label}
       style={{ width: 80, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0, background: '#000' }}
-      onError={() => setErr(true)}
+      onError={() => {
+        if(src.includes('hqdefault')) setSrc(`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`);
+        else setErr(true);
+      }}
     />
   );
 }
@@ -296,9 +312,15 @@ function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
               {v.caption && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.caption}</div>}
             </div>
             {isAdmin && (
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                <button onClick={e => onEdit(v, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #e4e7ec', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#374151' }}>Edit</button>
-                <button onClick={e => onDelete(v.id, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #fee2e2', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#dc2626' }}>Delete</button>
+              <div style={{ display: 'flex', gap: 5, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <button onClick={e => onEdit(v, e)} style={{ display:'flex',alignItems:'center',gap:4, padding: '4px 9px', borderRadius: 5, border: '1px solid #e4e7ec', background: '#f8f9fb', fontSize: 11, cursor: 'pointer', color: '#374151', fontWeight:500 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                <button onClick={e => onDelete(v.id, e)} style={{ display:'flex',alignItems:'center',gap:4, padding: '4px 9px', borderRadius: 5, border: '1px solid #fee2e2', background: '#fff5f5', fontSize: 11, cursor: 'pointer', color: '#dc2626', fontWeight:500 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  Delete
+                </button>
               </div>
             )}
           </div>
@@ -318,8 +340,8 @@ function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
 // ── VideoCard component ────────────────────────────────────────
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const [hovered, setHovered] = useState(false);
+  const [thumbSrc, setThumbSrc] = useState(`https://img.youtube.com/vi/${v.video_id}/hqdefault.jpg`);
   const [thumbErr, setThumbErr] = useState(false);
-  const thumb = `https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`;
 
   return (
     <div
@@ -329,59 +351,73 @@ function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
       style={{
         borderRadius: 10, overflow: 'hidden', background: '#fff',
         border: '1px solid #e4e7ec', cursor: 'pointer',
-        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.10)' : '0 1px 3px rgba(0,0,0,0.05)',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.12)' : '0 1px 3px rgba(0,0,0,0.05)',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
         transition: 'all 0.15s ease',
       }}
     >
       {/* Thumbnail */}
-      <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', paddingTop: '56.25%', background: '#0f172a', overflow: 'hidden' }}>
         {thumbErr ? (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1f2937' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M10 9l6 3-6 3V9z" fill="#4b5563" stroke="none"/></svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'linear-gradient(135deg,#1e293b,#0f172a)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="#475569" strokeWidth="1.5"/><path d="M10 9l6 3-6 3V9z" fill="#475569"/></svg>
+            <span style={{ fontSize: 10, color: '#475569', fontWeight: 500 }}>No preview</span>
           </div>
         ) : (
           <img
-            src={thumb}
+            src={thumbSrc}
             alt={v.label}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={() => setThumbErr(true)}
+            onError={() => {
+              if(thumbSrc.includes('hqdefault')) setThumbSrc(`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`);
+              else setThumbErr(true);
+            }}
           />
         )}
         {/* Play overlay */}
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)',
+          background: hovered ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.18)',
           transition: 'background 0.15s',
         }}>
           <div style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: hovered ? '#ff0000' : 'rgba(255,255,255,0.85)',
+            width: 46, height: 46, borderRadius: '50%',
+            background: hovered ? '#ff0000' : 'rgba(255,255,255,0.92)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.15s',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: hovered ? '0 4px 16px rgba(255,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.3)',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={hovered ? '#fff' : '#111'} style={{ marginLeft: 3 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={hovered ? '#fff' : '#111'} style={{ marginLeft: 3 }}>
               <polygon points="5,3 19,12 5,21"/>
             </svg>
           </div>
+        </div>
+        {/* Duration badge placeholder - subtle top-right corner */}
+        <div style={{ position:'absolute', top:7, right:7, background:'rgba(0,0,0,0.65)', borderRadius:4, padding:'2px 6px', fontSize:10, color:'#fff', fontWeight:600, backdropFilter:'blur(4px)' }}>
+          ▶ Video
         </div>
       </div>
 
       {/* Info */}
       <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.35, marginBottom: v.caption ? 4 : 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.4, marginBottom: v.caption ? 4 : 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {v.label}
         </div>
         {v.caption && (
-          <div style={{ fontSize: 11, color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: isAdmin ? 0 : 0 }}>
             {v.caption}
           </div>
         )}
         {isAdmin && (
-          <div style={{ display: 'flex', gap: 4, marginTop: 8 }} onClick={e => e.stopPropagation()}>
-            <button onClick={e => onEdit(v, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #e4e7ec', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#374151' }}>Edit</button>
-            <button onClick={e => onDelete(v.id, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #fee2e2', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#dc2626' }}>Delete</button>
+          <div style={{ display: 'flex', gap: 5, marginTop: 9 }} onClick={e => e.stopPropagation()}>
+            <button onClick={e => onEdit(v, e)} style={{ display:'flex', alignItems:'center', gap:4, padding: '4px 9px', borderRadius: 5, border: '1px solid #e4e7ec', background: '#f8f9fb', fontSize: 11, cursor: 'pointer', color: '#374151', fontWeight:500 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button onClick={e => onDelete(v.id, e)} style={{ display:'flex', alignItems:'center', gap:4, padding: '4px 9px', borderRadius: 5, border: '1px solid #fee2e2', background: '#fff5f5', fontSize: 11, cursor: 'pointer', color: '#dc2626', fontWeight:500 }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Delete
+            </button>
           </div>
         )}
       </div>

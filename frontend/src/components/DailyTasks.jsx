@@ -15,6 +15,7 @@ export default function DailyTasks(){
   const [departments,setDepartments]=useState([]);
   const [projects,setProjects]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
@@ -83,11 +84,14 @@ export default function DailyTasks(){
   }
 
   async function save(){
+    if(saving)return;
+    setSaving(true);
     try{
       if(editing){await tasksApi.update(editing.id,form);show("Task updated");}
       else{await tasksApi.create(form);show("Task logged");}
       await load();setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error saving task");}
+    finally{setSaving(false);}
   }
   async function del(){
     try{await tasksApi.remove(delId);show("Deleted");setDelId(null);await load();}
@@ -248,8 +252,10 @@ export default function DailyTasks(){
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Log Task"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+            {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Logging…"):(editing?"Save Changes":"Log Task")}
+          </button>
         </div>
       </Modal>
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Delete Entry" width={360}>

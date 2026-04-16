@@ -27,6 +27,7 @@ export default function Projects(){
   const [ovLoading,setOvLoading]=useState(false);
   const [ovModal,setOvModal]=useState(false);
 
+  const [saving,setSaving]=useState(false);
   const [closePending,setClosePending]=useState(null); // {id,status} | null
   const [closeDate,setCloseDate]=useState("");
   const [myTaskProjectIds,setMyTaskProjectIds]=useState(new Set());
@@ -44,13 +45,25 @@ export default function Projects(){
     finally{setLoading(false);}
   }
   async function save(){
+    if(saving) return;
+    setSaving(true);
     try{
       let pid;
-      if(editing){await projApi.update(editing.id,form);show("Project updated");pid=editing.id;}
-      else{const r=await projApi.create(form);show("Project created");pid=r.data?.id||r.data?.data?.id;}
-      if(pid) await projApi.setAssignees(pid, form.assignee_ids||[]);
-      await load();setModal(false);
+      if(editing){
+        await projApi.update(editing.id,form);
+        try{ await projApi.setAssignees(editing.id, form.assignee_ids||[]); }catch{}
+        show("Project updated");
+        pid=editing.id;
+      } else {
+        const r=await projApi.create(form);
+        pid=r.data?.id;
+        if(pid){ try{ await projApi.setAssignees(pid, form.assignee_ids||[]); }catch{} }
+        show("Project created");
+      }
+      setModal(false);
+      load(); // background reload
     }catch(e){show(e?.response?.data?.error||"Error");}
+    finally{ setSaving(false); }
   }
   async function del(id){
     try{await projApi.remove(id);show("Deleted");await load();}
@@ -408,8 +421,10 @@ export default function Projects(){
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Create Project"}</button>
+          <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+            {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Creating…"):(editing?"Save Changes":"Create Project")}
+          </button>
         </div>
       </Modal>
       {/* ── Close Date Modal ── */}
