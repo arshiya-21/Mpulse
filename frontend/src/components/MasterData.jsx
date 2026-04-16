@@ -216,12 +216,9 @@ function Employees(){
     try{
       if(editing){await empApi.update(editing.id,form);show("Employee updated");setModal(false);}
       else{
-        const r=await empApi.create(form);
-        const newEmp=r.data.data||r.data;
+        await empApi.create(form);
+        show("Employee created");
         setModal(false);
-        const invR=await empApi.genInvite(newEmp.id);
-        setInviteUrl(invR.data.inviteUrl||"");
-        setInviteEmp(newEmp);
       }
       await load();
     }catch(e){show(e?.response?.data?.error||"Error");}
@@ -354,11 +351,11 @@ function Employees(){
               </select>
             </div>
           </div>
-          {!editing&&<div style={{padding:"10px 12px",borderRadius:7,background:"#eff6ff",border:"1px solid #bfdbfe",fontSize:12,color:"#1e40af",display:"flex",alignItems:"center",gap:8}}><span>📧</span>An invite email will be sent after saving.</div>}
+
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Create & Send Invite"}</button>
+          <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>{editing?"Save Changes":"Create Employee"}</button>
         </div>
       </Modal>
       {inviteEmp&&(
