@@ -150,7 +150,7 @@ router.post('/:id/assignees', verify, requireRole('Admin','Manager'), async (req
 // POST create
 router.post('/', verify, requireRole('Admin', 'Manager'), async (req, res) => {
   try {
-    let { name, description, department_id, owner_id, status = 'Open', start_date, end_date } = req.body;
+    let { name, description, department_id, owner_id, status = 'Not Started', start_date, end_date } = req.body;
     if (!name || !start_date || !end_date)
       return res.status(400).json({ error: 'Name, start date and end date are required' });
 

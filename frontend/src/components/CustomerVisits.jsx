@@ -141,7 +141,7 @@ export default function CustomerVisits(){
       channel:        v.channel        || "Email",
       agenda:         v.agenda         || "",
       planned_date:   v.planned_date   ? String(v.planned_date).slice(0,10) : "",
-      duration:       v.duration       || "1 Day",
+      duration:       v.duration ? String(v.duration) : "1 Day",
       assigned_to:    String(v.assigned_to || ""),
       proof_file:     v.proof_file     || "",
       status:         v.status         || "Planned",

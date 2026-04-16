@@ -347,6 +347,12 @@ module.exports = async function migrate() {
     `);
     console.log('✅ projects columns + project_assignees table ready');
 
+    // ── customer_visits: change duration from INT to VARCHAR ─────
+    await db.query(`
+      ALTER TABLE customer_visits
+        ALTER COLUMN duration TYPE VARCHAR(100) USING duration::text;
+    `);
+
     // ── licenses: add missing columns ────────────────────────────
     await db.query(`
       ALTER TABLE licenses

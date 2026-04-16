@@ -29,7 +29,7 @@ export default function Projects(){
   const [deptF,setDeptF]=useState("");
   const {msg,show}=useToast();
   const today=new Date().toLocaleDateString('en-CA');
-  const blank={name:"",description:"",start_date:today,end_date:"",department_id:"",owner_id:"",status:"Open",assignee_ids:[]};
+  const blank={name:"",description:"",start_date:today,end_date:"",department_id:"",owner_id:"",status:"Not Started",assignee_ids:[]};
   const [form,setForm]=useState(blank);
 
   // Overview modal state
