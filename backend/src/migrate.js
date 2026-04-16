@@ -320,6 +320,16 @@ module.exports = async function migrate() {
     `);
     console.log('✅ system_settings columns ready');
 
+    // ── licenses: add missing columns ────────────────────────────
+    await db.query(`
+      ALTER TABLE licenses
+        ADD COLUMN IF NOT EXISTS status           VARCHAR(20)  NOT NULL DEFAULT 'active',
+        ADD COLUMN IF NOT EXISTS duration_months  INT,
+        ADD COLUMN IF NOT EXISTS features         TEXT,
+        ADD COLUMN IF NOT EXISTS updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW();
+    `);
+    console.log('✅ licenses columns ready');
+
     // ── Fix library_videos: extract YouTube ID from full URLs ──
     // Some video_ids may have been saved as full YouTube URLs
     const { rows: badVideos } = await db.query(`
