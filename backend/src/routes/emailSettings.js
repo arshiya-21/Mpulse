@@ -15,24 +15,39 @@ router.get('/', verify, async (req, res) => {
   }
 });
 
-// PUT update email settings (from_email + app_password)
+// PUT update email settings (from_email + optional app_password)
 router.put('/', verify, async (req, res) => {
   try {
     const { from_email, app_password } = req.body;
-    if (!from_email || !app_password) {
-      return res.status(400).json({ error: 'Gmail address and App Password are required' });
+    if (!from_email) {
+      return res.status(400).json({ error: 'Gmail address is required' });
     }
 
-    const { rows } = await db.query(`
-      INSERT INTO email_settings (id, from_email, app_password, is_configured, updated_at)
-      VALUES (1, $1, $2, TRUE, NOW())
-      ON CONFLICT (id) DO UPDATE SET
-        from_email    = $1,
-        app_password  = $2,
-        is_configured = TRUE,
-        updated_at    = NOW()
-      RETURNING id, from_email, is_configured, updated_at
-    `, [from_email.trim().toLowerCase(), app_password.trim()]);
+    let rows;
+    if (app_password && app_password.trim()) {
+      // Update both email and password
+      ({ rows } = await db.query(`
+        INSERT INTO email_settings (id, from_email, app_password, is_configured, updated_at)
+        VALUES (1, $1, $2, TRUE, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          from_email    = $1,
+          app_password  = $2,
+          is_configured = TRUE,
+          updated_at    = NOW()
+        RETURNING id, from_email, is_configured, updated_at
+      `, [from_email.trim().toLowerCase(), app_password.trim()]));
+    } else {
+      // Update only email, keep existing password
+      ({ rows } = await db.query(`
+        INSERT INTO email_settings (id, from_email, is_configured, updated_at)
+        VALUES (1, $1, TRUE, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          from_email    = $1,
+          is_configured = TRUE,
+          updated_at    = NOW()
+        RETURNING id, from_email, is_configured, updated_at
+      `, [from_email.trim().toLowerCase()]));
+    }
 
     res.json(rows[0]);
   } catch (err) {

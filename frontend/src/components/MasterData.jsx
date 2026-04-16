@@ -1032,9 +1032,12 @@ function EmailConfig(){
   }
 
   async function save(){
-    if(!form.from_email||!form.app_password){show("Both fields are required");return;}
+    if(!form.from_email){show("Gmail address is required");return;}
+    if(!cfg.is_configured && !form.app_password){show("App Password is required");return;}
     setSaving(true);
-    try{ await emailSettingsApi.update(form); show("Sender email saved ✓"); await load(); }
+    const payload = { from_email: form.from_email };
+    if(form.app_password) payload.app_password = form.app_password;
+    try{ await emailSettingsApi.update(payload); show("Sender email saved ✓"); await load(); }
     catch(e){ show(e?.response?.data?.error||"Save failed"); }
     finally{ setSaving(false); }
   }
@@ -1089,19 +1092,6 @@ function EmailConfig(){
 
         {/* ── Left: Sender (Gmail SMTP) ── */}
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {cfg.is_configured&&(
-            <div style={{background:"#f0fdf4",border:"1px solid #a7f3d0",borderRadius:10,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:"#059669",marginBottom:2}}>📧 Active Sender</div>
-                <div style={{fontSize:14,fontWeight:600,color:"#111827"}}>{cfg.from_email}</div>
-                {cfg.updated_at&&<div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Updated: {new Date(cfg.updated_at).toLocaleString()}</div>}
-              </div>
-              <button onClick={testConn} disabled={testing}
-                style={{padding:"7px 14px",borderRadius:7,border:"none",background:"#059669",color:"#fff",fontSize:12,fontWeight:600,cursor:testing?"not-allowed":"pointer"}}>
-                {testing?"Sending…":"🧪 Test Email"}
-              </button>
-            </div>
-          )}
 
           <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"20px",boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
             <div style={{fontSize:14,fontWeight:700,color:"#111827",marginBottom:14}}>📤 Sender Account (Gmail SMTP)</div>
@@ -1116,7 +1106,8 @@ function EmailConfig(){
                 <div style={{position:"relative"}}>
                   <input type={showPass?"text":"password"} value={form.app_password}
                     onChange={e=>setForm({...form,app_password:e.target.value})}
-                    placeholder={cfg.is_configured?cfg.app_password_masked:"Enter 16-character app password"}
+                    placeholder={cfg.is_configured?"Leave blank to keep existing password":"Enter 16-character app password"}
+                    autoComplete="new-password"
                     style={{...inputS,paddingRight:42}}/>
                   <button onClick={()=>setShowPass(!showPass)}
                     style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#9ca3af"}}>
@@ -1137,12 +1128,6 @@ function EmailConfig(){
                   style={{display:"inline-block",marginTop:8,fontSize:11,color:"#1d4ed8",fontWeight:600}}>→ Open App Passwords ↗</a>
               </div>
               <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-                {cfg.is_configured&&(
-                  <button onClick={testConn} disabled={testing}
-                    style={{padding:"8px 16px",borderRadius:7,border:"1px solid #a7f3d0",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:testing?"not-allowed":"pointer"}}>
-                    {testing?"Sending…":"🧪 Test Connection"}
-                  </button>
-                )}
                 <button onClick={save} disabled={saving}
                   style={{padding:"8px 18px",borderRadius:7,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.8:1}}>
                   {saving?"Saving…":"💾 Save"}
