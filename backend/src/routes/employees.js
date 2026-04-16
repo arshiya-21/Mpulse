@@ -181,16 +181,13 @@ router.post('/', verify, requireRole('Admin', 'Manager'), async (req, res) => {
 
     console.log('✅ Employee created:', newEmployee.email);
 
-    let emailError = null;
-    try {
-      const loginUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      await sendNewUserEmail({ toName: newEmployee.name, toEmail: newEmployee.email, tempPassword, loginUrl, isResend: false });
-    } catch (emailErr) {
-      console.error('⚠️ Failed to send credentials email:', emailErr.message);
-      emailError = emailErr.message;
-    }
+    // Send email async — don't block the response
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    sendNewUserEmail({ toName: newEmployee.name, toEmail: newEmployee.email, tempPassword, loginUrl, isResend: false })
+      .then(() => console.log('✅ Credentials email sent to:', newEmployee.email))
+      .catch(e => console.error('⚠️ Failed to send credentials email:', e.message));
 
-    res.status(201).json({ message: 'Employee created successfully', data: newEmployee, tempPassword, emailError });
+    res.status(201).json({ message: 'Employee created successfully', data: newEmployee, tempPassword });
   } catch (err) {
     console.error('❌ POST /employees error:', err);
     res.status(500).json({ error: 'Failed to create employee' });
