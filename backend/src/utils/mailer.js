@@ -16,7 +16,10 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: fromEmail, pass: appPassword }
+    auth: { user: fromEmail, pass: appPassword },
+    connectionTimeout: 10000,
+    greetingTimeout:   10000,
+    socketTimeout:     15000,
   });
 
   const mailOptions = {
@@ -117,7 +120,10 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: fromEmail, pass: appPassword }
+    auth: { user: fromEmail, pass: appPassword },
+    connectionTimeout: 10000,
+    greetingTimeout:   10000,
+    socketTimeout:     15000,
   });
 
   const mailOptions = {
@@ -184,7 +190,10 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: fromEmail, pass: appPassword }
+    auth: { user: fromEmail, pass: appPassword },
+    connectionTimeout: 10000,
+    greetingTimeout:   10000,
+    socketTimeout:     15000,
   });
 
   const dateStr = plannedDate ? String(plannedDate).slice(0, 10) : '—';
@@ -249,7 +258,10 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: fromEmail, pass: appPassword }
+    auth: { user: fromEmail, pass: appPassword },
+    connectionTimeout: 10000,
+    greetingTimeout:   10000,
+    socketTimeout:     15000,
   });
 
   const dateStr = new Date(plannedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
