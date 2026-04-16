@@ -7,7 +7,7 @@ import * as custApi          from "../api/customers.js";
 import * as emailSettingsApi from "../api/emailSettings.js";
 import * as permApi          from "../api/permissions.js";
 import * as settingsApi      from "../api/settings.js";
-import { useToast, Toast, Spinner, Modal, inputS, labelS, LICENSE_COLORS } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, inputS, labelS, LICENSE_COLORS } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 // ─── DEPARTMENTS ──────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ function Departments(){
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         {isAdmin&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
@@ -129,7 +129,7 @@ function Roles(){
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         {isAdmin&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
@@ -243,9 +243,10 @@ function Employees(){
   function copyLink(link){navigator.clipboard.writeText(link).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2000);}
 
   const scopeCfg=getAccessConfig();
+  // Admin sees all employees always — never restrict by team
   // Manager: backend already returns dept-employees + cross-dept direct reports — show all of them
   // Other roles with _team_only flag: apply client-side dept filter
-  const restrictToTeam=user?.role!=="Manager"&&!!(scopeCfg[user?.role]?._team_only?.view);
+  const restrictToTeam=user?.role!=="Admin"&&user?.role!=="Manager"&&!!(scopeCfg[user?.role]?._team_only?.view);
   const teamEmps=restrictToTeam&&user?.department_id
     ?emps.filter(e=>String(e.department_id)===String(user.department_id))
     :emps;
@@ -260,7 +261,7 @@ function Employees(){
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
         <input placeholder="Search by name or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{...inputS,maxWidth:280}}/>
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
@@ -434,7 +435,7 @@ function Licenses(){
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         <button onClick={()=>{setEditing(null);setForm({name:"",description:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add License</button>
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
@@ -572,7 +573,7 @@ function CustomerMaster(){
           <span style={{fontSize:11,color:"#9ca3af",alignSelf:"flex-end",marginLeft:"auto"}}>{filtered.length} of {customers.length}</span>
         </div>
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
@@ -742,6 +743,8 @@ export function getAccessConfig(){
     for(const role of ROLES_LIST){
       merged[role]={...DEFAULT_ACCESS[role],...(stored[role]||{})};
     }
+    // Admin can never be restricted to team-only — enforce regardless of stored value
+    merged["Admin"]={...merged["Admin"],_team_only:{view:false,create:false,update:false,delete:false}};
     return merged;
   }catch{return DEFAULT_ACCESS;}
 }
@@ -877,6 +880,7 @@ function AccessConfig(){
   function reset(){ load(); setDirty(false); show("Reloaded from database"); }
 
   function toggleTeamOnly(){
+    if(selectedRole==="Admin") return; // Admin always has full access — cannot restrict
     const cur=!!(cfg[selectedRole]?._team_only?.view);
     setCfg(prev=>({...prev,[selectedRole]:{...prev[selectedRole],_team_only:{view:!cur,create:false,update:false,delete:false}}}));
     setDirty(true);
@@ -983,12 +987,14 @@ function AccessConfig(){
                 <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>Restrict to Own Team/Department</div>
                 <div style={{fontSize:12,color:"#9ca3af",marginTop:3}}>When enabled, this role sees only data belonging to their department or employees who directly report to them — enforced server-side regardless of other permission settings.</div>
               </div>
-              {/* Toggle switch */}
+              {/* Toggle switch — locked OFF for Admin */}
               {(()=>{
-                const on=!!(cfg[selectedRole]?._team_only?.view);
+                const isAdminRole=selectedRole==="Admin";
+                const on=!isAdminRole&&!!(cfg[selectedRole]?._team_only?.view);
                 return(
-                  <div onClick={toggleTeamOnly}
-                    style={{width:44,height:24,borderRadius:12,background:on?"#4f46e5":"#d1d5db",position:"relative",cursor:"pointer",transition:"background 0.2s",flexShrink:0,marginLeft:24}}
+                  <div onClick={isAdminRole?undefined:toggleTeamOnly}
+                    title={isAdminRole?"Admin always has full access — cannot restrict":"Toggle team-only scope"}
+                    style={{width:44,height:24,borderRadius:12,background:on?"#4f46e5":"#d1d5db",position:"relative",cursor:isAdminRole?"not-allowed":"pointer",transition:"background 0.2s",flexShrink:0,marginLeft:24,opacity:isAdminRole?0.45:1}}
                   >
                     <div style={{position:"absolute",top:3,left:on?23:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)",transition:"left 0.2s"}}/>
                   </div>

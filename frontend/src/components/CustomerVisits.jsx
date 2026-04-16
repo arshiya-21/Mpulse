@@ -4,7 +4,7 @@ import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
-import { useToast, Toast, Spinner, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate } from "./shared.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -224,7 +224,7 @@ export default function CustomerVisits(){
       </div>
 
       {/* Table */}
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox text="Loading visits…"/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>

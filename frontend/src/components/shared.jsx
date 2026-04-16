@@ -113,6 +113,21 @@ export function Spinner({ size = 20, color = '#4f46e5' }) {
   );
 }
 
+// ── LoadingBox (centered loading state for tables/sections) ────
+export function LoadingBox({ text = 'Loading…' }) {
+  return (
+    <div style={{
+      display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:12, padding:'48px 24px',
+      background:'#fff', borderRadius:10, border:'1px solid #e4e7ec',
+      color:'#6b7280', fontSize:13, fontWeight:500
+    }}>
+      <Spinner size={32} />
+      <span>{text}</span>
+    </div>
+  );
+}
+
 // ── Pb (Progress bar) ──────────────────────────────────────────
 export function Pb({ value, color = '#4f46e5', height = 6 }) {
   const pct = Math.min(100, Math.max(0, value || 0));

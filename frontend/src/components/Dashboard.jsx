@@ -7,7 +7,7 @@ import * as empApi   from "../api/employees.js";
 import * as deptApi  from "../api/departments.js";
 import * as projApi  from "../api/projects.js";
 import * as tasksApi from "../api/tasks.js";
-import { useToast, Toast, Pb, Spinner, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Dashboard(){
@@ -94,7 +94,7 @@ function UserDashboard({user}){
         ))}
       </div>
 
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox text="Loading dashboard…"/>:(
         <>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}}>
             <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -352,7 +352,7 @@ function AdminManagerDashboard(){
         ))}
       </div>
 
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox text="Loading dashboard…"/>:(
         <>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
             <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>

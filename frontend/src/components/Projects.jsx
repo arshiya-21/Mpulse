@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as projApi from "../api/projects.js";
 import * as deptApi from "../api/departments.js";
 import * as empApi  from "../api/employees.js";
-import { useToast, Toast, Spinner, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 
@@ -178,7 +178,7 @@ export default function Projects(){
           </div>
         </div>
       </div>
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox text="Loading projects…"/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>

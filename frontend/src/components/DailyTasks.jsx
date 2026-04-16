@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, Modal, selS, inputS, labelS, WTYPES, PSTATS, SC2, SC2C, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, PSTATS, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -150,7 +150,7 @@ export default function DailyTasks(){
         </div>
       </div>
 
-      {loading?<Spinner/>:(
+      {loading?<LoadingBox text="Loading tasks…"/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
