@@ -16,8 +16,8 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     family: 4,
     auth: { user: fromEmail, pass: appPassword },
     connectionTimeout: 10000,
@@ -123,8 +123,8 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     family: 4,
     auth: { user: fromEmail, pass: appPassword },
     connectionTimeout: 10000,
@@ -196,8 +196,8 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     family: 4,
     auth: { user: fromEmail, pass: appPassword },
     connectionTimeout: 10000,
@@ -267,8 +267,8 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     family: 4,
     auth: { user: fromEmail, pass: appPassword },
     connectionTimeout: 10000,
