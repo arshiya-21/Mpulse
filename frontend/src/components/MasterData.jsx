@@ -214,13 +214,20 @@ function Employees(){
   }
   async function save(){
     try{
-      if(editing){await empApi.update(editing.id,form);show("Employee updated");setModal(false);}
-      else{
-        await empApi.create(form);
+      if(editing){
+        await empApi.update(editing.id,form);
         setModal(false);
-        show("Employee created — credentials email sent");
+        show("Employee updated");
+        load(); // background refresh
+      } else {
+        const r = await empApi.create(form);
+        const newEmp = r.data.data || r.data;
+        // Add to list immediately, close popup, then sync in background
+        setEmps(prev => [...prev, newEmp]);
+        setModal(false);
+        show("Employee created");
+        load(); // background refresh for full data
       }
-      await load();
     }catch(e){show(e?.response?.data?.error||"Error");}
   }
   async function del(){
