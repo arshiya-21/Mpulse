@@ -1086,11 +1086,7 @@ function EmailConfig(){
 
   return(
     <div style={{width:"100%"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:20}}>
-        {cfg.is_configured&&(
-          <span style={{display:"flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0"}}>✓ Configured</span>
-        )}
-      </div>
+      <div style={{marginBottom:20}}></div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
 
@@ -1107,17 +1103,30 @@ function EmailConfig(){
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 <label style={labelS}>Gmail App Password <span style={{color:"#dc2626"}}>*</span></label>
-                <div style={{position:"relative"}}>
-                  <input type={showPass?"text":"password"} value={form.app_password}
-                    onChange={e=>setForm({...form,app_password:e.target.value})}
-                    placeholder={cfg.is_configured?"Leave blank to keep existing password":"Enter 16-character app password"}
-                    autoComplete="new-password"
-                    style={{...inputS,paddingRight:42}}/>
-                  <button onClick={()=>setShowPass(!showPass)}
-                    style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#9ca3af"}}>
-                    {showPass?"🙈":"👁️"}
-                  </button>
-                </div>
+                {cfg.is_configured && !showPass ? (
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{...inputS,flex:1,color:"#6b7280",letterSpacing:3,fontSize:16,padding:"9px 12px"}}>••••••••••••••••</div>
+                    <button onClick={()=>setShowPass(true)}
+                      style={{padding:"8px 14px",borderRadius:7,border:"1px solid #e4e7ec",background:"#fff",color:"#4f46e5",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>
+                      Edit
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{position:"relative"}}>
+                    <input type="password" value={form.app_password}
+                      onChange={e=>setForm({...form,app_password:e.target.value})}
+                      placeholder="Enter new 16-character app password"
+                      autoComplete="new-password"
+                      style={{...inputS,paddingRight:42}}
+                      autoFocus={cfg.is_configured}/>
+                    {cfg.is_configured && (
+                      <button onClick={()=>{setShowPass(false);setForm({...form,app_password:""});}}
+                        style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#9ca3af"}}>
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                )}
                 <span style={{fontSize:11,color:"#9ca3af"}}>Not your login password — this is a 16-char <strong>App Password</strong>.</span>
               </div>
               <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"12px 14px"}}>
