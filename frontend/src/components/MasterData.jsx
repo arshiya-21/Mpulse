@@ -42,11 +42,7 @@ function Departments(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Departments</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>{depts.length} departments configured</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         {isAdmin&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
       </div>
       {loading?<Spinner/>:(
@@ -130,11 +126,7 @@ function Roles(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Roles</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>Manage system access control</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         {isAdmin&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
       </div>
       {loading?<Spinner/>:(
@@ -256,14 +248,7 @@ function Employees(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Employees</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3,display:"flex",alignItems:"center",gap:8}}>
-            {user?.role==="Manager"?`${filtered.length} employees in your team`:restrictToTeam?`${filtered.length} employees in your department`:`${emps.length} total employees`}
-            {pendingCount>0&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fff7ed",color:"#c2410c"}}>⏳ {pendingCount} invite pending</span>}
-          </div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         <button onClick={openAdd} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Employee</button>
       </div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
@@ -440,11 +425,7 @@ function Licenses(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>License Master</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>{licenses.length} license types</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         <button onClick={()=>{setEditing(null);setForm({name:"",description:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add License</button>
       </div>
       {loading?<Spinner/>:(
@@ -507,7 +488,7 @@ function CustomerMaster(){
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
-  const [form,setForm]=useState({name:"",license_id:"",status:"Active"});
+  const [form,setForm]=useState({name:"",license_id:"",status:"active"});
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("");
   const [licF,setLicF]=useState("");
@@ -541,22 +522,18 @@ function CustomerMaster(){
     if(licF&&String(c.license_id)!==String(licF))return false;
     return true;
   });
-  const activeCount=customers.filter(c=>c.status==="Active").length;
+  const activeCount=customers.filter(c=>c.status==="active").length;
   const kpis=[
     {label:"Total",value:customers.length,icon:"🏢",accent:"#4f46e5",bg:"#ede9fe"},
     {label:"Active",value:activeCount,icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Inactive",value:customers.length-activeCount,icon:"⛔",accent:"#dc2626",bg:"#fef2f2"},
-    {label:"Licenses Used",value:[...new Set(customers.filter(c=>c.status==="Active"&&c.license_id).map(c=>c.license_id))].length,icon:"🔑",accent:"#d97706",bg:"#fef9c3"},
+    {label:"Licenses Used",value:[...new Set(customers.filter(c=>c.status==="active"&&c.license_id).map(c=>c.license_id))].length,icon:"🔑",accent:"#d97706",bg:"#fef9c3"},
   ];
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Customer Master</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>{customers.length} customers · {activeCount} active</div>
-        </div>
-        <button onClick={()=>{setEditing(null);setForm({name:"",license_id:"",status:"Active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Customer</button>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
+        <button onClick={()=>{setEditing(null);setForm({name:"",license_id:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Customer</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:14}}>
         {kpis.map((k,i)=>(
@@ -611,7 +588,7 @@ function CustomerMaster(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         {c.license_name?<span style={{padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:lc.bg,color:lc.c}}>{c.license_name}</span>:<span style={{color:"#9ca3af",fontSize:12}}>—</span>}
                       </td>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:c.status==="Active"?"#ecfdf5":"#f1f5f9",color:c.status==="Active"?"#059669":"#64748b"}}>{c.status}</span></td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:c.status==="active"?"#ecfdf5":"#f1f5f9",color:c.status==="active"?"#059669":"#64748b"}}>{c.status}</span></td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",gap:2}}>
                           <button onClick={()=>openEdit(c)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
@@ -638,7 +615,7 @@ function CustomerMaster(){
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Status</label>
             <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
-              <option>Active</option><option>Inactive</option>
+              <option value="active">Active</option><option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -944,12 +921,7 @@ function AccessConfig(){
 
   return(
     <div>
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:24}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Access Configuration</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>Role-based permissions for all pages and Master Data tabs — roles sync from Role Master</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:24}}>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {dirty&&<span style={{fontSize:11,color:"#d97706",fontWeight:600,padding:"4px 10px",borderRadius:20,background:"#fffbeb",border:"1px solid #fde68a"}}>● Unsaved</span>}
           <button onClick={reset} style={{padding:"8px 16px",borderRadius:8,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",fontSize:13,fontWeight:600,cursor:"pointer"}}>↺ Reload</button>
@@ -1107,11 +1079,7 @@ function EmailConfig(){
 
   return(
     <div style={{width:"100%"}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Email Configuration</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>Sender account, notification recipients and alert preferences</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:20}}>
         {cfg.is_configured&&(
           <span style={{display:"flex",alignItems:"center",gap:6,padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:"#ecfdf5",color:"#059669",border:"1px solid #a7f3d0"}}>✓ Configured</span>
         )}
@@ -1273,13 +1241,24 @@ function CategoriesConfig(){
   const [cats,setCats]=useState([]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(true);
+  const [currentSettings,setCurrentSettings]=useState(null);
   const {msg,show}=useToast();
 
   useEffect(()=>{
     settingsApi.get()
       .then(r=>{
+        setCurrentSettings(r.data);
         const raw=r.data?.work_categories;
-        setCats(raw ? JSON.parse(raw) : [...DEFAULT_CATS]);
+        try {
+          // Handle multiple levels of JSON.stringify (over-escaped DB values)
+          let val = raw;
+          for(let i=0;i<5;i++){
+            if(Array.isArray(val)) break;
+            if(typeof val==='string') val=JSON.parse(val);
+            else break;
+          }
+          setCats(Array.isArray(val) ? val : [...DEFAULT_CATS]);
+        } catch { setCats([...DEFAULT_CATS]); }
       })
       .catch(()=>show("Failed to load"))
       .finally(()=>setLoading(false));
@@ -1287,10 +1266,19 @@ function CategoriesConfig(){
 
   async function save(list){
     try{
+      const base = currentSettings || {};
       await settingsApi.update({
-        company_name:"My Company",daily_target_mins:510,work_days:"Mon–Fri",
-        timezone:"Asia/Kolkata",tat_alert_days:2,email_notif:true,
-        auto_close:false,session_timeout:30,work_categories:list
+        company_name:         base.company_name         || "My Company",
+        daily_target_mins:    base.daily_target_mins    || 510,
+        work_days:            base.work_days            || "Mon-Fri",
+        timezone:             base.timezone             || "Asia/Kolkata",
+        tat_alert_days:       base.tat_alert_days       || 2,
+        email_notif:          base.email_notif          ?? true,
+        auto_close:           base.auto_close           ?? false,
+        session_timeout:      base.session_timeout      || 30,
+        admin_email:          base.admin_email          || null,
+        visit_reminder_enabled: base.visit_reminder_enabled ?? true,
+        work_categories:      list,
       });
       show("Categories saved");
     }catch(e){ show(e?.response?.data?.error||"Save failed"); }

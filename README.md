@@ -1,63 +1,88 @@
-# Task Manager Application
+# MPulse — Work Pulse Intelligence
 
-A full-stack task management and project tracking application built with React (frontend) and Node.js/Express (backend) with PostgreSQL database.
+A full-stack internal management platform built for **MPM Infosoft**. It tracks employee work logs, projects, customer visits, and team utilization in one place.
 
-## 🚀 Quick Start
+**Stack:** React 18 · Node.js / Express · PostgreSQL 16 · Docker
+
+---
+
+## What MPulse Does
+
+### Daily Work Log
+Employees log their work each day — project, category, minutes spent. The system automatically calculates utilization (% of daily target worked) and TAT (days delayed vs. project deadline).
+
+### Projects
+Track all client and internal projects. Each project has assignees, start/end dates, and a status. Managers and Admin can see TAT — how many days a project ran beyond its target end date.
+
+### Dashboard
+Gives Admin and Managers a bird's-eye view: daily utilization across the team, recent task logs, project team breakdown, and workload charts.
+
+### Customer Visits
+Schedule and track customer visits. Assign to an employee, set channel (Email, WhatsApp, Phone Call, etc.), agenda, and date. The system sends email notifications when a visit is scheduled and daily reminders for overdue/upcoming visits.
+
+### Master Data
+Manage the core data that drives the system:
+- **Employees** — add, invite, set roles and departments
+- **Departments** — organize teams
+- **Roles** — Admin, Manager, User
+- **Licenses** — track software/service licenses sold to customers
+- **Customers** — customer list linked to licenses and visits
+- **Email Config** — configure Gmail SMTP to send system emails
+- **Access Config** — role-based permission control per page
+- **Categories** — configure work categories for task logging
+- **Formulas** — configure utilization calculation formula
+
+### Reports
+Export task data as CSV or Excel (.xlsx). Filtered by date, department, employee, project, or status. Non-admin users only see their own department's data.
+
+### Library
+Video library organized by section. Upload YouTube video IDs and they display as a thumbnail grid. Supports sections, add/edit/delete by Admin.
+
+### Administration
+System-wide settings: company name, daily work target, timezone, TAT alert days, session timeout, and notification toggles.
+
+---
+
+## Roles
+
+| Role    | What they see |
+|---------|--------------|
+| Admin   | Everything — all departments, all employees, full settings |
+| Manager | Their department's data, their team's work logs and visits |
+| User    | Only their own work log, their assigned projects and visits |
+
+---
+
+## Default Login
+
+| Field    | Value            |
+|----------|------------------|
+| Email    | admin@mpulse.com |
+| Password | Admin@1234       |
+
+Change the password after first login.
+
+---
+
+## Local Development
 
 ### Prerequisites
-- **Node.js** (v16 or higher)
-- **Docker** (for PostgreSQL database)
-- **Git** (optional, for cloning)
+- Node.js 18+
+- Docker Desktop
 
-### 1. Clone or Download the Project
-```bash
-# If using git
-git clone <repository-url>
-cd task-manager
-```
-
-### 2. Start the Database
-The application uses PostgreSQL running in Docker. Start it with:
+### 1. Start the database
 ```bash
 docker-compose up -d
 ```
-This will start PostgreSQL on port 5432 with the database `task_tracker`.
 
-### 3. Setup Backend
+### 2. Backend
 ```bash
 cd backend
 npm install
-npm run setup -- "Admin User" "admin@company.com" "Admin@1234"
-npm run dev
+npm run dev        # runs on http://localhost:4000
 ```
-The backend will run on `http://localhost:4000`.
 
-### 4. Setup Frontend (in a new terminal)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-The frontend will run on `http://localhost:5173`.
-
-### 5. Access the Application
-Open your browser and go to: `http://localhost:5173`
-
-**Login Credentials:**
-- **Email:** `admin@company.com`
-- **Password:** `Admin@1234`
-
-## 📋 Detailed Setup
-
-### Database Configuration
-The database is configured via Docker Compose with these settings:
-- **Database:** `task_tracker`
-- **Username:** `tracker_user`
-- **Password:** `tracker_pass_123`
-- **Port:** `5432`
-
-### Environment Variables
-The backend uses a `.env` file with the following configuration:
+`backend/.env`:
 ```
 PORT=4000
 DATABASE_URL=postgresql://tracker_user:tracker_pass_123@localhost:5432/task_tracker
@@ -66,107 +91,67 @@ JWT_EXPIRES_IN=24h
 CORS_ORIGIN=http://localhost:5173
 ```
 
-### Available Scripts
-
-#### Backend Scripts
-- `npm run dev` - Start development server with nodemon
-- `npm run start` - Start production server
-- `npm run setup` - Initialize database and create admin user
-
-#### Frontend Scripts
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-
-## 🏗️ Project Structure
-
-```
-task-manager/
-├── backend/                 # Node.js/Express API
-│   ├── routes/             # API route handlers
-│   ├── middleware/         # Authentication middleware
-│   ├── db.js              # Database connection
-│   ├── server.js          # Main server file
-│   └── package.json       # Backend dependencies
-├── frontend/               # React application
-│   ├── src/               # Source code
-│   ├── public/            # Static assets
-│   └── package.json       # Frontend dependencies
-├── database/              # Database schema
-│   └── schema.sql         # PostgreSQL schema
-├── docker-compose.yml     # Docker configuration
-└── README.md             # This file
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### 1. "Cannot connect to server" error
-- Ensure both backend and frontend are running
-- Check that ports 4000 (backend) and 5173 (frontend) are not blocked
-- Verify CORS configuration in backend
-
-#### 2. Database connection issues
-- Ensure Docker is running: `docker ps`
-- Check if PostgreSQL container is up: `docker-compose ps`
-- Verify database credentials in `.env`
-
-#### 3. Port conflicts
-- If ports 4000 or 5173 are in use, change them in:
-  - Backend: `.env` file (PORT variable)
-  - Frontend: Update CORS_ORIGIN in backend `.env`
-
-#### 4. Node.js version issues
-- Ensure you're using Node.js v16 or higher
-- Check version: `node --version`
-
-### Resetting the Application
-
-To completely reset the application:
+### 3. Frontend
 ```bash
-# Stop all services
-docker-compose down
-
-# Remove database volume (WARNING: This deletes all data)
-docker volume rm task-manager_pgdata
-
-# Restart everything
-docker-compose up -d
-cd backend && npm run setup -- "Admin User" "admin@company.com" "Admin@1234"
-npm run dev
+cd frontend
+npm install
+npm run dev        # runs on http://localhost:5173
 ```
 
-## 🛠️ Development
+---
 
-### Adding New Features
-- Backend API routes go in `backend/routes/`
-- Frontend components go in `frontend/src/`
-- Database changes require schema updates in `database/schema.sql`
+## Project Structure
 
-### API Endpoints
-- `POST /api/auth/login` - User authentication
-- `GET /api/dashboard/kpis` - Dashboard KPIs
-- `GET /api/employees` - Employee management
-- `GET /api/projects` - Project management
-- `GET /api/tasks` - Task management
+```
+mpulse/
+├── backend/
+│   ├── src/
+│   │   ├── app.js              # Express entry point + route registration
+│   │   ├── migrate.js          # Auto-runs on startup — creates/alters tables
+│   │   ├── config/db.js        # PostgreSQL pool
+│   │   ├── middleware/auth.js  # JWT verify middleware
+│   │   ├── routes/             # One file per API domain
+│   │   │   ├── auth.js         # Login, password reset
+│   │   │   ├── employees.js    # Employee CRUD + invite
+│   │   │   ├── tasks.js        # Work log CRUD + utilization calc
+│   │   │   ├── projects.js     # Project CRUD + assignees
+│   │   │   ├── visits.js       # Customer visit CRUD
+│   │   │   ├── reports.js      # CSV / Excel export
+│   │   │   ├── permissions.js  # Role permission read/write
+│   │   │   ├── emailSettings.js# Gmail SMTP config
+│   │   │   └── library.js      # Video library sections + videos
+│   │   └── utils/
+│   │       ├── mailer.js       # Nodemailer — all email sending
+│   │       └── visitReminder.js# node-cron — daily 9AM reminder emails
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/         # One file per page
+│   │   ├── api/                # Axios calls per domain
+│   │   └── context/AuthContext.jsx
+│   ├── nginx.conf              # Production nginx (serves SPA + proxies /api)
+│   ├── Dockerfile
+│   └── vite.config.js
+├── database/
+│   ├── schema.sql              # Full schema + seed data (used on first DB init)
+│   └── seed.js                 # Run manually to re-seed: node database/seed.js
+├── docker-compose.yml          # Local dev — starts DB only
+├── docker-compose.prod.yml     # Production — all 3 services
+├── .env.example                # Copy to .env and fill in secrets
+└── README.md
+```
 
-## 📚 Technologies Used
+---
 
-### Frontend
-- **React** - UI framework
-- **Vite** - Build tool and dev server
-- **Recharts** - Data visualization
-- **Axios** - HTTP client
+## Email Setup (Gmail SMTP)
 
-### Backend
-- **Node.js** - Runtime
-- **Express.js** - Web framework
-- **PostgreSQL** - Database
-- **JWT** - Authentication
-- **bcrypt** - Password hashing
+1. Go to **Master Data → Email Config**
+2. Enter your Gmail address
+3. Enter a Gmail **App Password** (not your login password)
+   - Go to myaccount.google.com → Security → 2-Step Verification → App Passwords
+   - Create one named "MPulse"
+   - Paste the 16-character password
+4. Click **Save** then **Test Email**
 
-### Infrastructure
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-
+This enables: new employee welcome emails, visit scheduled notifications, daily overdue/upcoming visit reminders.

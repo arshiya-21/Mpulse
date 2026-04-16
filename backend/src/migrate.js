@@ -122,6 +122,28 @@ module.exports = async function migrate() {
     `);
     console.log('✅ Manager default permissions corrected');
 
+    // ── email_settings table ──────────────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS email_settings (
+        id            SERIAL PRIMARY KEY,
+        from_email    VARCHAR(200),
+        app_password  VARCHAR(500),
+        is_configured BOOLEAN     NOT NULL DEFAULT FALSE,
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      INSERT INTO email_settings (id, from_email, app_password, is_configured)
+      VALUES (1, NULL, NULL, FALSE)
+      ON CONFLICT (id) DO NOTHING;
+    `);
+    console.log('✅ email_settings table ready');
+
+    // ── customers: add license date columns ───────────────────────────
+    await db.query(`
+      ALTER TABLE customers
+        ADD COLUMN IF NOT EXISTS license_start_date DATE,
+        ADD COLUMN IF NOT EXISTS license_end_date   DATE;
+    `);
+
     // ── Add admin_email + visit_reminder_enabled to system_settings ──
     await db.query(`
       ALTER TABLE system_settings

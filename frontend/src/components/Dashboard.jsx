@@ -178,7 +178,12 @@ function UserDashboard({user}){
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",color:"#4b5563",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name||"—"}</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
-                      <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}><Pb v={Math.round(parseFloat(t.utilization)||0)}/></td>
+                      <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
+                          <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                        </div>
+                      </td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}>
                         {t.tat_days>0?<span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{t.tat_days}d</span>:<span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>On Time</span>}
                       </td>
@@ -475,7 +480,12 @@ function AdminManagerDashboard(){
                         </td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
-                        <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}><Pb v={Math.round(parseFloat(t.utilization)||0)}/></td>
+                        <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
+                            <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                          </div>
+                        </td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}>
                           {t.tat_days>0
                             ?<span style={{padding:"2px 7px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{t.tat_days}d late</span>
@@ -521,14 +531,16 @@ function AdminManagerDashboard(){
                         return pct>0?<div key={mi} title={m.name+": "+pct+"%"} style={{width:pct+"%",background:COLORS[mi%COLORS.length],minWidth:4}}/>:null;
                       })}
                     </div>
+                    {!selMember&&(
                     <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
                       {projMembers.map((m,mi)=>{
                         const pct=grandMins>0?Math.round((m.mins/grandMins)*100):0;
                         const uc=m.avgUtil>=85?"#059669":m.avgUtil>=65?"#d97706":"#dc2626";
-                        const isSelected=selMember===m.name;
                         return(
-                          <div key={mi} onClick={()=>setSelMember(isSelected?null:m.name)}
-                            style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",borderRadius:9,border:"1px solid "+(isSelected?COLORS[mi%COLORS.length]:"#e4e7ec"),background:isSelected?"#f0f4ff":"#fafbff",minWidth:160,cursor:"pointer",transition:"border-color .15s"}}>
+                          <div key={mi} onClick={()=>setSelMember(m.name)}
+                            style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",borderRadius:9,border:"1px solid #e4e7ec",background:"#fafbff",minWidth:160,cursor:"pointer",transition:"border-color .15s"}}
+                            onMouseEnter={e=>e.currentTarget.style.borderColor=COLORS[mi%COLORS.length]}
+                            onMouseLeave={e=>e.currentTarget.style.borderColor="#e4e7ec"}>
                             <div style={{width:30,height:30,borderRadius:"50%",background:COLORS[mi%COLORS.length],color:"#fff",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{m.name[0]}</div>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{display:"flex",alignItems:"baseline",gap:5}}>
@@ -547,6 +559,7 @@ function AdminManagerDashboard(){
                         );
                       })}
                     </div>
+                    )}
 
                     {/* Employee Breakdown Table — always shown */}
                     <div style={{border:"1px solid #e4e7ec",borderRadius:8,overflow:"hidden"}}>
@@ -614,7 +627,12 @@ function AdminManagerDashboard(){
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:11,color:"#4b5563"}}>{String(t.task_date).slice(0,10)}</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",color:"#6b7280"}}>{t.category}</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace"}}>{t.spent_mins}m</td>
-                                  <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5"}}><Pb v={Math.round(parseFloat(t.utilization)||0)}/></td>
+                                  <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
+                                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                      <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
+                                      <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                                    </div>
+                                  </td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5"}}>
                                     {t.tat_days>0
                                       ?<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{t.tat_days}d late</span>

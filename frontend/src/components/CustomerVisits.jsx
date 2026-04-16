@@ -196,12 +196,7 @@ export default function CustomerVisits(){
 
   return(
     <div>
-      {/* Header */}
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Customer Visits</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>{visits.length} visits logged</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
         <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
       </div>
 

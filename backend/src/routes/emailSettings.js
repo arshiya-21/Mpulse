@@ -2,31 +2,38 @@ const express    = require('express');
 const router     = express.Router();
 const db         = require('../config/db');
 const { verify } = require('../middleware/auth');
-const { sendMail } = require('../utils/mailer');
+const nodemailer = require('nodemailer');
 
 // GET email settings
 router.get('/', verify, async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM email_settings LIMIT 1');
-    res.json(rows[0] || {});
+    const { rows } = await db.query('SELECT id, from_email, is_configured, updated_at FROM email_settings WHERE id = 1 LIMIT 1');
+    res.json(rows[0] || { from_email: '', is_configured: false });
   } catch (err) {
     console.error('GET /email-settings error:', err);
     res.status(500).json({ error: 'Failed to fetch email settings' });
   }
 });
 
-// PUT update email settings
+// PUT update email settings (from_email + app_password)
 router.put('/', verify, async (req, res) => {
   try {
-    const { smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, smtp_secure } = req.body;
+    const { from_email, app_password } = req.body;
+    if (!from_email || !app_password) {
+      return res.status(400).json({ error: 'Gmail address and App Password are required' });
+    }
+
     const { rows } = await db.query(`
-      INSERT INTO email_settings (id, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, smtp_secure, updated_at)
-      VALUES (1, $1,$2,$3,$4,$5,$6, NOW())
+      INSERT INTO email_settings (id, from_email, app_password, is_configured, updated_at)
+      VALUES (1, $1, $2, TRUE, NOW())
       ON CONFLICT (id) DO UPDATE SET
-        smtp_host=$1, smtp_port=$2, smtp_user=$3, smtp_pass=$4,
-        smtp_from=$5, smtp_secure=$6, updated_at=NOW()
-      RETURNING *
-    `, [smtp_host, smtp_port||587, smtp_user, smtp_pass, smtp_from, smtp_secure||false]);
+        from_email    = $1,
+        app_password  = $2,
+        is_configured = TRUE,
+        updated_at    = NOW()
+      RETURNING id, from_email, is_configured, updated_at
+    `, [from_email.trim().toLowerCase(), app_password.trim()]);
+
     res.json(rows[0]);
   } catch (err) {
     console.error('PUT /email-settings error:', err);
@@ -34,13 +41,28 @@ router.put('/', verify, async (req, res) => {
   }
 });
 
-// POST test email
+// POST test email — sends a test to the configured from_email address
 router.post('/test', verify, async (req, res) => {
   try {
-    const { to } = req.body;
-    if (!to) return res.status(400).json({ error: 'Recipient email required' });
-    await sendMail({ to, subject: 'MPulse — Test Email', text: 'Email configuration is working!' });
-    res.json({ message: 'Test email sent successfully' });
+    const { rows } = await db.query('SELECT from_email, app_password FROM email_settings WHERE id = 1 LIMIT 1');
+    const s = rows[0];
+    if (!s?.from_email || !s?.app_password) {
+      return res.status(400).json({ error: 'Email not configured yet. Save your Gmail address and App Password first.' });
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: s.from_email, pass: s.app_password },
+    });
+
+    await transporter.sendMail({
+      from:    `"MPulse" <${s.from_email}>`,
+      to:      s.from_email,
+      subject: 'MPulse — Test Email',
+      text:    'Your email configuration is working correctly!',
+    });
+
+    res.json({ message: `Test email sent to ${s.from_email}` });
   } catch (err) {
     console.error('POST /email-settings/test error:', err);
     res.status(500).json({ error: err.message || 'Failed to send test email' });

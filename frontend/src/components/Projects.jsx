@@ -149,14 +149,7 @@ export default function Projects(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Project Master</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3,display:"flex",alignItems:"center",gap:8}}>
-            {filtered.length} projects
-            {projects.some(p=>p.status==="Closed")&&<span style={{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#f0fdf4",color:"#065f46",border:"1px solid #a7f3d0"}}>incl. closed</span>}
-          </div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:14}}>
         {user.role!=="User"&&(
           <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ New Project</button>
         )}

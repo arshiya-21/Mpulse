@@ -23,13 +23,15 @@ export const STATUS_CFG = {
 };
 
 // ── Visit constants ────────────────────────────────────────────
-export const VISIT_STATUSES  = ['All','Scheduled','Completed','Cancelled','No Show'];
-export const VISIT_CHANNELS  = ['In-Person','Phone','Video Call','Email','WhatsApp','Other'];
+export const VISIT_STATUSES  = ['Planned','In Progress','Completed','Pending','Rescheduled','Cancelled'];
+export const VISIT_CHANNELS  = ['Email','WhatsApp','Phone Call','SMS','On-Site Request'];
 export const STATUS_STYLE = {
-  'Scheduled':  { bg:'#dbeafe', c:'#1e40af' },
-  'Completed':  { bg:'#d1fae5', c:'#065f46' },
-  'Cancelled':  { bg:'#fee2e2', c:'#991b1b' },
-  'No Show':    { bg:'#fef9c3', c:'#92400e' },
+  'Planned':     { bg:'#dbeafe', c:'#1e40af' },
+  'In Progress': { bg:'#fff7ed', c:'#c2410c' },
+  'Completed':   { bg:'#d1fae5', c:'#065f46' },
+  'Pending':     { bg:'#fef9c3', c:'#92400e' },
+  'Rescheduled': { bg:'#ede9fe', c:'#5b21b6' },
+  'Cancelled':   { bg:'#fee2e2', c:'#991b1b' },
 };
 
 // ── Work log types ─────────────────────────────────────────────
@@ -60,22 +62,22 @@ export const SC2C = { background:'#fff', borderRadius:12, border:'1px solid #e4e
 
 // ── Toast ──────────────────────────────────────────────────────
 export function useToast() {
-  const [toast, setToast] = useState(null);
+  const [msg, setMsg] = useState(null);
   const show = useCallback((message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    setMsg({ message, type });
+    setTimeout(() => setMsg(null), 3000);
   }, []);
-  return { toast, show };
+  return { msg, show };
 }
 
-export function Toast({ toast }) {
-  if (!toast) return null;
+export function Toast({ msg }) {
+  if (!msg) return null;
   const colors = {
     success: { bg:'#d1fae5', border:'#6ee7b7', color:'#065f46' },
     error:   { bg:'#fee2e2', border:'#fca5a5', color:'#991b1b' },
     info:    { bg:'#dbeafe', border:'#93c5fd', color:'#1e40af' },
   };
-  const c = colors[toast.type] || colors.info;
+  const c = colors[msg.type] || colors.info;
   return (
     <div style={{
       position:'fixed', bottom:24, right:24, zIndex:9999,
@@ -84,7 +86,7 @@ export function Toast({ toast }) {
       boxShadow:'0 4px 16px rgba(0,0,0,0.10)', maxWidth:360,
       animation:'fadeIn 0.2s ease'
     }}>
-      {toast.message}
+      {msg.message}
     </div>
   );
 }

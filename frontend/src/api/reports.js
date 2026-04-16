@@ -16,6 +16,11 @@ export const exportCSV = async (params) => {
   triggerDownload(res.data, `mpulse_raw_${new Date().toISOString().slice(0,10)}.csv`);
 };
 
+export const exportXLSX = async (params) => {
+  const res = await api.get('/reports/export/xlsx', { params, responseType: 'blob' });
+  triggerDownload(res.data, `mpulse_report_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
 export const exportSummary = async (type, params) => {
   const res = await api.get('/reports/summary', { params: { ...params, type }, responseType: 'blob' });
   triggerDownload(res.data, `mpulse_${type}_summary_${new Date().toISOString().slice(0,10)}.csv`);

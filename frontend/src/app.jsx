@@ -264,14 +264,18 @@ function Login({onLogin}){
 
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App(){
-  const {user,login,logout}=useAuth();
+  const {user,setUser,logout}=useAuth();
   const location=useLocation();
 
   if(location.pathname==="/set-password"){
     return <SetPassword/>;
   }
 
-  function handleLogin(userData,token){login(userData,token);}
+  function handleLogin(userData,token){
+    localStorage.setItem('mpulse_token', token);
+    localStorage.setItem('mpulse_user', JSON.stringify(userData));
+    setUser(userData);
+  }
   function handleLogout(){logout();}
 
   if(!user)return <Login onLogin={handleLogin}/>;

@@ -30,11 +30,7 @@ export default function Administration(){
   if(loading)return <Spinner/>;
   return(
     <div>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18}}>
-        <div>
-          <div style={{fontSize:20,fontWeight:700,color:"#111827"}}>Administration</div>
-          <div style={{fontSize:13,color:"#9ca3af",marginTop:3}}>System configuration and settings</div>
-        </div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
         <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Save Changes</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
@@ -79,7 +75,7 @@ export default function Administration(){
           <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Session Timeout</label>
               <select value={s.session_timeout} onChange={e=>setS(p=>({...p,session_timeout:+e.target.value}))} style={inputS}>
-                <option value={15}>15 minutes</option><option value={30}>30 minutes</option><option value={60}>1 hour</option>
+                <option value={0}>No timeout</option><option value={15}>15 minutes</option><option value={30}>30 minutes</option><option value={60}>1 hour</option>
               </select>
             </div>
             <div style={{padding:"8px 12px",borderRadius:6,background:"#fffbeb",border:"1px solid #fde68a",fontSize:12,color:"#d97706"}}>⚠️ Password policy: min 8 chars, 1 uppercase, 1 number</div>

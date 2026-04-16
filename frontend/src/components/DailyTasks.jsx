@@ -165,7 +165,12 @@ export default function DailyTasks(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#f8f9fb",color:"#4b5563"}}>{t.work_type}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
-                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><Pb v={Math.round(parseFloat(t.utilization)||0)}/></td>
+                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
+                        <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                      </div>
+                    </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       {t.tat_days>0?<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{t.tat_days}d</span>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>On Time</span>}
                     </td>

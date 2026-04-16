@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+
+  # ── PostgreSQL Database ───────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: mpulse-db
+    restart: always
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-task_tracker}
+      POSTGRES_USER:     ${DB_USER:-tracker_user}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tracker_user} -d ${DB_NAME:-task_tracker}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Node.js/Express) ─────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mpulse-backend
+    restart: always
+    environment:
+      PORT:          4000
+      DATABASE_URL:  postgresql://${DB_USER:-tracker_ user}:${DB_PASS}@db:5432/${DB_NAME:-task_tracker}
+      JWT_SECRET:    ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      CORS_ORIGIN:   ${CORS_ORIGIN:-http://localhost}
+      NODE_ENV:      production
+    volumes:
+      - uploads:/app/src/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ── Frontend (React + nginx) ──────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mpulse-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount Let's Encrypt certs (optional — only needed for HTTPS)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - backend
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  internal:
+    driver: bridge

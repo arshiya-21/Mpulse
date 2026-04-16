@@ -1,17 +1,21 @@
-# docker-compose.yml
+# docker-compose.yml — LOCAL DEVELOPMENT (DB only)
+# Starts only the PostgreSQL database. Backend and frontend run with npm run dev.
 version: '3.8'
+
 services:
   db:
     image: postgres:16-alpine
+    container_name: mpulse-db-1
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: task_tracker
-      POSTGRES_USER: tracker_user
+      POSTGRES_DB:       task_tracker
+      POSTGRES_USER:     tracker_user
       POSTGRES_PASSWORD: tracker_pass_123
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
 
 volumes:
   pgdata:
