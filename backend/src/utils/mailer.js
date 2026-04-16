@@ -1,6 +1,25 @@
 const nodemailer = require('nodemailer');
 const db         = require('../config/db');
 
+// ── SMTP transport ────────────────────────────────────────────
+// Host/port/auth come from env vars so you can swap providers
+// without code changes (e.g. Brevo, SendGrid, etc.)
+function getSmtpTransport(fromEmail, appPassword) {
+  return nodemailer.createTransport({
+    host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
+    port:   parseInt(process.env.SMTP_PORT || '465'),
+    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+    family: 4,
+    auth: {
+      user: process.env.SMTP_USER || fromEmail,
+      pass: process.env.SMTP_PASS || appPassword,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout:   10000,
+    socketTimeout:     15000,
+  });
+}
+
 // ── Fetch email config from email_settings table ──────────
 async function getEmailConfig() {
   const { rows } = await db.query(`SELECT * FROM email_settings WHERE id = 1 LIMIT 1`);
@@ -14,16 +33,7 @@ async function getEmailConfig() {
 async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isResend = false }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: { user: fromEmail, pass: appPassword },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
-  });
+  const transporter = getSmtpTransport(fromEmail, appPassword);
 
   const mailOptions = {
     from: `"MPulse" <${fromEmail}>`,
@@ -121,16 +131,7 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
 async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hours' }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: { user: fromEmail, pass: appPassword },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
-  });
+  const transporter = getSmtpTransport(fromEmail, appPassword);
 
   const mailOptions = {
     from: `"MPulse" <${fromEmail}>`,
@@ -194,16 +195,7 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
 async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, contactPerson, agenda, plannedDate, duration, assignedTo, channel }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: { user: fromEmail, pass: appPassword },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
-  });
+  const transporter = getSmtpTransport(fromEmail, appPassword);
 
   const dateStr = plannedDate ? String(plannedDate).slice(0, 10) : '—';
   const subject = `New Visit Scheduled – ${customerName} on ${dateStr}`;
@@ -265,16 +257,7 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
 async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson, agenda, plannedDate, assignedToName, isAdmin, type = 'overdue' }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: { user: fromEmail, pass: appPassword },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
-  });
+  const transporter = getSmtpTransport(fromEmail, appPassword);
 
   const dateStr = new Date(plannedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const isUpcoming = type === 'upcoming';

@@ -66,11 +66,14 @@ router.post('/test', verify, async (req, res) => {
     }
 
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
+      port:   parseInt(process.env.SMTP_PORT || '465'),
+      secure: (process.env.SMTP_SECURE || 'true') === 'true',
       family: 4,
-      auth: { user: s.from_email, pass: s.app_password },
+      auth: {
+        user: process.env.SMTP_USER || s.from_email,
+        pass: process.env.SMTP_PASS || s.app_password,
+      },
       connectionTimeout: 10000,
       greetingTimeout:   10000,
       socketTimeout:     15000,
