@@ -1,21 +1,5 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const db         = require('../config/db');
-
-// ── SMTP transport ────────────────────────────────────────────
-function getSmtpTransport(fromEmail, appPassword) {
-  return nodemailer.createTransport({
-    host:   'smtp.resend.com',
-    port:   465,
-    secure: true,
-    auth: {
-      user: 'resend',
-      pass: appPassword,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
-  });
-}
 
 // ── Fetch email config from email_settings table ──────────
 async function getEmailConfig() {
@@ -27,15 +11,15 @@ async function getEmailConfig() {
 }
 
 // ── Send NEW USER email with temporary password ───────────
-async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isResend = false }) {
+async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isResend: isResendEmail = false }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = getSmtpTransport(fromEmail, appPassword);
+  const resendClient = new Resend(appPassword);
 
   const mailOptions = {
     from: `"MPulse" <${fromEmail}>`,
     to: toEmail,
-    subject: isResend ? '🔐 Your New MPulse Login Credentials' : '🎉 Welcome to MPulse — Your Account is Ready',
+    subject: isResendEmail ? '🔐 Your New MPulse Login Credentials' : '🎉 Welcome to MPulse — Your Account is Ready',
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:540px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
         
@@ -49,7 +33,7 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
         <!-- Body -->
         <div style="padding:32px;">
           <p style="font-size:16px;font-weight:600;color:#111827;margin:0 0 8px;">
-            ${isResend ? `Hi ${toName},` : `Welcome ${toName}! 🎉`}
+            ${isResendEmail ? `Hi ${toName},` : `Welcome ${toName}! 🎉`}
           </p>
           <p style="font-size:14px;color:#4b5563;line-height:1.7;margin:0 0 24px;">
             ${isResend 
@@ -120,15 +104,15 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
     `
   };
 
-  await transporter.sendMail(mailOptions);
-  console.log(`📧 ${isResend ? 'Password reset' : 'Welcome'} email sent to ${toEmail}`);
+  await resendClient.emails.send(mailOptions);
+  console.log(`📧 ${isResendEmail ? 'Password reset' : 'Welcome'} email sent to ${toEmail}`);
 }
 
 // ── Send invite email (existing functionality) ────────────
 async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hours' }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = getSmtpTransport(fromEmail, appPassword);
+  const resendClient = new Resend(appPassword);
 
   const mailOptions = {
     from: `"MPulse" <${fromEmail}>`,
@@ -184,7 +168,7 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await resendClient.emails.send(mailOptions);
   console.log(`📧 Invite email sent to ${toEmail}`);
 }
 
@@ -192,7 +176,7 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
 async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, contactPerson, agenda, plannedDate, duration, assignedTo, channel }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = getSmtpTransport(fromEmail, appPassword);
+  const resendClient = new Resend(appPassword);
 
   const dateStr = plannedDate ? String(plannedDate).slice(0, 10) : '—';
   const subject = `New Visit Scheduled – ${customerName} on ${dateStr}`;
@@ -245,7 +229,7 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await resendClient.emails.send(mailOptions);
   console.log(`📧 Visit scheduled notification sent to ${toEmail}${ccEmails.length ? ` (CC: ${ccEmails.join(', ')})` : ''}`);
   return subject;
 }
@@ -254,7 +238,7 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
 async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson, agenda, plannedDate, assignedToName, isAdmin, type = 'overdue' }) {
   const { fromEmail, appPassword } = await getEmailConfig();
 
-  const transporter = getSmtpTransport(fromEmail, appPassword);
+  const resendClient = new Resend(appPassword);
 
   const dateStr = new Date(plannedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const isUpcoming = type === 'upcoming';
@@ -321,7 +305,7 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await resendClient.emails.send(mailOptions);
   console.log(`📧 Visit ${type} reminder sent to ${toEmail}`);
 }
 

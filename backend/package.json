@@ -8,9 +8,13 @@
     "setup": "node src/setup.js"
   },
   "nodemonConfig": {
-    "watch": ["src"],
+    "watch": [
+      "src"
+    ],
     "ext": "js,json",
-    "ignore": ["src/uploads/*"]
+    "ignore": [
+      "src/uploads/*"
+    ]
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -22,7 +26,8 @@
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
-    "pg": "^8.12.0"
+    "pg": "^8.12.0",
+    "resend": "^4.8.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

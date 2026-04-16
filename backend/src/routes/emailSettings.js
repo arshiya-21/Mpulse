@@ -2,7 +2,7 @@ const express    = require('express');
 const router     = express.Router();
 const db         = require('../config/db');
 const { verify } = require('../middleware/auth');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 // GET email settings
 router.get('/', verify, async (req, res) => {
@@ -65,21 +65,9 @@ router.post('/test', verify, async (req, res) => {
       return res.status(400).json({ error: 'Email not configured yet. Save your Gmail address and App Password first.' });
     }
 
-    const transporter = nodemailer.createTransport({
-      host:   'smtp.resend.com',
-      port:   465,
-      secure: true,
-      auth: {
-        user: 'resend',
-        pass: s.app_password,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout:   10000,
-      socketTimeout:     15000,
-    });
-
-    await transporter.sendMail({
-      from:    `"MPulse" <${s.from_email}>`,
+    const resendClient = new Resend(s.app_password);
+    await resendClient.emails.send({
+      from:    `MPulse <${s.from_email}>`,
       to:      s.from_email,
       subject: 'MPulse — Test Email',
       text:    'Your email configuration is working correctly!',
