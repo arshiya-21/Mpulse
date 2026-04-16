@@ -60,8 +60,8 @@ router.put('/', async (req, res) => {
     if (!tat_alert_days || tat_alert_days < 1 || tat_alert_days > 365) {
       return res.status(400).json({ error: 'TAT alert threshold must be between 1 and 365 days' });
     }
-    if (!session_timeout || session_timeout < 5 || session_timeout > 1440) {
-      return res.status(400).json({ error: 'Session timeout must be between 5 and 1440 minutes' });
+    if (session_timeout == null || (session_timeout !== 0 && (session_timeout < 5 || session_timeout > 1440))) {
+      return res.status(400).json({ error: 'Session timeout must be 0 (no timeout) or between 5 and 1440 minutes' });
     }
 
     // Validate admin_email if provided
@@ -85,8 +85,7 @@ router.put('/', async (req, res) => {
         admin_email             = $9,
         visit_reminder_enabled  = $10,
         work_categories         = COALESCE($11, work_categories),
-        work_formulas           = COALESCE($12, work_formulas),
-        updated_at              = NOW()
+        work_formulas           = COALESCE($12, work_formulas)
       WHERE id = 1
       RETURNING *
     `, [

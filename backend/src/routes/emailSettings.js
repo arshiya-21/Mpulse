@@ -53,6 +53,9 @@ router.post('/test', verify, async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: { user: s.from_email, pass: s.app_password },
+      connectionTimeout: 10000,
+      greetingTimeout:   10000,
+      socketTimeout:     15000,
     });
 
     await transporter.sendMail({

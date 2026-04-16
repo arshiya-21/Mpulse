@@ -276,6 +276,27 @@ module.exports = async function migrate() {
     `);
     console.log('✅ email_settings table ready');
 
+    // ── Default licenses ──────────────────────────────────────────────
+    await db.query(`
+      INSERT INTO licenses (name, description) VALUES
+        ('DigiSmart',       'DigiSmart module'),
+        ('DigiSmart+VComp', 'DigiSmart bundled with VComp'),
+        ('Digitalization',  'Full digitalization suite'),
+        ('Gateway',         'Gateway integration module'),
+        ('IIOT',            'Industrial IoT module'),
+        ('Sandman',         'Sandman core module'),
+        ('Sandman+VComp',   'Sandman bundled with VComp'),
+        ('VComp-SP',        'VComp single product')
+      ON CONFLICT (name) DO NOTHING
+    `);
+    console.log('✅ Default licenses ready');
+
+    // ── departments: add status column ───────────────────────────────
+    await db.query(`
+      ALTER TABLE departments
+        ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active';
+    `);
+
     // ── customers: add license date columns ───────────────────────────
     await db.query(`
       ALTER TABLE customers

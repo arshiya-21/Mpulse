@@ -13,6 +13,27 @@ function toCSV(rows) {
   ].join('\n');
 }
 
+// GET /api/reports/count — lightweight row count for current filters
+router.get('/count', verify, async (req, res) => {
+  try {
+    const { from, to, emp_id, proj_id, status } = req.query;
+    const dept_id = req.user.role === 'Admin' ? req.query.dept_id : req.user.department_id;
+    let q = `SELECT COUNT(*)::int AS total FROM tasks t
+             JOIN employees e ON e.id = t.employee_id
+             JOIN projects  p ON p.id = t.project_id
+             WHERE 1=1`;
+    const params = [];
+    if (from)    { params.push(from);    q += ` AND t.task_date     >= $${params.length}`; }
+    if (to)      { params.push(to);      q += ` AND t.task_date     <= $${params.length}`; }
+    if (emp_id)  { params.push(emp_id);  q += ` AND t.employee_id   = $${params.length}`; }
+    if (dept_id) { params.push(dept_id); q += ` AND e.department_id = $${params.length}`; }
+    if (proj_id) { params.push(proj_id); q += ` AND t.project_id    = $${params.length}`; }
+    if (status)  { params.push(status);  q += ` AND t.status        = $${params.length}`; }
+    const { rows } = await db.query(q, params);
+    res.json({ count: rows[0].total });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET /api/reports/export?from=&to=&emp_id=&dept_id=&proj_id=&status=
 router.get('/export', verify, async (req, res) => {
   try {

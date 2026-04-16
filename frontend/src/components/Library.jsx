@@ -12,6 +12,7 @@ export default function Library() {
   const [videos, setVideos]       = useState([]);
   const [activeSection, setActiveSection] = useState('all');
   const [playerVideo, setPlayerVideo]     = useState(null);
+  const [viewMode, setViewMode]           = useState('grid');
   const [loading, setLoading]     = useState(true);
 
   // Admin modals
@@ -95,7 +96,17 @@ export default function Library() {
   return (
     <div style={{ fontFamily: 'system-ui,sans-serif' }}>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 18 }}>
+        {/* Grid / List toggle */}
+        <div style={{ display: 'flex', border: '1px solid #e4e7ec', borderRadius: 8, overflow: 'hidden' }}>
+          <button onClick={() => setViewMode('grid')} title="Grid view"
+            style={{ padding: '6px 11px', border: 'none', background: viewMode === 'grid' ? '#4f46e5' : '#fff', color: viewMode === 'grid' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>⊞</button>
+          <button onClick={() => setViewMode('list')} title="List view"
+            style={{ padding: '6px 11px', border: 'none', borderLeft: '1px solid #e4e7ec', background: viewMode === 'list' ? '#4f46e5' : '#fff', color: viewMode === 'list' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>☰</button>
+        </div>
+        {isAdmin && activeSection !== 'all' && (
+          <button onClick={() => openAddVideo(activeSection)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e4e7ec', background: '#fff', color: '#4f46e5', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>+ Add Video</button>
+        )}
         {isAdmin && (
           <button onClick={openAddSection} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e4e7ec', background: '#fff', color: '#374151', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>+ Add Section</button>
         )}
@@ -147,7 +158,7 @@ export default function Library() {
                   </button>
                 )}
               </div>
-              <VideoGrid videos={sec.items} isAdmin={isAdmin} onPlay={setPlayerVideo} onEdit={openEditVideo} onDelete={deleteVid} />
+              <VideoGrid videos={sec.items} isAdmin={isAdmin} onPlay={setPlayerVideo} onEdit={openEditVideo} onDelete={deleteVid} viewMode={viewMode} />
             </div>
           ))}
         </div>
@@ -156,10 +167,10 @@ export default function Library() {
         <div>
           {displayVideos.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center', color: '#9ca3af', background: '#fff', borderRadius: 12, border: '1px solid #e4e7ec' }}>
-              No videos in this section.{isAdmin && ' Click "+ Video" to add one.'}
+              No videos in this section.{isAdmin && ' Use "+ Add Video" above to add one.'}
             </div>
           ) : (
-            <VideoGrid videos={displayVideos} isAdmin={isAdmin} onPlay={setPlayerVideo} onEdit={openEditVideo} onDelete={deleteVid} />
+            <VideoGrid videos={displayVideos} isAdmin={isAdmin} onPlay={setPlayerVideo} onEdit={openEditVideo} onDelete={deleteVid} viewMode={viewMode} />
           )}
         </div>
       )}
@@ -250,13 +261,35 @@ function Tab({ label, count, active, onClick }) {
 }
 
 // ── VideoGrid component ────────────────────────────────────────
-function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete }) {
+function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
+  if (viewMode === 'list') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {videos.map(v => (
+          <div key={v.id} onClick={() => onPlay(v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px', background: '#fff', border: '1px solid #e4e7ec', borderRadius: 10, cursor: 'pointer' }}
+          >
+            <img src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`} alt={v.label}
+              style={{ width: 80, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0, background: '#000' }}
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{v.label}</div>
+              {v.caption && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.caption}</div>}
+            </div>
+            {isAdmin && (
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <button onClick={e => onEdit(v, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #e4e7ec', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#374151' }}>Edit</button>
+                <button onClick={e => onDelete(v.id, e)} style={{ padding: '3px 8px', borderRadius: 5, border: '1px solid #fee2e2', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#dc2626' }}>Delete</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-      gap: 16,
-    }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
       {videos.map(v => (
         <VideoCard key={v.id} v={v} isAdmin={isAdmin} onPlay={onPlay} onEdit={onEdit} onDelete={onDelete} />
       ))}
