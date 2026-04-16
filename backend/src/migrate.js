@@ -313,12 +313,24 @@ module.exports = async function migrate() {
         ADD COLUMN IF NOT EXISTS work_formulas          TEXT;
     `);
 
-    // ── Add closed_at to projects ─────────────────────────────
+    // ── Add closed_at + owner_id to projects ─────────────────────
     await db.query(`
       ALTER TABLE projects
-        ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ;
+        ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS owner_id  INT REFERENCES employees(id) ON DELETE SET NULL;
     `);
-    console.log('✅ system_settings columns ready');
+
+    // ── project_assignees table ───────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS project_assignees (
+        project_id  INT NOT NULL REFERENCES projects(id)  ON DELETE CASCADE,
+        employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        PRIMARY KEY (project_id, employee_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_proj_assignees_project  ON project_assignees(project_id);
+      CREATE INDEX IF NOT EXISTS idx_proj_assignees_employee ON project_assignees(employee_id);
+    `);
+    console.log('✅ projects columns + project_assignees table ready');
 
     // ── licenses: add missing columns ────────────────────────────
     await db.query(`
