@@ -36,8 +36,8 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
             ${isResendEmail ? `Hi ${toName},` : `Welcome ${toName}! 🎉`}
           </p>
           <p style="font-size:14px;color:#4b5563;line-height:1.7;margin:0 0 24px;">
-            ${isResend 
-              ? 'Your login credentials have been reset. Use the details below to sign in to your MPulse account.' 
+            ${isResendEmail
+              ? 'Your login credentials have been reset. Use the details below to sign in to your MPulse account.'
               : 'Your account has been created by your administrator. Use the credentials below to sign in to MPulse.'}
           </p>
 
