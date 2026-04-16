@@ -5,4 +5,5 @@ export const getOne        = (id)      => api.get(`/employees/${id}`);
 export const create        = (data)    => api.post('/employees', data);
 export const update        = (id, d)   => api.put(`/employees/${id}`, d);
 export const remove        = (id)      => api.delete(`/employees/${id}`);
-export const genInvite     = (id)      => api.post(`/employees/${id}/invite`);
+export const genInvite          = (id) => api.post(`/employees/${id}/invite`);
+export const resendCredentials  = (id) => api.post(`/employees/${id}/resend-credentials`);

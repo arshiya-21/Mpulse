@@ -303,9 +303,11 @@ router.post('/:id/resend-credentials', verify, requireRole('Admin', 'Manager'), 
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await db.query('UPDATE employees SET password_hash=$1, invite_status=$2, updated_at=NOW() WHERE id=$3', [passwordHash, 'pending', id]);
     const loginUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    await sendNewUserEmail({ toName: employee.name, toEmail: employee.email, tempPassword, loginUrl, isResend: true });
-    console.log('✅ Credentials resent to:', employee.email);
-    res.json({ message: 'Credentials resent successfully', tempPassword });
+    // Fire email async — don't block response
+    sendNewUserEmail({ toName: employee.name, toEmail: employee.email, tempPassword, loginUrl, isResend: true })
+      .then(() => console.log('✅ Credentials resent to:', employee.email))
+      .catch(e => console.error('⚠️ Resend credentials email failed:', e.message));
+    res.json({ message: 'Credentials resent successfully' });
   } catch (err) {
     console.error('❌ POST /employees/:id/resend-credentials error:', err);
     res.status(500).json({ error: 'Failed to resend credentials' });

@@ -235,8 +235,10 @@ function Employees(){
     catch(e){show(e?.response?.data?.error||"Cannot delete");}
   }
   async function resendInvite(e){
-    try{const r=await empApi.genInvite(e.id);setInviteUrl(r.data.inviteUrl||"");setInviteEmp(e);setCopied(false);}
-    catch{show("Failed to generate invite");}
+    try{
+      await empApi.resendCredentials(e.id);
+      show("Credentials sent to "+e.email);
+    } catch(err){ show(err?.response?.data?.error||"Failed to resend"); }
   }
   function copyLink(link){navigator.clipboard.writeText(link).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2000);}
 
