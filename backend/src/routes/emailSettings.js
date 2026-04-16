@@ -69,6 +69,7 @@ router.post('/test', verify, async (req, res) => {
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
+      family: 4,
       auth: { user: s.from_email, pass: s.app_password },
       connectionTimeout: 10000,
       greetingTimeout:   10000,
