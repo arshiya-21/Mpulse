@@ -270,6 +270,14 @@ module.exports = async function migrate() {
         is_configured BOOLEAN     NOT NULL DEFAULT FALSE,
         updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+    `);
+    // Add missing columns to existing email_settings tables (safe ALTER)
+    await db.query(`
+      ALTER TABLE email_settings
+        ADD COLUMN IF NOT EXISTS is_configured BOOLEAN     NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    `);
+    await db.query(`
       INSERT INTO email_settings (id, from_email, app_password, is_configured)
       VALUES (1, NULL, NULL, FALSE)
       ON CONFLICT (id) DO NOTHING;

@@ -66,13 +66,12 @@ router.post('/test', verify, async (req, res) => {
     }
 
     const transporter = nodemailer.createTransport({
-      host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-      port:   parseInt(process.env.SMTP_PORT || '465'),
-      secure: (process.env.SMTP_SECURE || 'true') === 'true',
-      family: 4,
+      host:   'smtp.resend.com',
+      port:   465,
+      secure: true,
       auth: {
-        user: process.env.SMTP_USER || s.from_email,
-        pass: process.env.SMTP_PASS || s.app_password,
+        user: 'resend',
+        pass: s.app_password,
       },
       connectionTimeout: 10000,
       greetingTimeout:   10000,

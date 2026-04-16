@@ -2,17 +2,14 @@ const nodemailer = require('nodemailer');
 const db         = require('../config/db');
 
 // ── SMTP transport ────────────────────────────────────────────
-// Host/port/auth come from env vars so you can swap providers
-// without code changes (e.g. Brevo, SendGrid, etc.)
 function getSmtpTransport(fromEmail, appPassword) {
   return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
-    port:   parseInt(process.env.SMTP_PORT || '465'),
-    secure: (process.env.SMTP_SECURE || 'true') === 'true',
-    family: 4,
+    host:   'smtp.resend.com',
+    port:   465,
+    secure: true,
     auth: {
-      user: process.env.SMTP_USER || fromEmail,
-      pass: process.env.SMTP_PASS || appPassword,
+      user: 'resend',
+      pass: appPassword,
     },
     connectionTimeout: 10000,
     greetingTimeout:   10000,
