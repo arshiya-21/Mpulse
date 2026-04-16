@@ -21,6 +21,5 @@ backend/uploads/
 .DS_Store
 Thumbs.db
 
-# Local only — deployment docs and DB scripts
+# Local only — deployment reference
 details.md
-database/
