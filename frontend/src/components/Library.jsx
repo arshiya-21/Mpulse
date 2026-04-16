@@ -224,9 +224,14 @@ export default function Library() {
           <div><label style={labelS}>Title / Label</label><input value={vidForm.label} onChange={e => setVidForm(f => ({ ...f, label: e.target.value }))} style={inputS} placeholder="e.g. Active Clay"/></div>
           <div><label style={labelS}>Description / Caption</label><input value={vidForm.caption} onChange={e => setVidForm(f => ({ ...f, caption: e.target.value }))} style={inputS} placeholder="Short description…"/></div>
           <div>
-            <label style={labelS}>YouTube Video ID</label>
-            <input value={vidForm.video_id} onChange={e => setVidForm(f => ({ ...f, video_id: e.target.value.trim() }))} style={inputS} placeholder="e.g. ztfIlTmLMkc"/>
-            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>The 11-character ID from the YouTube URL (after ?v=)</div>
+            <label style={labelS}>YouTube Video ID or URL</label>
+            <input value={vidForm.video_id} onChange={e => {
+              const raw = e.target.value.trim();
+              // Accept full YouTube URLs and extract the video ID
+              const match = raw.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+              setVidForm(f => ({ ...f, video_id: match ? match[1] : raw }));
+            }} style={inputS} placeholder="e.g. ztfIlTmLMkc or paste full YouTube URL"/>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Paste a YouTube URL or the 11-character video ID</div>
           </div>
           <div><label style={labelS}>Sort Order</label><input type="number" value={vidForm.sort_order} onChange={e => setVidForm(f => ({ ...f, sort_order: +e.target.value }))} style={inputS}/></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -260,6 +265,22 @@ function Tab({ label, count, active, onClick }) {
   );
 }
 
+// ── ListThumb component ───────────────────────────────────────
+function ListThumb({ videoId, label }) {
+  const [err, setErr] = useState(false);
+  if (err) return (
+    <div style={{ width: 80, height: 46, borderRadius: 6, flexShrink: 0, background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 9l6 3-6 3V9z" fill="#4b5563" stroke="none"/></svg>
+    </div>
+  );
+  return (
+    <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt={label}
+      style={{ width: 80, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0, background: '#000' }}
+      onError={() => setErr(true)}
+    />
+  );
+}
+
 // ── VideoGrid component ────────────────────────────────────────
 function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
   if (viewMode === 'list') {
@@ -269,10 +290,7 @@ function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
           <div key={v.id} onClick={() => onPlay(v)}
             style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px', background: '#fff', border: '1px solid #e4e7ec', borderRadius: 10, cursor: 'pointer' }}
           >
-            <img src={`https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`} alt={v.label}
-              style={{ width: 80, height: 46, objectFit: 'cover', borderRadius: 6, flexShrink: 0, background: '#000' }}
-              onError={e => { e.target.style.display = 'none'; }}
-            />
+            <ListThumb videoId={v.video_id} label={v.label} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{v.label}</div>
               {v.caption && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.caption}</div>}
@@ -300,6 +318,7 @@ function VideoGrid({ videos, isAdmin, onPlay, onEdit, onDelete, viewMode }) {
 // ── VideoCard component ────────────────────────────────────────
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const [hovered, setHovered] = useState(false);
+  const [thumbErr, setThumbErr] = useState(false);
   const thumb = `https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`;
 
   return (
@@ -317,12 +336,18 @@ function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
     >
       {/* Thumbnail */}
       <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000', overflow: 'hidden' }}>
-        <img
-          src={thumb}
-          alt={v.label}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          onError={e => { e.target.style.display = 'none'; }}
-        />
+        {thumbErr ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1f2937' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M10 9l6 3-6 3V9z" fill="#4b5563" stroke="none"/></svg>
+          </div>
+        ) : (
+          <img
+            src={thumb}
+            alt={v.label}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={() => setThumbErr(true)}
+          />
+        )}
         {/* Play overlay */}
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
