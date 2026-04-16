@@ -320,6 +320,20 @@ module.exports = async function migrate() {
     `);
     console.log('✅ system_settings columns ready');
 
+    // ── Fix library_videos: extract YouTube ID from full URLs ──
+    // Some video_ids may have been saved as full YouTube URLs
+    const { rows: badVideos } = await db.query(`
+      SELECT id, video_id FROM library_videos
+      WHERE video_id LIKE '%youtube%' OR video_id LIKE '%youtu.be%' OR video_id LIKE 'http%'
+    `);
+    for (const vid of badVideos) {
+      const match = vid.video_id.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+      if (match) {
+        await db.query('UPDATE library_videos SET video_id = $1 WHERE id = $2', [match[1], vid.id]);
+        console.log(`✅ Fixed video_id for library_videos id=${vid.id}: ${vid.video_id} → ${match[1]}`);
+      }
+    }
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);
