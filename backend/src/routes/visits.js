@@ -151,7 +151,7 @@ router.post('/', verify, async (req, res) => {
     // ── Auto work log: only when visit is scheduled for today and has an assignee ──
     const visit      = rows[0];
     const todayIST   = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
-    const visitDate  = String(visit.planned_date).slice(0, 10);
+    const visitDate  = new Date(visit.planned_date).toISOString().slice(0, 10); // always YYYY-MM-DD
 
     if (visitDate === todayIST && effectiveAssignedTo) {
       try {
