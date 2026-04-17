@@ -220,6 +220,7 @@ export default function Projects(){
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <span style={{fontSize:15}}>{p.status==="Closed"?"🔒":"📁"}</span>
                           <span onClick={()=>openOverview(p)} style={{color:p.status==="Closed"?"#6b7280":"#4f46e5",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}>{p.name}</span>
+                          {p.is_recurring&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#ede9fe",color:"#5b21b6"}}>↻ Recurring</span>}
                           {overdue&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>Overdue</span>}
                           {p.status==="Closed"&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#f0fdf4",color:"#065f46"}}>Closed</span>}
                         </div>
@@ -396,71 +397,68 @@ export default function Projects(){
         })()}
       </Modal>
 
-      <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Project":"New Project"} width={520}>
-        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={labelS}>Project Name *</label>
-            <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="e.g. Dashboard Redesign" style={inputS}/>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={labelS}>Description</label>
-            <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:64,lineHeight:1.5,fontFamily:"inherit"}}/>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer"}}
-            onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date,status:!f.is_recurring?"In Progress":f.status}))}>
-            <input type="checkbox" checked={!!form.is_recurring} readOnly
-              style={{width:16,height:16,accentColor:"#7c3aed",cursor:"pointer",flexShrink:0}}/>
-            <div>
-              <div style={{fontSize:13,fontWeight:600,color:"#5b21b6"}}>Recurring Project</div>
-              <div style={{fontSize:11,color:"#6b7280",marginTop:1}}>No fixed start/end date — this project runs on an ongoing basis</div>
+      <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Project":"New Project"} width={600}>
+        <div style={{padding:"12px 18px",display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",gap:3,gridColumn:"span 2"}}>
+              <label style={labelS}>Project Name *</label>
+              <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="e.g. Dashboard Redesign" style={inputS}/>
             </div>
-          </div>
-          {!form.is_recurring&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              <label style={labelS}>Start Date *</label>
-              <input type="date" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})} style={inputS}/>
+            <div style={{display:"flex",flexDirection:"column",gap:3,gridColumn:"span 2"}}>
+              <label style={labelS}>Description</label>
+              <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:48,lineHeight:1.5,fontFamily:"inherit"}}/>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              <label style={labelS}>Due Date *</label>
-              <input type="date" value={form.end_date} onChange={e=>setForm({...form,end_date:e.target.value})} style={inputS}/>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer",gridColumn:"span 2"}}
+              onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date,status:!f.is_recurring?"In Progress":f.status}))}>
+              <input type="checkbox" checked={!!form.is_recurring} readOnly style={{width:15,height:15,accentColor:"#7c3aed",cursor:"pointer",flexShrink:0}}/>
+              <div>
+                <div style={{fontSize:12,fontWeight:600,color:"#5b21b6"}}>Recurring Project</div>
+                <div style={{fontSize:11,color:"#6b7280"}}>No fixed start/end date — this project runs on an ongoing basis</div>
+              </div>
             </div>
-          </div>}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {!form.is_recurring&&<>
+              <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                <label style={labelS}>Start Date *</label>
+                <input type="date" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})} style={inputS}/>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                <label style={labelS}>Due Date *</label>
+                <input type="date" value={form.end_date} onChange={e=>setForm({...form,end_date:e.target.value})} style={inputS}/>
+              </div>
+            </>}
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
               <label style={labelS}>Department</label>
               <select value={form.department_id} onChange={e=>setForm({...form,department_id:e.target.value})} style={inputS}>
                 <option value="">Select dept</option>
                 {visibleDepts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
               <label style={labelS}>Owner</label>
               <select value={form.owner_id} onChange={e=>setForm({...form,owner_id:e.target.value})} style={inputS}>
                 <option value="">Select owner</option>
                 {managers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={labelS}>Assignees</label>
-            <div style={{border:"1px solid #e4e7ec",borderRadius:7,padding:"8px",maxHeight:110,overflowY:"auto",display:"flex",flexWrap:"wrap",gap:6}}>
-              {employees.map(e=>{
-                const sel=(form.assignee_ids||[]).includes(e.id);
-                return(
-                  <div key={e.id} onClick={()=>{
-                    const ids=form.assignee_ids||[];
-                    setForm({...form,assignee_ids:sel?ids.filter(i=>i!==e.id):[...ids,e.id]});
-                  }} style={{padding:"4px 10px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#4f46e5":"#f0f2f5",color:sel?"#fff":"#4b5563",userSelect:"none"}}>
-                    {e.name}
-                  </div>
-                );
-              })}
-              {employees.length===0&&<span style={{fontSize:12,color:"#9ca3af"}}>No employees available</span>}
+            <div style={{display:"flex",flexDirection:"column",gap:3,gridColumn:"span 2"}}>
+              <label style={labelS}>Assignees</label>
+              <div style={{border:"1px solid #e4e7ec",borderRadius:7,padding:"7px",maxHeight:88,overflowY:"auto",display:"flex",flexWrap:"wrap",gap:5}}>
+                {employees.map(e=>{
+                  const sel=(form.assignee_ids||[]).includes(e.id);
+                  return(
+                    <div key={e.id} onClick={()=>{const ids=form.assignee_ids||[];setForm({...form,assignee_ids:sel?ids.filter(i=>i!==e.id):[...ids,e.id]});}}
+                      style={{padding:"3px 9px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#4f46e5":"#f0f2f5",color:sel?"#fff":"#4b5563",userSelect:"none"}}>
+                      {e.name}
+                    </div>
+                  );
+                })}
+                {employees.length===0&&<span style={{fontSize:12,color:"#9ca3af"}}>No employees available</span>}
+              </div>
+              <div style={{fontSize:11,color:"#9ca3af"}}>Click names to assign</div>
             </div>
-            <div style={{fontSize:11,color:"#9ca3af"}}>Click names to assign</div>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"10px 18px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
           <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
             {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Creating…"):(editing?"Save Changes":"Create Project")}

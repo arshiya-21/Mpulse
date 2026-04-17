@@ -308,42 +308,55 @@ export default function DailyTasks(){
       </Modal>
       <Toast msg={msg}/>
       {descView&&(
-        <div onClick={()=>setDescView(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:500,boxShadow:"0 24px 64px rgba(0,0,0,0.22)",overflow:"hidden"}}>
-            {/* Header */}
-            <div style={{background:"#4f46e5",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-              <div>
-                <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{descView.project_name||"Task Detail"}</div>
-                <div style={{fontSize:12,color:"#a5b4fc",marginTop:2}}>{fmtDate(descView.task_date)} · {descView.employee_name}</div>
-              </div>
-              <button onClick={()=>setDescView(null)} style={{border:"none",background:"rgba(255,255,255,0.15)",cursor:"pointer",color:"#fff",borderRadius:8,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>✕</button>
-            </div>
-            {/* Stats grid */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"#f0f2f5"}}>
-              {[
-                {label:"Category",   value:descView.category||"—"},
-                {label:"Work Type",  value:descView.work_type||"—"},
-                {label:"Status",     value:descView.status||"—"},
-                {label:"Minutes",    value:(descView.spent_mins||0)+"m"},
-                {label:"Utilization",value:Math.round(parseFloat(descView.utilization)||0)+"%"},
-                {label:"TAT",        value:descView.tat_days>0?"+"+descView.tat_days+"d late":"On Time"},
-              ].map(s=>(
-                <div key={s.label} style={{background:"#fff",padding:"12px 14px"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>{s.label}</div>
-                  <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>{s.value}</div>
+        <div onClick={()=>setDescView(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:520,maxHeight:"88vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 64px rgba(0,0,0,0.25)",overflow:"hidden"}}>
+
+            {/* Purple header */}
+            <div style={{background:"linear-gradient(135deg,#4f46e5,#7c3aed)",padding:"16px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexShrink:0}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:11,fontWeight:600,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Task Record</div>
+                <div style={{fontSize:16,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descView.project_name||"—"}</div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6,flexWrap:"wrap"}}>
+                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{fmtDate(descView.task_date)}</span>
+                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.employee_name}</span>
+                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.department||"—"}</span>
                 </div>
-              ))}
+              </div>
+              <button onClick={()=>setDescView(null)} style={{border:"none",background:"rgba(255,255,255,0.2)",cursor:"pointer",color:"#fff",borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,marginLeft:12}}>✕</button>
             </div>
-            {/* Description */}
-            <div style={{padding:"16px 20px"}}>
-              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Description</div>
-              {descView.description
-                ? <p style={{fontSize:13,color:"#374151",lineHeight:1.75,margin:0,whiteSpace:"pre-wrap"}}>{descView.description}</p>
-                : <p style={{fontSize:13,color:"#9ca3af",margin:0,fontStyle:"italic"}}>No description added.</p>
-              }
+
+            {/* Scrollable body */}
+            <div style={{overflowY:"auto",flex:1}}>
+              {/* Stats grid */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"#e5e7eb"}}>
+                {[
+                  {label:"Category",    value:descView.category||"—",     color:"#111827"},
+                  {label:"Work Type",   value:descView.work_type||"—",    color:"#111827"},
+                  {label:"Status",      value:descView.status||"—",       color:SC2C[descView.status]||"#111827"},
+                  {label:"Mins Spent",  value:(descView.spent_mins||0)+"m", color:"#4f46e5"},
+                  {label:"Utilization", value:Math.round(parseFloat(descView.utilization)||0)+"%", color:"#059669"},
+                  {label:"TAT",         value:descView.tat_days>0?"+"+descView.tat_days+"d late":"On Time", color:descView.tat_days>0?"#dc2626":"#059669"},
+                ].map(s=>(
+                  <div key={s.label} style={{background:"#fff",padding:"11px 14px"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:3}}>{s.label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:s.color}}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Description */}
+              <div style={{padding:"14px 18px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Description</div>
+                {descView.description
+                  ? <div style={{background:"#f8f9fb",borderRadius:8,padding:"12px 14px",border:"1px solid #e4e7ec",fontSize:13,color:"#374151",lineHeight:1.8,whiteSpace:"pre-wrap",maxHeight:200,overflowY:"auto"}}>{descView.description}</div>
+                  : <div style={{background:"#f8f9fb",borderRadius:8,padding:"12px 14px",border:"1px solid #e4e7ec",fontSize:13,color:"#9ca3af",fontStyle:"italic"}}>No description added.</div>
+                }
+              </div>
             </div>
-            <div style={{padding:"12px 20px",borderTop:"1px solid #f0f2f5",display:"flex",justifyContent:"flex-end"}}>
-              <button onClick={()=>setDescView(null)} style={{padding:"7px 18px",borderRadius:7,border:"1px solid #e4e7ec",background:"#fff",fontSize:13,fontWeight:600,color:"#4b5563",cursor:"pointer"}}>Close</button>
+
+            {/* Footer */}
+            <div style={{padding:"10px 18px",borderTop:"1px solid #f0f2f5",display:"flex",justifyContent:"flex-end",flexShrink:0}}>
+              <button onClick={()=>setDescView(null)} style={{padding:"7px 20px",borderRadius:7,border:"none",background:"#4f46e5",fontSize:13,fontWeight:600,color:"#fff",cursor:"pointer"}}>Close</button>
             </div>
           </div>
         </div>
