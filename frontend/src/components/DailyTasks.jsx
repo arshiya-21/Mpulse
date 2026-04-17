@@ -238,7 +238,7 @@ export default function DailyTasks(){
       )}
 
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Task":"Log Daily Task"} width={520}>
-        <div style={{padding:"18px 20px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Date</label><input type="date" value={form.task_date} onChange={e=>setForm({...form,task_date:e.target.value})} style={inputS}/></div>
             {user.role!=="User"&&(
@@ -264,6 +264,10 @@ export default function DailyTasks(){
                 </optgroup>}
               </select>
             </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
+              <label style={labelS}>Description <span style={{fontWeight:400,color:"#9ca3af"}}>(optional)</span></label>
+              <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3} placeholder="Describe what you worked on…" style={{...inputS,resize:"vertical",minHeight:72,fontFamily:"inherit"}}/>
+            </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Category</label>
               <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inputS}>
                 <option value="">Select category</option>
@@ -284,10 +288,6 @@ export default function DailyTasks(){
               <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
                 {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}
               </select>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
-              <label style={labelS}>Description <span style={{fontWeight:400,color:"#9ca3af"}}>(optional)</span></label>
-              <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3} placeholder="Describe what you worked on…" style={{...inputS,resize:"vertical",minHeight:72,fontFamily:"inherit"}}/>
             </div>
           </div>
         </div>

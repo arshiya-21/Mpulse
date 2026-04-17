@@ -398,14 +398,10 @@ export default function Projects(){
       </Modal>
 
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Project":"New Project"} width={520}>
-        <div style={{padding:"18px 20px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             <label style={labelS}>Project Name *</label>
             <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="e.g. Dashboard Redesign" style={inputS}/>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <label style={labelS}>Description</label>
-            <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:64,lineHeight:1.5,fontFamily:"inherit"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer"}}
             onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date}))}>
@@ -459,6 +455,10 @@ export default function Projects(){
               {employees.length===0&&<span style={{fontSize:12,color:"#9ca3af"}}>No employees available</span>}
             </div>
             <div style={{fontSize:11,color:"#9ca3af"}}>Click names to assign</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={labelS}>Description <span style={{fontWeight:400,color:"#9ca3af"}}>(optional)</span></label>
+            <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:64,lineHeight:1.5,fontFamily:"inherit"}}/>
           </div>
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
