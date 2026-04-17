@@ -3,12 +3,16 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const migrate = require('./migrate');
-const { startVisitReminderCron } = require('./utils/visitReminder');
+const { startVisitReminderCron }  = require('./utils/visitReminder');
+const { startWorklogDigestCron }  = require('./utils/worklogDigest');
 
 const app = express();
 
 // Run migrations then start background jobs
-migrate().then(() => startVisitReminderCron());
+migrate().then(() => {
+  startVisitReminderCron();
+  startWorklogDigestCron();
+});
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 // Serve uploaded proof files

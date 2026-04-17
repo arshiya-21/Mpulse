@@ -309,4 +309,117 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
   console.log(`📧 Visit ${type} reminder sent to ${toEmail}`);
 }
 
-module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail };
+// ── Send WORKLOG DIGEST email to a manager ────────────────
+async function sendWorklogDigestEmail({ toName, toEmail, departmentName, date, employees }) {
+  const { fromEmail, appPassword } = await getEmailConfig();
+  const resendClient = new Resend(appPassword);
+
+  function fmtMins(mins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+  }
+
+  const totalMins    = employees.reduce((s, e) => s + e.totalMins, 0);
+  const totalEntries = employees.reduce((s, e) => s + e.entries.length, 0);
+
+  const employeeBlocks = employees.map(emp => `
+    <div style="margin-bottom:18px;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:11px 16px;background:#eef2ff;">
+            <span style="font-size:14px;font-weight:700;color:#1e1b4b;">${emp.name}</span>
+          </td>
+          <td style="padding:11px 16px;background:#eef2ff;text-align:right;">
+            <span style="font-size:13px;font-weight:700;color:#4f46e5;background:#fff;padding:3px 12px;border-radius:20px;border:1px solid #c7d2fe;">${fmtMins(emp.totalMins)} worked</span>
+          </td>
+        </tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#f8f9fb;">
+            <th style="padding:7px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e4e7ec;">Project</th>
+            <th style="padding:7px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e4e7ec;">Category</th>
+            <th style="padding:7px 12px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e4e7ec;">Type</th>
+            <th style="padding:7px 12px;text-align:center;color:#6b7280;font-weight:600;border-bottom:1px solid #e4e7ec;white-space:nowrap;">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${emp.entries.map((entry, i) => `
+            <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'};">
+              <td style="padding:8px 12px;color:#111827;font-weight:600;border-bottom:1px solid #f0f2f5;">
+                ${entry.project_name}
+                ${entry.description ? `<div style="font-size:11px;color:#9ca3af;font-weight:400;margin-top:2px;">${entry.description}</div>` : ''}
+              </td>
+              <td style="padding:8px 12px;color:#4b5563;border-bottom:1px solid #f0f2f5;">${entry.category || '—'}</td>
+              <td style="padding:8px 12px;color:#4b5563;border-bottom:1px solid #f0f2f5;">${entry.work_type || '—'}</td>
+              <td style="padding:8px 12px;text-align:center;color:#4f46e5;font-weight:700;border-bottom:1px solid #f0f2f5;font-family:monospace;">${entry.spent_mins}m</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;">
+        <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
+        <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Daily Work Log Digest</div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="font-size:15px;font-weight:600;color:#111827;margin:0 0 4px;">Hi ${toName},</p>
+        <p style="font-size:13px;color:#4b5563;line-height:1.7;margin:0 0 20px;">
+          Here is the work log summary for <strong>${departmentName}</strong> on <strong>${date}</strong>.
+        </p>
+
+        <!-- Summary strip -->
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+          <tr>
+            <td style="padding:0 6px 0 0;">
+              <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:14px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Active Employees</div>
+                <div style="font-size:22px;font-weight:800;color:#4f46e5;">${employees.length}</div>
+              </div>
+            </td>
+            <td style="padding:0 3px;">
+              <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:14px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Total Entries</div>
+                <div style="font-size:22px;font-weight:800;color:#059669;">${totalEntries}</div>
+              </div>
+            </td>
+            <td style="padding:0 0 0 6px;">
+              <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Total Time</div>
+                <div style="font-size:22px;font-weight:800;color:#d97706;">${fmtMins(totalMins)}</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Employee blocks -->
+        ${employeeBlocks}
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:16px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
+        <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
+        <p style="font-size:10px;color:#9ca3af;margin:6px 0 0;">Automated daily digest sent at 7:00 PM IST</p>
+      </div>
+    </div>
+  `;
+
+  await resendClient.emails.send({
+    from:    `"MPulse" <${fromEmail}>`,
+    to:      toEmail,
+    subject: `📋 Daily Work Log — ${departmentName} · ${date}`,
+    html,
+  });
+  console.log(`📧 Worklog digest sent to ${toEmail} (${departmentName})`);
+}
+
+module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail };
