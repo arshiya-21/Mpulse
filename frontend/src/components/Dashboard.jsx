@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
@@ -222,6 +223,15 @@ function AdminManagerDashboard(){
   const [selProjId,setSelProjId]=useState(null);
   const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
   const {show,msg}=useToast();
+  const navigate=useNavigate();
+  const drillRef=useRef(null);
+  const projTeamRef=useRef(null);
+
+  useEffect(()=>{
+    if(drillType&&drillValue){
+      setTimeout(()=>drillRef.current?.scrollIntoView({behavior:'smooth',block:'start'}),120);
+    }
+  },[drillType,drillValue]);
 
   useEffect(()=>{
     Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll()])
@@ -448,7 +458,7 @@ function AdminManagerDashboard(){
 
           {drillType&&drillValue&&(
             <>
-            <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
+            <div ref={drillRef} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"12px 14px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:4,height:16,background:"#4f46e5",borderRadius:2}}/>
@@ -472,9 +482,9 @@ function AdminManagerDashboard(){
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontWeight:600,color:"#111827"}}>{t.employee_name}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                          <span onClick={()=>{ const p=projects.find(x=>x.id===t.project_id); if(p){setSelProjId(p.id);setSelMember(null);} }}
+                          <span onClick={()=>navigate('/projects')}
                             style={{color:"#4f46e5",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}
-                            title="View in Project Team Utilization">
+                            title="Go to Projects page">
                             {t.project_name||"—"}
                           </span>
                         </td>

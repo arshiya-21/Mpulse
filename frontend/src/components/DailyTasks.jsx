@@ -16,6 +16,7 @@ export default function DailyTasks(){
   const [projects,setProjects]=useState([]);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
+  const [descView,setDescView]=useState(null);
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
@@ -197,7 +198,12 @@ export default function DailyTasks(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#111827",fontWeight:600}}>{t.employee_name}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",maxWidth:200}}>
                       <div style={{color:"#4b5563",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name}</div>
-                      {t.description&&<div title={t.description} style={{fontSize:11,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginTop:2}}>{t.description}</div>}
+                      {t.description&&(
+                        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                          <div style={{fontSize:11,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{t.description}</div>
+                          <button onClick={e=>{e.stopPropagation();setDescView(t.description);}} title="View full description" style={{border:"none",background:"none",cursor:"pointer",padding:0,color:"#6b7280",fontSize:13,flexShrink:0,lineHeight:1}}>👁</button>
+                        </div>
+                      )}
                     </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#f8f9fb",color:"#4b5563"}}>{t.work_type}</span></td>
@@ -265,7 +271,7 @@ export default function DailyTasks(){
               </select>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
-              <label style={labelS}>Description <span style={{fontWeight:400,color:"#9ca3af"}}>(optional)</span></label>
+              <label style={labelS}>Description</label>
               <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3} placeholder="Describe what you worked on…" style={{...inputS,resize:"vertical",minHeight:72,fontFamily:"inherit"}}/>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Category</label>
@@ -306,6 +312,17 @@ export default function DailyTasks(){
         </div>
       </Modal>
       <Toast msg={msg}/>
+      {descView&&(
+        <div onClick={()=>setDescView(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,padding:"20px 24px",maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontSize:14,fontWeight:700,color:"#111827"}}>Task Description</span>
+              <button onClick={()=>setDescView(null)} style={{border:"none",background:"none",cursor:"pointer",fontSize:18,color:"#9ca3af",lineHeight:1}}>✕</button>
+            </div>
+            <p style={{fontSize:13,color:"#4b5563",lineHeight:1.75,margin:0,whiteSpace:"pre-wrap"}}>{descView}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
