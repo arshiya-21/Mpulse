@@ -19,7 +19,7 @@ export default function Projects(){
   const [deptF,setDeptF]=useState("");
   const {msg,show}=useToast();
   const today=new Date().toLocaleDateString('en-CA');
-  const blank={name:"",description:"",start_date:today,end_date:"",department_id:"",owner_id:"",status:"Not Started",assignee_ids:[]};
+  const blank={name:"",description:"",start_date:today,end_date:"",department_id:"",owner_id:"",status:"Not Started",assignee_ids:[],is_recurring:false};
   const [form,setForm]=useState(blank);
 
   // Overview modal state
@@ -48,26 +48,31 @@ export default function Projects(){
     if(saving) return;
     setSaving(true);
     try{
-      let pid;
       if(editing){
-        await projApi.update(editing.id,form);
+        const r=await projApi.update(editing.id,form);
         try{ await projApi.setAssignees(editing.id, form.assignee_ids||[]); }catch{}
+        // Update local state — no full reload needed
+        const assignees=employees.filter(e=>(form.assignee_ids||[]).includes(e.id)).map(e=>({id:e.id,name:e.name}));
+        const owner=employees.find(e=>String(e.id)===String(form.owner_id));
+        setProjects(prev=>prev.map(p=>p.id===editing.id?{...p,...form,assignees,owner_name:owner?.name||p.owner_name}:p));
         show("Project updated");
-        pid=editing.id;
       } else {
         const r=await projApi.create(form);
-        pid=r.data?.id;
+        const pid=r.data?.id;
         if(pid){ try{ await projApi.setAssignees(pid, form.assignee_ids||[]); }catch{} }
         show("Project created");
+        load(); // need full reload to get computed fields for new project
       }
       setModal(false);
-      load(); // background reload
     }catch(e){show(e?.response?.data?.error||"Error");}
     finally{ setSaving(false); }
   }
   async function del(id){
-    try{await projApi.remove(id);show("Deleted");await load();}
-    catch(e){show(e?.response?.data?.error||"Cannot delete");}
+    try{
+      await projApi.remove(id);
+      setProjects(prev=>prev.filter(p=>p.id!==id));
+      show("Deleted");
+    }catch(e){show(e?.response?.data?.error||"Cannot delete");}
   }
   async function updateStatus(id,status){
     if(status==="Closed"||status==="Completed"){
@@ -75,16 +80,19 @@ export default function Projects(){
       setCloseDate(new Date().toLocaleDateString('en-CA'));
       return;
     }
-    try{await projApi.update(id,{status});show("Status → "+status);await load();}
-    catch{show("Update failed");}
+    try{
+      await projApi.update(id,{status});
+      setProjects(prev=>prev.map(p=>p.id===id?{...p,status}:p));
+      show("Status → "+status);
+    }catch{show("Update failed");}
   }
   async function confirmClose(){
     if(!closePending)return;
     try{
       await projApi.update(closePending.id,{status:closePending.status,closed_at:closeDate});
+      setProjects(prev=>prev.map(p=>p.id===closePending.id?{...p,status:closePending.status,closed_at:closeDate,tat_days:0}:p));
       show("Status → "+closePending.status);
       if(closePending.fromOverview&&overview) setOverview(ov=>({...ov,project:{...ov.project,status:closePending.status}}));
-      await load();
     }catch{show("Update failed");}
     setClosePending(null);
   }
@@ -107,7 +115,7 @@ export default function Projects(){
     try{
       await projApi.update(overview.project.id,{status});
       setOverview(ov=>({...ov,project:{...ov.project,status}}));
-      await load();
+      setProjects(prev=>prev.map(p=>p.id===overview.project.id?{...p,status}:p));
       show("Status → "+status);
     }catch{ show("Update failed"); }
   }
@@ -122,7 +130,8 @@ export default function Projects(){
       department_id: String(p.department_id||""),
       owner_id:      String(p.owner_id||""),
       status:        p.status,
-      assignee_ids:  (p.assignees||[]).map(a=>a.id)
+      assignee_ids:  (p.assignees||[]).map(a=>a.id),
+      is_recurring:  !!p.is_recurring,
     });
     setModal(true);
   }
@@ -227,9 +236,14 @@ export default function Projects(){
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{p.owner_name||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                        <div style={{fontSize:11,color:"#9ca3af"}}>{fmtDate(p.start_date)} →</div>
-                        <div style={{fontFamily:"monospace",fontSize:12,color:tat>0?"#dc2626":"#4b5563",fontWeight:tat>0?700:400,marginTop:1}}>{fmtDate(p.end_date)}</div>
-                        <div style={{fontSize:11,color:"#9ca3af",marginTop:1}}>Target {p.target_days||0}d · Actual {p.actual_days||0}d</div>
+                        {p.is_recurring
+                          ? <span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ede9fe",color:"#5b21b6"}}>↻ Recurring</span>
+                          : <>
+                              <div style={{fontSize:11,color:"#9ca3af"}}>{fmtDate(p.start_date)} →</div>
+                              <div style={{fontFamily:"monospace",fontSize:12,color:tat>0?"#dc2626":"#4b5563",fontWeight:tat>0?700:400,marginTop:1}}>{fmtDate(p.end_date)}</div>
+                              <div style={{fontSize:11,color:"#9ca3af",marginTop:1}}>Target {p.target_days||0}d · Actual {p.actual_days||0}d</div>
+                            </>
+                        }
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         {tat===0?<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>✓ On Time</span>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{tat}d late</span>}
@@ -281,8 +295,13 @@ export default function Projects(){
                 {/* Due Date */}
                 <div style={{background:"#fffbeb",borderRadius:10,padding:"14px 16px"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Due Date</div>
-                  <div style={{fontSize:15,fontWeight:700,color:isOverdue?"#c2410c":"#d97706"}}>{fmtDate(pv.end_date)}</div>
-                  {tat>0&&<div style={{fontSize:11,color:"#c2410c",marginTop:2}}>+{tat}d overdue</div>}
+                  {pv.is_recurring
+                    ? <div style={{fontSize:13,fontWeight:600,color:"#5b21b6"}}>↻ Recurring</div>
+                    : <>
+                        <div style={{fontSize:15,fontWeight:700,color:isOverdue?"#c2410c":"#d97706"}}>{fmtDate(pv.end_date)}</div>
+                        {tat>0&&<div style={{fontSize:11,color:"#c2410c",marginTop:2}}>+{tat}d overdue</div>}
+                      </>
+                  }
                 </div>
                 {/* Team Size */}
                 <div style={{background:"#f5f3ff",borderRadius:10,padding:"14px 16px"}}>
@@ -377,7 +396,16 @@ export default function Projects(){
             <label style={labelS}>Description</label>
             <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:64,lineHeight:1.5,fontFamily:"inherit"}}/>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer"}}
+            onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date}))}>
+            <input type="checkbox" checked={!!form.is_recurring} readOnly
+              style={{width:16,height:16,accentColor:"#7c3aed",cursor:"pointer",flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:"#5b21b6"}}>Recurring Project</div>
+              <div style={{fontSize:11,color:"#6b7280",marginTop:1}}>No fixed start/end date — this project runs on an ongoing basis</div>
+            </div>
+          </div>
+          {!form.is_recurring&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={labelS}>Start Date *</label>
               <input type="date" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})} style={inputS}/>
@@ -386,6 +414,8 @@ export default function Projects(){
               <label style={labelS}>Due Date *</label>
               <input type="date" value={form.end_date} onChange={e=>setForm({...form,end_date:e.target.value})} style={inputS}/>
             </div>
+          </div>}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={labelS}>Department</label>
               <select value={form.department_id} onChange={e=>setForm({...form,department_id:e.target.value})} style={inputS}>

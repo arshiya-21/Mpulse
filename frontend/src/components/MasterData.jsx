@@ -856,6 +856,8 @@ function AccessConfig(){
           if(!(key in stored)) needsDbSync=true;
         }
       }
+      // Always force Admin to see all departments
+      if(merged["Admin"]) merged["Admin"]._team_only = {view:false,create:false,update:false,delete:false};
       setCfg(merged);
       // Sync to localStorage for synchronous nav reads
       localStorage.setItem(ACCESS_KEY,JSON.stringify(merged));
@@ -885,6 +887,7 @@ function AccessConfig(){
   }
 
   async function save(){
+    if(saving) return;
     setSaving(true);
     try{
       // Always enforce: Admin can never be team-only restricted
@@ -1066,6 +1069,7 @@ function EmailConfig(){
   }
 
   async function save(){
+    if(saving) return;
     if(!form.from_email){show("Gmail address is required");return;}
     if(!cfg.is_configured && !form.app_password){show("App Password is required");return;}
     setSaving(true);
@@ -1077,6 +1081,7 @@ function EmailConfig(){
   }
 
   async function saveNotif(){
+    if(savingNotif) return;
     if(notifCfg.admin_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifCfg.admin_email)){
       show("Invalid admin email format"); return;
     }

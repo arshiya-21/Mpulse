@@ -5,6 +5,7 @@ import { useToast, Toast, Spinner, inputS, labelS } from "./shared.jsx";
 export default function Administration(){
   const [s,setS]=useState({company_name:"",daily_target_mins:510,work_days:"Mon–Fri",timezone:"Asia/Kolkata",tat_alert_days:2,email_notif:true,auto_close:false,session_timeout:30});
   const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
   const {msg,show}=useToast();
 
   useEffect(()=>{
@@ -12,8 +13,11 @@ export default function Administration(){
   },[]);
 
   async function save(){
+    if(saving) return;
+    setSaving(true);
     try{await settingsApi.update(s);show("Settings saved successfully");}
     catch{show("Save failed");}
+    finally{setSaving(false);}
   }
 
   function Toggle({label,k}){
@@ -31,7 +35,7 @@ export default function Administration(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        <button onClick={save} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Save Changes</button>
+        <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#a5b4fc":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Save Changes"}</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>

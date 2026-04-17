@@ -35,7 +35,7 @@ export const STATUS_STYLE = {
 };
 
 // ── Work log types ─────────────────────────────────────────────
-export const WTYPES = ['All','Development','Testing','Meeting','Support','Design','Documentation','Other'];
+export const WTYPES = ['On Demand','Planned','Ad-hoc','Maintenance'];
 
 // ── Shared date formatter → dd-mm-yyyy ────────────────────────
 export function fmtDate(d) {

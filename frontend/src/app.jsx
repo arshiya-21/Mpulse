@@ -74,7 +74,10 @@ function Shell({user,onLogout}){
         const cached = sessionStorage.getItem(CACHE_KEY);
         if(newStr !== cached){
           sessionStorage.setItem(CACHE_KEY, newStr);
-          localStorage.setItem(ACCESS_KEY, newStr);
+          // Always force Admin to see all departments regardless of DB value
+          const parsed = JSON.parse(newStr);
+          if(parsed["Admin"]) parsed["Admin"]._team_only = {view:false,create:false,update:false,delete:false};
+          localStorage.setItem(ACCESS_KEY, JSON.stringify(parsed));
           window.dispatchEvent(new Event("mpulse-access-change"));
         }
       }catch{ /* silent — don't break the app if the request fails */ }

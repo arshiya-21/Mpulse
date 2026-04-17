@@ -34,7 +34,7 @@ export default function DailyTasks(){
   const {msg,show}=useToast();
   const [cats,setCats]=useState([...DEFAULT_CATS].sort((a,b)=>a.localeCompare(b)));
   const [dailyTarget,setDailyTarget]=useState(510);
-  const blank={task_date:fmt(today),employee_id:user.role==="User"?String(user.id):"",project_id:"",category:"",work_type:"Planned",spent_mins:"",status:"In Progress"};
+  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"In Progress"};
   const [form,setForm]=useState(blank);
 
   useEffect(()=>{
@@ -76,7 +76,7 @@ export default function DailyTasks(){
       employee_id: String(t.employee_id||""),
       project_id:  String(t.project_id||""),
       category:    t.category||"",
-      work_type:   t.work_type||"Planned",
+      work_type:   t.work_type||"On Demand",
       spent_mins:  t.spent_mins||"",
       status:      t.status||"In Progress"
     });
@@ -87,15 +87,41 @@ export default function DailyTasks(){
     if(saving)return;
     setSaving(true);
     try{
-      if(editing){await tasksApi.update(editing.id,form);show("Task updated");}
-      else{await tasksApi.create(form);show("Task logged");}
-      await load();setModal(false);
+      if(editing){
+        const r=await tasksApi.update(editing.id,form);
+        // Patch local state — avoid full reload
+        const emp=employees.find(e=>String(e.id)===String(form.employee_id));
+        const proj=projects.find(p=>String(p.id)===String(form.project_id));
+        const dept=departments.find(d=>d.id===emp?.department_id);
+        const updated={...editing,...r.data,
+          employee_name:emp?.name||editing.employee_name,
+          project_name:proj?.name||editing.project_name,
+          department:dept?.name||editing.department};
+        setTasks(prev=>prev.map(t=>t.id===editing.id?updated:t));
+        show("Task updated");
+      } else {
+        const r=await tasksApi.create(form);
+        const emp=employees.find(e=>String(e.id)===String(form.employee_id));
+        const proj=projects.find(p=>String(p.id)===String(form.project_id));
+        const dept=departments.find(d=>d.id===emp?.department_id);
+        const newTask={...r.data,
+          employee_name:emp?.name||"",
+          project_name:proj?.name||"",
+          department:dept?.name||"",
+          utilization:((r.data.spent_mins/dailyTarget)*100).toFixed(2)};
+        setTasks(prev=>[newTask,...prev]);
+        show("Task logged");
+      }
+      setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error saving task");}
     finally{setSaving(false);}
   }
   async function del(){
-    try{await tasksApi.remove(delId);show("Deleted");setDelId(null);await load();}
-    catch{show("Delete failed");}
+    try{
+      await tasksApi.remove(delId);
+      setTasks(prev=>prev.filter(t=>t.id!==delId));
+      show("Deleted");setDelId(null);
+    }catch{show("Delete failed");}
   }
 
   const hasFilters=catF||tatF||empF||deptF;

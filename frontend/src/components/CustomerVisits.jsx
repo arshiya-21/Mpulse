@@ -65,15 +65,25 @@ export default function CustomerVisits(){
     try{
       if(editing){
         await visitsApi.update(editing.id, form);
+        // Update local state — no full reload needed
+        const cust=customers.find(c=>String(c.id)===String(form.customer_id));
+        const emp=employees.find(e=>String(e.id)===String(form.assigned_to));
+        setVisits(prev=>prev.map(v=>v.id===editing.id?{...v,...form,
+          customer_name:cust?.name||editing.customer_name,
+          customer_company:cust?.company||editing.customer_company,
+          assigned_to_name:emp?.name||editing.assigned_to_name}:v));
         setModal(false);
         show("Visit updated");
-        loadAll();
       } else {
         const res = await visitsApi.create(form);
-        setModal(false);
-        // Build preview for notification popup
         const cust = customers.find(c=>String(c.id)===String(form.customer_id));
         const emp  = employees.find(e=>String(e.id)===String(form.assigned_to));
+        // Add to local state immediately
+        setVisits(prev=>[{...res.data,...form,
+          customer_name:cust?.name||"",
+          customer_company:cust?.company||"",
+          assigned_to_name:emp?.name||""},...prev]);
+        setModal(false);
         setNotifyVisit({
           id:            res.data.id,
           customerName:  cust?.name || "",
@@ -107,15 +117,19 @@ export default function CustomerVisits(){
     if(!closeForm.work_done){ show("Work done is required"); return; }
     try{
       await visitsApi.close(editing.id, closeForm);
+      setVisits(prev=>prev.map(v=>v.id===editing.id?{...v,...closeForm}:v));
       setCloseModal(false);
       show("Outcome updated");
-      loadAll();
     }catch{ show("Update failed"); }
   }
 
   async function del(){
-    try{ await visitsApi.remove(delId); setDelId(null); show("Deleted"); loadAll(); }
-    catch(e){ show(e?.response?.data?.error||"Cannot delete"); }
+    try{
+      await visitsApi.remove(delId);
+      setVisits(prev=>prev.filter(v=>v.id!==delId));
+      setDelId(null);
+      show("Deleted");
+    }catch(e){ show(e?.response?.data?.error||"Cannot delete"); }
   }
 
   async function handleFile(e){

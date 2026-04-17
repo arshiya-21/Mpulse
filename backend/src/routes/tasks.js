@@ -90,10 +90,11 @@ router.post('/', verify, async (req, res) => {
     if (!task_date || !employee_id || !project_id || !category || !spent_mins)
       return res.status(400).json({ error: 'task_date, employee_id, project_id, category, spent_mins are required' });
 
-    const { rows: pr } = await db.query(`SELECT end_date FROM projects WHERE id = $1`, [project_id]);
-    const projEnd = pr[0]?.end_date ? new Date(pr[0].end_date) : null;
-    const taskDt  = new Date(task_date);
-    const tat_days = projEnd && taskDt > projEnd
+    const { rows: pr } = await db.query(`SELECT end_date, is_recurring FROM projects WHERE id = $1`, [project_id]);
+    const projEnd    = pr[0]?.end_date ? new Date(pr[0].end_date) : null;
+    const isRecurring = pr[0]?.is_recurring || false;
+    const taskDt     = new Date(task_date);
+    const tat_days   = (!isRecurring && projEnd && taskDt > projEnd)
       ? Math.ceil((taskDt - projEnd) / 86400000) : 0;
 
     const { rows } = await db.query(`
