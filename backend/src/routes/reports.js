@@ -34,36 +34,47 @@ router.get('/count', verify, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Shared SELECT for both CSV and XLSX exports
+function buildExportQuery() {
+  return `
+    SELECT
+      TRIM(TO_CHAR(t.task_date, 'Month')) || ' - ' || TO_CHAR(t.task_date, 'YYYY')
+                                                       AS month_label,
+      TO_CHAR(t.task_date, 'DD-MM-YYYY')              AS created_on,
+      e.name                                           AS employee,
+      d.name                                           AS department,
+      p.name                                           AS project,
+      t.category                                       AS task_category,
+      t.work_type,
+      t.spent_mins,
+      ROUND(t.spent_mins::numeric / 60, 2)             AS productive_hours,
+      ROUND(
+        t.spent_mins::numeric
+        / COALESCE((SELECT daily_target_mins FROM system_settings WHERE id=1 LIMIT 1), 510)
+        * 100, 2
+      )                                                AS utilization_pct,
+      COALESCE(TO_CHAR(p.start_date, 'DD-MM-YYYY'), '')  AS project_start,
+      COALESCE(TO_CHAR(p.end_date,   'DD-MM-YYYY'), '')  AS project_end,
+      t.tat_days,
+      CASE WHEN t.tat_days > 0 THEN 'Delayed' ELSE 'On Time' END AS tat_status,
+      t.status                                         AS task_status,
+      p.status                                         AS project_status,
+      COALESCE(t.description, '')                      AS description
+    FROM tasks t
+    JOIN employees   e ON e.id = t.employee_id
+    JOIN projects    p ON p.id = t.project_id
+    LEFT JOIN departments d ON d.id = e.department_id
+    WHERE 1=1
+  `;
+}
+
 // GET /api/reports/export?from=&to=&emp_id=&dept_id=&proj_id=&status=
 router.get('/export', verify, async (req, res) => {
   try {
     const { from, to, emp_id, proj_id, status } = req.query;
     // Non-admin users are restricted to their own department
     const dept_id = req.user.role === 'Admin' ? req.query.dept_id : req.user.department_id;
-    let q = `
-      SELECT
-        TO_CHAR(t.task_date, 'Month YYYY')     AS month_label,
-        t.created_at::date                     AS created_on,
-        e.name                                 AS employee,
-        d.name                                 AS department,
-        p.name                                 AS project,
-        t.category                             AS task_category,
-        t.work_type,
-        t.spent_mins,
-        ROUND(t.spent_mins::numeric / 60, 2)   AS productive_hours,
-        ROUND(t.utilization, 2)                AS utilization_pct,
-        p.start_date                           AS project_start,
-        p.end_date                             AS project_end,
-        t.tat_days,
-        CASE WHEN t.tat_days > 0 THEN 'Delayed' ELSE 'On Time' END AS tat_status,
-        t.status                               AS task_status,
-        p.status                               AS project_status
-      FROM tasks t
-      JOIN employees   e ON e.id = t.employee_id
-      JOIN projects    p ON p.id = t.project_id
-      LEFT JOIN departments d ON d.id = e.department_id
-      WHERE 1=1
-    `;
+    let q = buildExportQuery();
     const params = [];
     if (from)    { params.push(from);    q += ` AND t.task_date      >= $${params.length}`; }
     if (to)      { params.push(to);      q += ` AND t.task_date      <= $${params.length}`; }
@@ -89,30 +100,7 @@ router.get('/export/xlsx', verify, async (req, res) => {
   try {
     const { from, to, emp_id, proj_id, status } = req.query;
     const dept_id = req.user.role === 'Admin' ? req.query.dept_id : req.user.department_id;
-    let q = `
-      SELECT
-        TO_CHAR(t.task_date, 'Month YYYY')     AS month_label,
-        t.created_at::date                     AS created_on,
-        e.name                                 AS employee,
-        d.name                                 AS department,
-        p.name                                 AS project,
-        t.category                             AS task_category,
-        t.work_type,
-        t.spent_mins,
-        ROUND(t.spent_mins::numeric / 60, 2)   AS productive_hours,
-        ROUND(t.utilization, 2)                AS utilization_pct,
-        p.start_date                           AS project_start,
-        p.end_date                             AS project_end,
-        t.tat_days,
-        CASE WHEN t.tat_days > 0 THEN 'Delayed' ELSE 'On Time' END AS tat_status,
-        t.status                               AS task_status,
-        p.status                               AS project_status
-      FROM tasks t
-      JOIN employees   e ON e.id = t.employee_id
-      JOIN projects    p ON p.id = t.project_id
-      LEFT JOIN departments d ON d.id = e.department_id
-      WHERE 1=1
-    `;
+    let q = buildExportQuery();
     const params = [];
     if (from)    { params.push(from);    q += ` AND t.task_date     >= $${params.length}`; }
     if (to)      { params.push(to);      q += ` AND t.task_date     <= $${params.length}`; }
@@ -130,9 +118,10 @@ router.get('/export/xlsx', verify, async (req, res) => {
     const ws = wb.addWorksheet('Task Report');
 
     const headers = [
-      'Month','Created On','Employee','Department','Project','Task Category',
-      'Work Type','Spent Mins','Productive Hours','Utilization %',
-      'Project Start','Project End','TAT Days','TAT Status','Task Status','Project Status'
+      'Month', 'Date', 'Employee', 'Department', 'Project', 'Task Category',
+      'Work Type', 'Spent Mins', 'Productive Hours', 'Utilization %',
+      'Project Start', 'Project End', 'TAT Days', 'TAT Status',
+      'Task Status', 'Project Status', 'Description'
     ];
 
     ws.addRow(headers);
@@ -148,12 +137,13 @@ router.get('/export/xlsx', verify, async (req, res) => {
 
     rows.forEach((r, i) => {
       const row = ws.addRow([
-        r.month_label, r.created_on ? String(r.created_on).slice(0,10) : '',
+        r.month_label, r.created_on,
         r.employee, r.department, r.project, r.task_category,
-        r.work_type, r.spent_mins, r.productive_hours, r.utilization_pct,
-        r.project_start ? String(r.project_start).slice(0,10) : '',
-        r.project_end   ? String(r.project_end).slice(0,10)   : '',
-        r.tat_days, r.tat_status, r.task_status, r.project_status
+        r.work_type, r.spent_mins, r.productive_hours,
+        r.utilization_pct !== null ? Number(r.utilization_pct) : 0,
+        r.project_start, r.project_end,
+        r.tat_days, r.tat_status, r.task_status, r.project_status,
+        r.description
       ]);
       if (i % 2 === 0) {
         row.eachCell(cell => {

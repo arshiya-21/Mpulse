@@ -7,22 +7,23 @@ import { useAuth }     from "../context/AuthContext.jsx";
 import { useToast, Toast } from "./shared.jsx";
 
 const COLUMNS = [
-  { key:"month_label",       label:"Month",              desc:"e.g. April 2026" },
-  { key:"created_on",        label:"Created On",         desc:"Date task was logged" },
+  { key:"month_label",       label:"Month",              desc:"e.g. April - 2026" },
+  { key:"created_on",        label:"Date",               desc:"Task date in DD-MM-YYYY" },
   { key:"employee",          label:"Employee",           desc:"Full name" },
   { key:"department",        label:"Department",         desc:"Employee's department" },
   { key:"project",           label:"Project",            desc:"Assigned project" },
   { key:"task_category",     label:"Task Category",      desc:"Work category" },
   { key:"work_type",         label:"Work Type",          desc:"Type of work done" },
   { key:"spent_mins",        label:"Spent Mins",         desc:"Minutes worked" },
-  { key:"productive_hours",  label:"Productive Hours",   desc:"Hours (rounded)" },
-  { key:"utilization_pct",   label:"Utilization %",      desc:"% of daily target" },
-  { key:"project_start",     label:"Project Start",      desc:"Project start date" },
-  { key:"project_end",       label:"Project End",        desc:"Project end date" },
+  { key:"productive_hours",  label:"Productive Hours",   desc:"Hours (rounded to 2 decimals)" },
+  { key:"utilization_pct",   label:"Utilization %",      desc:"% of daily target (spent_mins / target × 100)" },
+  { key:"project_start",     label:"Project Start",      desc:"Project start date in DD-MM-YYYY" },
+  { key:"project_end",       label:"Project End",        desc:"Project end date in DD-MM-YYYY" },
   { key:"tat_days",          label:"TAT Days",           desc:"Days beyond deadline" },
   { key:"tat_status",        label:"TAT Status",         desc:"On Time / Delayed" },
   { key:"task_status",       label:"Task Status",        desc:"Current work status" },
   { key:"project_status",    label:"Project Status",     desc:"Project health" },
+  { key:"description",       label:"Description",        desc:"Task description / notes" },
 ];
 
 const fldS = {display:"flex",flexDirection:"column",gap:6};

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
@@ -223,7 +222,6 @@ function AdminManagerDashboard(){
   const [selProjId,setSelProjId]=useState(null);
   const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
   const {show,msg}=useToast();
-  const navigate=useNavigate();
   const drillRef=useRef(null);
   const projTeamRef=useRef(null);
 
@@ -482,9 +480,13 @@ function AdminManagerDashboard(){
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontWeight:600,color:"#111827"}}>{t.employee_name}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                          <span onClick={()=>navigate('/projects')}
+                          <span onClick={()=>{
+                              const p=projects.find(x=>x.id===t.project_id);
+                              if(p){setSelProjId(p.id);setSelMember(null);}
+                              setTimeout(()=>projTeamRef.current?.scrollIntoView({behavior:'smooth',block:'start'}),120);
+                            }}
                             style={{color:"#4f46e5",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}
-                            title="Go to Projects page">
+                            title="View in Project Team Utilization">
                             {t.project_name||"—"}
                           </span>
                         </td>
@@ -516,7 +518,7 @@ function AdminManagerDashboard(){
           )}
 
           {(
-            <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
+            <div ref={projTeamRef} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"12px 16px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                 <div style={{width:3,height:18,background:"#4f46e5",borderRadius:2}}/>
                 <span style={{fontSize:13,fontWeight:700}}>Project Team Utilization</span>

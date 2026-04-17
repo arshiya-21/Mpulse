@@ -196,15 +196,7 @@ export default function DailyTasks(){
                   <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#111827",fontWeight:600}}>{t.employee_name}</td>
-                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",maxWidth:200}}>
-                      <div style={{color:"#4b5563",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name}</div>
-                      {t.description&&(
-                        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-                          <div style={{fontSize:11,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{t.description}</div>
-                          <button onClick={e=>{e.stopPropagation();setDescView(t.description);}} title="View full description" style={{border:"none",background:"none",cursor:"pointer",padding:0,color:"#6b7280",fontSize:13,flexShrink:0,lineHeight:1}}>👁</button>
-                        </div>
-                      )}
-                    </td>
+                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#4b5563",maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#f8f9fb",color:"#4b5563"}}>{t.work_type}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
@@ -220,6 +212,9 @@ export default function DailyTasks(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:SC2[t.status]||"#f8f9fb",color:SC2C[t.status]||"#4b5563"}}>{t.status}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       <div style={{display:"flex",gap:2}}>
+                        <button onClick={()=>setDescView(t)} title="View record" style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",color:"#6b7280",display:"flex",alignItems:"center"}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
                         <button onClick={()=>openEdit(t)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
                         <button onClick={()=>setDelId(t.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
                       </div>
@@ -314,12 +309,42 @@ export default function DailyTasks(){
       <Toast msg={msg}/>
       {descView&&(
         <div onClick={()=>setDescView(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,padding:"20px 24px",maxWidth:480,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <span style={{fontSize:14,fontWeight:700,color:"#111827"}}>Task Description</span>
-              <button onClick={()=>setDescView(null)} style={{border:"none",background:"none",cursor:"pointer",fontSize:18,color:"#9ca3af",lineHeight:1}}>✕</button>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:500,boxShadow:"0 24px 64px rgba(0,0,0,0.22)",overflow:"hidden"}}>
+            {/* Header */}
+            <div style={{background:"#4f46e5",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>{descView.project_name||"Task Detail"}</div>
+                <div style={{fontSize:12,color:"#a5b4fc",marginTop:2}}>{fmtDate(descView.task_date)} · {descView.employee_name}</div>
+              </div>
+              <button onClick={()=>setDescView(null)} style={{border:"none",background:"rgba(255,255,255,0.15)",cursor:"pointer",color:"#fff",borderRadius:8,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,lineHeight:1}}>✕</button>
             </div>
-            <p style={{fontSize:13,color:"#4b5563",lineHeight:1.75,margin:0,whiteSpace:"pre-wrap"}}>{descView}</p>
+            {/* Stats grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"#f0f2f5"}}>
+              {[
+                {label:"Category",   value:descView.category||"—"},
+                {label:"Work Type",  value:descView.work_type||"—"},
+                {label:"Status",     value:descView.status||"—"},
+                {label:"Minutes",    value:(descView.spent_mins||0)+"m"},
+                {label:"Utilization",value:Math.round(parseFloat(descView.utilization)||0)+"%"},
+                {label:"TAT",        value:descView.tat_days>0?"+"+descView.tat_days+"d late":"On Time"},
+              ].map(s=>(
+                <div key={s.label} style={{background:"#fff",padding:"12px 14px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>{s.label}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+            {/* Description */}
+            <div style={{padding:"16px 20px"}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Description</div>
+              {descView.description
+                ? <p style={{fontSize:13,color:"#374151",lineHeight:1.75,margin:0,whiteSpace:"pre-wrap"}}>{descView.description}</p>
+                : <p style={{fontSize:13,color:"#9ca3af",margin:0,fontStyle:"italic"}}>No description added.</p>
+              }
+            </div>
+            <div style={{padding:"12px 20px",borderTop:"1px solid #f0f2f5",display:"flex",justifyContent:"flex-end"}}>
+              <button onClick={()=>setDescView(null)} style={{padding:"7px 18px",borderRadius:7,border:"1px solid #e4e7ec",background:"#fff",fontSize:13,fontWeight:600,color:"#4b5563",cursor:"pointer"}}>Close</button>
+            </div>
           </div>
         </div>
       )}

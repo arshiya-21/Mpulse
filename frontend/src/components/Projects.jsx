@@ -237,7 +237,7 @@ export default function Projects(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{p.owner_name||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         {p.is_recurring
-                          ? <span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ede9fe",color:"#5b21b6"}}>↻ Recurring</span>
+                          ? <span style={{color:"#9ca3af",fontSize:13}}>—</span>
                           : <>
                               <div style={{fontSize:11,color:"#9ca3af"}}>{fmtDate(p.start_date)} →</div>
                               <div style={{fontFamily:"monospace",fontSize:12,color:tat>0?"#dc2626":"#4b5563",fontWeight:tat>0?700:400,marginTop:1}}>{fmtDate(p.end_date)}</div>
@@ -254,11 +254,10 @@ export default function Projects(){
                         }
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                        <span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,
-                          background:p.is_recurring?"#ede9fe":CS_BG[cs]||"#f8f9fb",
-                          color:p.is_recurring?"#5b21b6":CS_C[cs]||"#4b5563"}}>
-                          {p.is_recurring?"↻ Recurring":cs}
-                        </span>
+                        {p.is_recurring
+                          ? <span style={{color:"#9ca3af",fontSize:12}}>—</span>
+                          : <span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:CS_BG[cs]||"#f8f9fb",color:CS_C[cs]||"#4b5563"}}>{cs}</span>
+                        }
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{user.role!=="User"?<StatusDrop value={p.status} onChange={v=>updateStatus(p.id,v)}/>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:STATUS_CFG[p.status]?.bg||"#f8f9fb",color:STATUS_CFG[p.status]?.color||"#4b5563"}}>{p.status}</span>}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -408,7 +407,7 @@ export default function Projects(){
             <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Brief description…" style={{...inputS,resize:"vertical",minHeight:64,lineHeight:1.5,fontFamily:"inherit"}}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer"}}
-            onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date}))}>
+            onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date,status:!f.is_recurring?"In Progress":f.status}))}>
             <input type="checkbox" checked={!!form.is_recurring} readOnly
               style={{width:16,height:16,accentColor:"#7c3aed",cursor:"pointer",flexShrink:0}}/>
             <div>
