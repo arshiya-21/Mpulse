@@ -34,7 +34,7 @@ export default function DailyTasks(){
   const {msg,show}=useToast();
   const [cats,setCats]=useState([...DEFAULT_CATS].sort((a,b)=>a.localeCompare(b)));
   const [dailyTarget,setDailyTarget]=useState(510);
-  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"In Progress"};
+  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"In Progress",description:""};
   const [form,setForm]=useState(blank);
 
   useEffect(()=>{
@@ -78,7 +78,8 @@ export default function DailyTasks(){
       category:    t.category||"",
       work_type:   t.work_type||"On Demand",
       spent_mins:  t.spent_mins||"",
-      status:      t.status||"In Progress"
+      status:      t.status||"In Progress",
+      description: t.description||""
     });
     setModal(true);
   }
@@ -194,7 +195,10 @@ export default function DailyTasks(){
                   <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#111827",fontWeight:600}}>{t.employee_name}</td>
-                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#4b5563",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name}</td>
+                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",maxWidth:200}}>
+                      <div style={{color:"#4b5563",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.project_name}</div>
+                      {t.description&&<div title={t.description} style={{fontSize:11,color:"#9ca3af",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginTop:2}}>{t.description}</div>}
+                    </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{t.category}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#f8f9fb",color:"#4b5563"}}>{t.work_type}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
@@ -280,6 +284,10 @@ export default function DailyTasks(){
               <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
                 {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}
               </select>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
+              <label style={labelS}>Description <span style={{fontWeight:400,color:"#9ca3af"}}>(optional)</span></label>
+              <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3} placeholder="Describe what you worked on…" style={{...inputS,resize:"vertical",minHeight:72,fontFamily:"inherit"}}/>
             </div>
           </div>
         </div>

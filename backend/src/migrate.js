@@ -341,6 +341,12 @@ module.exports = async function migrate() {
         ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN NOT NULL DEFAULT FALSE;
     `);
 
+    // ── Add description to tasks ──────────────────────────────────────────
+    await db.query(`
+      ALTER TABLE tasks
+        ADD COLUMN IF NOT EXISTS description TEXT;
+    `);
+
     // ── project_assignees table ───────────────────────────────────
     await db.query(`
       CREATE TABLE IF NOT EXISTS project_assignees (

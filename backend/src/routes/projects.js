@@ -188,36 +188,53 @@ router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => 
 
     const { name, description, department_id, owner_id, status, start_date, end_date, closed_at: reqClosedAt, is_recurring } = req.body;
 
-    // Set closed_at when transitioning to Closed/Completed; use explicit date if provided
+    // Set closed_at when transitioning to Closed/Completed
     const { rows: cur } = await db.query('SELECT status, closed_at FROM projects WHERE id = $1', [pid]);
-    const wasOpen = cur[0] && !['Closed','Completed'].includes(cur[0].status);
+    const wasOpen   = cur[0] && !['Closed','Completed'].includes(cur[0].status);
     const nowClosed = status && ['Closed','Completed'].includes(status);
     const setClosedAt = wasOpen && nowClosed;
 
-    // Build date clause — use literal NULL for recurring, COALESCE for normal
-    // (avoids PostgreSQL "could not determine data type of parameter" with null casts)
-    const dateClause = is_recurring === true
-      ? `start_date = NULL, end_date = NULL,`
-      : `start_date = COALESCE($6, start_date), end_date = COALESCE($7, end_date),`;
+    // Build SQL + params separately for recurring vs normal to avoid passing untyped
+    // null params for $6/$7 when they're not referenced (PostgreSQL type-inference error)
+    let sql, params;
+    if (is_recurring === true) {
+      // Dates cleared to NULL — no date params needed ($6 = pid)
+      params = [name, description, department_id, owner_id, status,
+                pid, setClosedAt, reqClosedAt || null, true];
+      sql = `
+        UPDATE projects SET
+          name          = COALESCE($1, name),
+          description   = COALESCE($2, description),
+          department_id = COALESCE($3, department_id),
+          owner_id      = COALESCE($4, owner_id),
+          status        = COALESCE($5, status),
+          start_date    = NULL,
+          end_date      = NULL,
+          closed_at     = CASE WHEN $7 THEN COALESCE($8::date, NOW()::date) ELSE closed_at END,
+          is_recurring  = $9
+        WHERE id = $6 RETURNING *, TO_CHAR(closed_at,'YYYY-MM-DD') AS closed_at
+      `;
+    } else {
+      const recurringClause = is_recurring != null ? `, is_recurring = $11` : '';
+      params = [name, description, department_id, owner_id, status,
+                start_date || null, end_date || null,
+                pid, setClosedAt, reqClosedAt || null, is_recurring ?? null];
+      sql = `
+        UPDATE projects SET
+          name          = COALESCE($1, name),
+          description   = COALESCE($2, description),
+          department_id = COALESCE($3, department_id),
+          owner_id      = COALESCE($4, owner_id),
+          status        = COALESCE($5, status),
+          start_date    = COALESCE($6, start_date),
+          end_date      = COALESCE($7, end_date),
+          closed_at     = CASE WHEN $9 THEN COALESCE($10::date, NOW()::date) ELSE closed_at END
+          ${recurringClause}
+        WHERE id = $8 RETURNING *, TO_CHAR(closed_at,'YYYY-MM-DD') AS closed_at
+      `;
+    }
 
-    // Only include is_recurring in the UPDATE when explicitly provided
-    const recurringClause = is_recurring != null ? `, is_recurring = $11` : '';
-
-    const { rows } = await db.query(`
-      UPDATE projects SET
-        name          = COALESCE($1, name),
-        description   = COALESCE($2, description),
-        department_id = COALESCE($3, department_id),
-        owner_id      = COALESCE($4, owner_id),
-        status        = COALESCE($5, status),
-        ${dateClause}
-        closed_at     = CASE WHEN $9 THEN COALESCE($10::date, NOW()::date) ELSE closed_at END
-        ${recurringClause}
-      WHERE id = $8 RETURNING *, TO_CHAR(closed_at,'YYYY-MM-DD') AS closed_at
-    `, [name, description, department_id, owner_id, status,
-        is_recurring === true ? null : (start_date || null),
-        is_recurring === true ? null : (end_date   || null),
-        pid, setClosedAt, reqClosedAt || null, is_recurring ?? null]);
+    const { rows } = await db.query(sql, params);
     if (!rows.length) return res.status(404).json({ error: 'Project not found' });
     const p = rows[0];
     res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at) });

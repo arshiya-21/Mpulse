@@ -15,7 +15,7 @@ router.get('/', verify, async (req, res) => {
     const { from, to, emp_id, dept_id, category, tat } = req.query;
     let q = `
       SELECT t.id, TO_CHAR(t.task_date,'YYYY-MM-DD') AS task_date, t.employee_id, t.project_id, t.category,
-             t.work_type, t.spent_mins, t.tat_days, t.status,
+             t.work_type, t.spent_mins, t.tat_days, t.status, t.description,
              t.created_at, t.updated_at,
              ROUND((t.spent_mins::NUMERIC / COALESCE(
                (SELECT daily_target_mins FROM system_settings WHERE id = 1 LIMIT 1), 510
@@ -71,7 +71,7 @@ router.get('/', verify, async (req, res) => {
 // POST create
 router.post('/', verify, async (req, res) => {
   try {
-    let { task_date, employee_id, project_id, category, work_type = 'Planned', spent_mins, status = 'In Progress' } = req.body;
+    let { task_date, employee_id, project_id, category, work_type = 'Planned', spent_mins, status = 'In Progress', description } = req.body;
 
     // User can only log tasks for themselves
     if (req.user.role === 'User') {
@@ -98,10 +98,10 @@ router.post('/', verify, async (req, res) => {
       ? Math.ceil((taskDt - projEnd) / 86400000) : 0;
 
     const { rows } = await db.query(`
-      INSERT INTO tasks (task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      INSERT INTO tasks (task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, description)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING *, utilization
-    `, [task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status]);
+    `, [task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, description || null]);
 
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -132,7 +132,7 @@ router.put('/:id', verify, async (req, res) => {
       }
     }
 
-    const { task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status } = req.body;
+    const { task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, description } = req.body;
     const { rows } = await db.query(`
       UPDATE tasks SET
         task_date   = COALESCE($1, task_date),
@@ -142,10 +142,11 @@ router.put('/:id', verify, async (req, res) => {
         work_type   = COALESCE($5, work_type),
         spent_mins  = COALESCE($6, spent_mins),
         tat_days    = COALESCE($7, tat_days),
-        status      = COALESCE($8, status)
+        status      = COALESCE($8, status),
+        description = $10
       WHERE id = $9
       RETURNING *, utilization
-    `, [task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, taskId]);
+    `, [task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, taskId, description ?? null]);
     if (!rows.length) return res.status(404).json({ error: 'Task not found' });
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
