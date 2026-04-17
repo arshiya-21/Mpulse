@@ -10,6 +10,28 @@ async function getDeptId(req) {
   return rows[0]?.department_id || null;
 }
 
+// Helper: parse duration string → number of days
+// "1 Day" → 1 | "2 Days" → 2 | "Half Day" → 0.5 | unknown → 1
+function parseDurationDays(duration) {
+  if (!duration) return 1;
+  const s = String(duration).toLowerCase().trim();
+  if (s.includes('half')) return 0.5;
+  const m = s.match(/(\d+(\.\d+)?)/);
+  return m ? parseFloat(m[1]) : 1;
+}
+
+// Helper: find or create the system "Customer Visits" project
+async function getOrCreateVisitProject() {
+  const { rows } = await db.query(`SELECT id FROM projects WHERE name = 'Customer Visits' LIMIT 1`);
+  if (rows.length) return rows[0].id;
+  const { rows: np } = await db.query(
+    `INSERT INTO projects (name, status, is_recurring, description)
+     VALUES ('Customer Visits', 'In Progress', TRUE, 'System project — auto-logged customer visit tasks')
+     RETURNING id`
+  );
+  return np[0].id;
+}
+
 // GET all visits with joins
 router.get('/', verify, async (req, res) => {
   try {
@@ -125,6 +147,36 @@ router.post('/', verify, async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *
     `, [customer_id, contact_person, channel, agenda, planned_date, duration,
         effectiveAssignedTo, proof_file, status, work_done, issues_resolved, additional_reqs, req.user.userId]);
+
+    // ── Auto work log: only when visit is scheduled for today and has an assignee ──
+    const visit      = rows[0];
+    const todayIST   = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+    const visitDate  = String(visit.planned_date).slice(0, 10);
+
+    if (visitDate === todayIST && effectiveAssignedTo) {
+      try {
+        const days      = parseDurationDays(duration);
+        const spentMins = Math.round(days * 8 * 60);
+        const projId    = await getOrCreateVisitProject();
+
+        const { rows: cr } = await db.query('SELECT name FROM customers WHERE id = $1', [customer_id]);
+        const customerName  = cr[0]?.name || '';
+        const desc = `Auto-logged: Customer visit${customerName ? ' — ' + customerName : ''}${agenda ? ' | ' + agenda : ''}`;
+
+        await db.query(
+          `INSERT INTO tasks
+             (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8)`,
+          [visitDate, effectiveAssignedTo, projId,
+           'Customer Visit', 'On-Site', spentMins, 'In Progress', desc]
+        );
+        console.log(`📋 Visit work log auto-created — employee ${effectiveAssignedTo}, ${spentMins}m`);
+      } catch (autoErr) {
+        // Don't fail visit creation because of work-log error
+        console.error('⚠️  Auto visit work log failed:', autoErr.message);
+      }
+    }
+
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

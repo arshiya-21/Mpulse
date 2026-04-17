@@ -1044,7 +1044,7 @@ function AccessConfig(){
 function EmailConfig(){
   const [cfg,setCfg]         = useState({from_email:"",app_password_masked:"",is_configured:false,updated_at:null});
   const [form,setForm]       = useState({from_email:"",app_password:""});
-  const [notifCfg,setNotifCfg] = useState({admin_email:"",visit_reminder_enabled:true,email_notif:true});
+  const [notifCfg,setNotifCfg] = useState({admin_email:"",visit_reminder_enabled:true,email_notif:true,worklog_digest_enabled:true});
   const [loading,setLoading] = useState(true);
   const [saving,setSaving]   = useState(false);
   const [savingNotif,setSavingNotif] = useState(false);
@@ -1061,8 +1061,9 @@ function EmailConfig(){
       setForm({from_email:eR.data.from_email||"", app_password:""});
       setNotifCfg({
         admin_email:             sR.data?.admin_email||"",
-        visit_reminder_enabled:  sR.data?.visit_reminder_enabled ?? true,
-        email_notif:             sR.data?.email_notif ?? true,
+        visit_reminder_enabled:   sR.data?.visit_reminder_enabled  ?? true,
+        email_notif:              sR.data?.email_notif              ?? true,
+        worklog_digest_enabled:   sR.data?.worklog_digest_enabled  ?? true,
       });
     }catch{ show("Failed to load email settings"); }
     finally{ setLoading(false); }
@@ -1201,6 +1202,7 @@ function EmailConfig(){
             <div style={{background:"#f8f9fb",border:"1px solid #e4e7ec",borderRadius:8,padding:"4px 14px"}}>
               <Toggle label="Email Notifications" desc="Master switch — enables all system emails" k="email_notif"/>
               <Toggle label="Visit Due Reminders" desc="Daily 9 AM alert for overdue/due-today visits" k="visit_reminder_enabled"/>
+              <Toggle label="Daily Work Log Digest" desc="7 PM summary email to each manager with their team's work logs" k="worklog_digest_enabled"/>
             </div>
 
             <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#92400e",lineHeight:1.6}}>

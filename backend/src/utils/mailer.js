@@ -310,7 +310,7 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
 }
 
 // ── Send WORKLOG DIGEST email to a manager ────────────────
-async function sendWorklogDigestEmail({ toName, toEmail, departmentName, date, employees }) {
+async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
   const { fromEmail, appPassword } = await getEmailConfig();
   const resendClient = new Resend(appPassword);
 
@@ -329,8 +329,9 @@ async function sendWorklogDigestEmail({ toName, toEmail, departmentName, date, e
         <tr>
           <td style="padding:11px 16px;background:#eef2ff;">
             <span style="font-size:14px;font-weight:700;color:#1e1b4b;">${emp.name}</span>
+            ${emp.department ? `<span style="font-size:11px;color:#6366f1;background:#e0e7ff;padding:2px 8px;border-radius:20px;margin-left:8px;">${emp.department}</span>` : ''}
           </td>
-          <td style="padding:11px 16px;background:#eef2ff;text-align:right;">
+          <td style="padding:11px 16px;background:#eef2ff;text-align:right;white-space:nowrap;">
             <span style="font-size:13px;font-weight:700;color:#4f46e5;background:#fff;padding:3px 12px;border-radius:20px;border:1px solid #c7d2fe;">${fmtMins(emp.totalMins)} worked</span>
           </td>
         </tr>
@@ -374,7 +375,7 @@ async function sendWorklogDigestEmail({ toName, toEmail, departmentName, date, e
       <div style="padding:28px 32px;">
         <p style="font-size:15px;font-weight:600;color:#111827;margin:0 0 4px;">Hi ${toName},</p>
         <p style="font-size:13px;color:#4b5563;line-height:1.7;margin:0 0 20px;">
-          Here is the work log summary for <strong>${departmentName}</strong> on <strong>${date}</strong>.
+          Here is the work log summary for your team on <strong>${date}</strong>.
         </p>
 
         <!-- Summary strip -->
@@ -416,10 +417,10 @@ async function sendWorklogDigestEmail({ toName, toEmail, departmentName, date, e
   await resendClient.emails.send({
     from:    `"MPulse" <${fromEmail}>`,
     to:      toEmail,
-    subject: `📋 Daily Work Log — ${departmentName} · ${date}`,
+    subject: `📋 Daily Work Log — Your Team · ${date}`,
     html,
   });
-  console.log(`📧 Worklog digest sent to ${toEmail} (${departmentName})`);
+  console.log(`📧 Worklog digest sent to ${toEmail}`);
 }
 
 module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail };

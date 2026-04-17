@@ -43,6 +43,7 @@ router.put('/', async (req, res) => {
       session_timeout,
       admin_email,
       visit_reminder_enabled,
+      worklog_digest_enabled,
       work_categories,
       work_formulas
     } = req.body;
@@ -84,8 +85,9 @@ router.put('/', async (req, res) => {
         session_timeout         = $8,
         admin_email             = $9,
         visit_reminder_enabled  = $10,
-        work_categories         = COALESCE($11, work_categories),
-        work_formulas           = COALESCE($12, work_formulas)
+        worklog_digest_enabled  = $11,
+        work_categories         = COALESCE($12, work_categories),
+        work_formulas           = COALESCE($13, work_formulas)
       WHERE id = 1
       RETURNING *
     `, [
@@ -99,6 +101,7 @@ router.put('/', async (req, res) => {
       session_timeout,
       admin_email ? admin_email.trim() : null,
       visit_reminder_enabled ?? true,
+      worklog_digest_enabled ?? true,
       work_categories ? (Array.isArray(work_categories) ? JSON.stringify(work_categories) : work_categories) : null,
       work_formulas ? (Array.isArray(work_formulas) ? JSON.stringify(work_formulas) : work_formulas) : null
     ]);

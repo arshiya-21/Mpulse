@@ -347,6 +347,12 @@ module.exports = async function migrate() {
         ADD COLUMN IF NOT EXISTS description TEXT;
     `);
 
+    // ── Add worklog_digest_enabled to system_settings ─────────────────────
+    await db.query(`
+      ALTER TABLE system_settings
+        ADD COLUMN IF NOT EXISTS worklog_digest_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+    `);
+
     // ── project_assignees table ───────────────────────────────────
     await db.query(`
       CREATE TABLE IF NOT EXISTS project_assignees (
