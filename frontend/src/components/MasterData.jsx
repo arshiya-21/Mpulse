@@ -1045,9 +1045,10 @@ function EmailConfig(){
   const [cfg,setCfg]         = useState({from_email:"",app_password_masked:"",is_configured:false,updated_at:null});
   const [form,setForm]       = useState({from_email:"",app_password:""});
   const [notifCfg,setNotifCfg] = useState({admin_email:"",visit_reminder_enabled:true,email_notif:true,worklog_digest_enabled:true});
-  const [loading,setLoading] = useState(true);
-  const [saving,setSaving]   = useState(false);
+  const [loading,setLoading]       = useState(true);
+  const [saving,setSaving]         = useState(false);
   const [savingNotif,setSavingNotif] = useState(false);
+  const [sendingDigest,setSendingDigest] = useState(false);
   const [testing,setTesting] = useState(false);
   const [showPass,setShowPass] = useState(false);
   const {msg,show} = useToast();
@@ -1079,6 +1080,16 @@ function EmailConfig(){
     try{ await emailSettingsApi.update(payload); show("Sender email saved ✓"); await load(); }
     catch(e){ show(e?.response?.data?.error||"Save failed"); }
     finally{ setSaving(false); }
+  }
+
+  async function sendDigestNow(){
+    if(sendingDigest) return;
+    setSendingDigest(true);
+    try{
+      const r = await settingsApi.triggerDigest();
+      show(r.data.message);
+    }catch(e){ show(e?.response?.data?.error||"Failed to send digest"); }
+    finally{ setSendingDigest(false); }
   }
 
   async function saveNotif(){
@@ -1202,7 +1213,22 @@ function EmailConfig(){
             <div style={{background:"#f8f9fb",border:"1px solid #e4e7ec",borderRadius:8,padding:"4px 14px"}}>
               <Toggle label="Email Notifications" desc="Master switch — enables all system emails" k="email_notif"/>
               <Toggle label="Visit Due Reminders" desc="Daily 9 AM alert for overdue/due-today visits" k="visit_reminder_enabled"/>
-              <Toggle label="Daily Work Log Digest" desc="7 PM summary email to each manager with their team's work logs" k="worklog_digest_enabled"/>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>Daily Work Log Digest</div>
+                  <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Scheduled at <strong>7:00 PM IST</strong> — summary email to each manager with their team's work logs</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0,marginLeft:16}}>
+                  <button onClick={sendDigestNow} disabled={sendingDigest}
+                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:sendingDigest?"#eef2ff":"#4f46e5",color:sendingDigest?"#6366f1":"#fff",cursor:sendingDigest?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                    {sendingDigest?"Sending…":"▶ Send Now"}
+                  </button>
+                  <div onClick={()=>setNotifCfg(p=>({...p,worklog_digest_enabled:!p.worklog_digest_enabled}))}
+                    style={{width:40,height:22,borderRadius:11,background:notifCfg.worklog_digest_enabled?"#4f46e5":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",border:"1px solid #e4e7ec"}}>
+                    <div style={{position:"absolute",top:2,left:notifCfg.worklog_digest_enabled?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#92400e",lineHeight:1.6}}>

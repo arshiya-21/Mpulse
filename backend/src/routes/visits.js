@@ -245,6 +245,12 @@ router.put('/:id', verify, async (req, res) => {
       syncUpdates.push(`spent_mins = $${syncParams.length}`);
     }
 
+    if (planned_date !== undefined) {
+      const newDate = new Date(updatedVisit.planned_date).toISOString().slice(0, 10);
+      syncParams.push(newDate);
+      syncUpdates.push(`task_date = $${syncParams.length}`);
+    }
+
     if (syncUpdates.length) {
       syncParams.push(visitId);
       await db.query(

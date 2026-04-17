@@ -2,14 +2,15 @@ const cron = require('node-cron');
 const db   = require('../config/db');
 const { sendWorklogDigestEmail } = require('./mailer');
 
-async function runWorklogDigest() {
+// force=true bypasses the toggle check (used by the "Send Now" test button)
+async function runWorklogDigest({ force = false } = {}) {
   try {
     const { rows: cfg } = await db.query(
       'SELECT email_notif, worklog_digest_enabled FROM system_settings WHERE id = 1'
     );
-    if (!cfg[0]?.email_notif || !cfg[0]?.worklog_digest_enabled) {
+    if (!force && (!cfg[0]?.email_notif || !cfg[0]?.worklog_digest_enabled)) {
       console.log('⏭️  Worklog digest disabled — skipping');
-      return;
+      return { skipped: true, reason: 'Digest is disabled in Notification Settings' };
     }
 
     // All distinct managers (any role) who have at least one managed employee
@@ -25,7 +26,7 @@ async function runWorklogDigest() {
 
     if (managers.length === 0) {
       console.log('⏭️  No managers with managed employees found — skipping worklog digest');
-      return;
+      return { skipped: true, reason: 'No managers with managed employees found' };
     }
 
     const today = new Date().toLocaleDateString('en-IN', {
@@ -93,8 +94,10 @@ async function runWorklogDigest() {
     }
 
     console.log(`✅ Worklog digest complete — sent to ${sent} manager(s)`);
+    return { sent, total: managers.length };
   } catch (err) {
     console.error('❌ Worklog digest error:', err.message);
+    throw err;
   }
 }
 
@@ -103,4 +106,4 @@ function startWorklogDigestCron() {
   console.log('⏰ Worklog digest cron scheduled (daily 19:00 Asia/Kolkata)');
 }
 
-module.exports = { startWorklogDigestCron };
+module.exports = { startWorklogDigestCron, runWorklogDigest };

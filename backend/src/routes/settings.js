@@ -1,6 +1,8 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
+const { verify } = require('../middleware/auth');
+const { runWorklogDigest } = require('../utils/worklogDigest');
 
 // ── GET: Fetch system settings ────────────────────────────
 router.get('/', async (req, res) => {
@@ -111,6 +113,20 @@ router.put('/', async (req, res) => {
   } catch (err) {
     console.error('❌ PUT /settings error:', err);
     res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
+// POST /api/settings/trigger-digest — manually fire the worklog digest (Admin only)
+router.post('/trigger-digest', verify, async (req, res) => {
+  if (req.user.role !== 'Admin') return res.status(403).json({ error: 'Admin only' });
+  try {
+    const result = await runWorklogDigest({ force: true });
+    if (result?.skipped) return res.json({ message: result.reason });
+    const { sent, total } = result;
+    if (sent === 0) return res.json({ message: 'No work logs found for today — no emails sent' });
+    res.json({ message: `Digest sent to ${sent} of ${total} manager(s)` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
