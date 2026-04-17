@@ -505,7 +505,7 @@ function AdminManagerDashboard(){
             </>
           )}
 
-          {selProj&&(
+          {(
             <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"12px 16px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
                 <div style={{width:3,height:18,background:"#4f46e5",borderRadius:2}}/>
@@ -657,6 +657,7 @@ function AdminManagerDashboard(){
         </>
       )}
       <Toast msg={msg}/>
+
     </div>
   );
 }

@@ -331,8 +331,13 @@ module.exports = async function migrate() {
     // ── Add closed_at + owner_id to projects ─────────────────────
     await db.query(`
       ALTER TABLE projects
-        ADD COLUMN IF NOT EXISTS closed_at    TIMESTAMPTZ,
-        ADD COLUMN IF NOT EXISTS owner_id     INT REFERENCES employees(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS owner_id  INT REFERENCES employees(id) ON DELETE SET NULL;
+    `);
+
+    // ── Add is_recurring to projects (separate statement so it always runs) ──
+    await db.query(`
+      ALTER TABLE projects
         ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN NOT NULL DEFAULT FALSE;
     `);
 

@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, PSTATS, SC2, SC2C, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -248,9 +248,15 @@ export default function DailyTasks(){
             <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}><label style={labelS}>Project</label>
               <select value={form.project_id} onChange={e=>setForm({...form,project_id:e.target.value})} style={inputS}>
                 <option value="">Select project</option>
-                {projects.filter(p=>p.status!=="Closed"&&p.status!=="Completed").map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                {(user.role==="User"
+                  ? projects.filter(p=>p.status!=="Closed"&&p.status!=="Completed"&&(String(p.owner_id)===String(user.id)||(p.assignees||[]).some(a=>String(a.id)===String(user.id))))
+                  : projects.filter(p=>p.status!=="Closed"&&p.status!=="Completed")
+                ).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 {projects.some(p=>p.status==="Closed"||p.status==="Completed")&&<optgroup label="─── Closed / Completed ───">
-                  {projects.filter(p=>p.status==="Closed"||p.status==="Completed").map(p=><option key={p.id} value={p.id}>{p.name} [{p.status}]</option>)}
+                  {(user.role==="User"
+                    ? projects.filter(p=>(p.status==="Closed"||p.status==="Completed")&&(String(p.owner_id)===String(user.id)||(p.assignees||[]).some(a=>String(a.id)===String(user.id))))
+                    : projects.filter(p=>p.status==="Closed"||p.status==="Completed")
+                  ).map(p=><option key={p.id} value={p.id}>{p.name} [{p.status}]</option>)}
                 </optgroup>}
               </select>
             </div>
@@ -272,7 +278,7 @@ export default function DailyTasks(){
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Status</label>
               <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
-                {PSTATS.map(s=><option key={s}>{s}</option>)}
+                {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
           </div>

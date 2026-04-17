@@ -212,8 +212,8 @@ export default function Projects(){
               <tbody>
                 {filtered.map(p=>{
                   const tat=p.tat_days||0;
-                  const cs=p.status==="Closed"||p.status==="Completed"?"On Time":tat>0?"Delayed":"In Progress";
-                  const overdue=tat>0&&p.status!=="Closed"&&p.status!=="Completed";
+                  const cs=p.is_recurring?"Recurring":p.status==="Closed"||p.status==="Completed"?"On Time":tat>0?"Delayed":"In Progress";
+                  const overdue=!p.is_recurring&&tat>0&&p.status!=="Closed"&&p.status!=="Completed";
                   return(
                     <tr key={p.id}>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -246,9 +246,20 @@ export default function Projects(){
                         }
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                        {tat===0?<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>✓ On Time</span>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{tat}d late</span>}
+                        {p.is_recurring
+                          ?<span style={{color:"#9ca3af",fontSize:12}}>—</span>
+                          :tat===0
+                            ?<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>✓ On Time</span>
+                            :<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>+{tat}d late</span>
+                        }
                       </td>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:CS_BG[cs]||"#f8f9fb",color:CS_C[cs]||"#4b5563"}}>{cs}</span></td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
+                        <span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,
+                          background:p.is_recurring?"#ede9fe":CS_BG[cs]||"#f8f9fb",
+                          color:p.is_recurring?"#5b21b6":CS_C[cs]||"#4b5563"}}>
+                          {p.is_recurring?"↻ Recurring":cs}
+                        </span>
+                      </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{user.role!=="User"?<StatusDrop value={p.status} onChange={v=>updateStatus(p.id,v)}/>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:STATUS_CFG[p.status]?.bg||"#f8f9fb",color:STATUS_CFG[p.status]?.color||"#4b5563"}}>{p.status}</span>}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         {user.role!=="User"&&(
