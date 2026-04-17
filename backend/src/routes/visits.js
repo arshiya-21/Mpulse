@@ -229,15 +229,31 @@ router.put('/:id', verify, async (req, res) => {
         assigned_to, proof_file, status, work_done, issues_resolved, additional_reqs, visitId]);
     if (!rows.length) return res.status(404).json({ error: 'Visit not found' });
 
-    // If visit was just marked Completed, sync the linked work log
-    if (rows[0].status === 'Completed') {
+    // Sync linked work log: status and/or spent_mins
+    const updatedVisit = rows[0];
+    const syncUpdates = [];
+    const syncParams  = [];
+
+    if (updatedVisit.status === 'Completed') {
+      syncUpdates.push(`status = 'Completed'`);
+    }
+
+    if (duration !== undefined) {
+      const days      = parseDurationDays(updatedVisit.duration);
+      const spentMins = Math.round(days * 8 * 60);
+      syncParams.push(spentMins);
+      syncUpdates.push(`spent_mins = $${syncParams.length}`);
+    }
+
+    if (syncUpdates.length) {
+      syncParams.push(visitId);
       await db.query(
-        `UPDATE tasks SET status = 'Completed' WHERE visit_id = $1 AND status != 'Completed'`,
-        [visitId]
+        `UPDATE tasks SET ${syncUpdates.join(', ')} WHERE visit_id = $${syncParams.length}`,
+        syncParams
       ).catch(e => console.error('⚠️  Visit work log sync failed:', e.message));
     }
 
-    res.json(rows[0]);
+    res.json(updatedVisit);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

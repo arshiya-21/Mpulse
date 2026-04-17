@@ -256,9 +256,9 @@ function AdminManagerDashboard(){
   const totalMins=filtered.reduce((s,t)=>s+(t.spent_mins||0),0);
   const avgUtil=filtered.length?Math.round(filtered.reduce((s,t)=>s+(parseFloat(t.utilization)||0),0)/filtered.length):0;
   const totalDelays=filtered.filter(t=>t.tat_days>0).length;
-  const onTime=filtered.filter(t=>t.status==="On Time completion").length;
+  const onTime=filtered.filter(t=>t.tat_days===0).length;
   const inProg=filtered.filter(t=>t.status==="In Progress").length;
-  const delayed=filtered.filter(t=>t.status==="Delayed").length;
+  const delayed=filtered.filter(t=>t.tat_days>0).length;
 
   const empMap={};
   filtered.forEach(t=>{
@@ -304,15 +304,17 @@ function AdminManagerDashboard(){
   const projMembers=Object.values(projMemberMap).map(m=>({...m,avgUtil:m.count?Math.round(m.utilSum/m.count):0})).sort((a,b)=>b.mins-a.mins);
   const grandMins=projMembers.reduce((s,m)=>s+m.mins,0);
 
-  const closedProjects=projects.filter(p=>["Closed","Completed"].includes(p.status)).length;
+  const openProjects  = projects.filter(p=>["Not Started","In Progress","On Hold"].includes(p.status)).length;
+  const closedProjects= projects.filter(p=>["Completed","Cancelled"].includes(p.status)).length;
+  const onTimeTasks   = filtered.filter(t=>t.tat_days===0).length;
   const kpis=[
     {label:"Active Employees",  value:employees.length,                icon:"👥",accent:"#7c3aed",bg:"#ede9fe"},
-    {label:"Open Projects",     value:projects.filter(p=>p.status==="Open").length,icon:"📁",accent:"#1d4ed8",bg:"#dbeafe"},
+    {label:"Open Projects",     value:openProjects,                    icon:"📁",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Tasks Logged",      value:filtered.length,                 icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",   value:avgUtil+"%",                     icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
     {label:"Total Hours",       value:Math.round(totalMins/60)+"h",    icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
     {label:"Project Delays",    value:totalDelays,                     icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
-    {label:"On Time Tasks",     value:onTime,                          icon:"✅",accent:"#059669",bg:"#ecfdf5"},
+    {label:"On Time Tasks",     value:onTimeTasks,                     icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Closed Projects",   value:closedProjects,                  icon:"🔒",accent:"#065f46",bg:"#f0fdf4"},
   ];
   const ttip={contentStyle:{borderRadius:8,fontSize:12,padding:"6px 10px",border:"1px solid #e4e7ec"}};
