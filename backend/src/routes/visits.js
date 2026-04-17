@@ -165,10 +165,10 @@ router.post('/', verify, async (req, res) => {
 
         await db.query(
           `INSERT INTO tasks
-             (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8)`,
+             (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description, visit_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8,$9)`,
           [visitDate, effectiveAssignedTo, projId,
-           'Customer Visit', 'On-Site', spentMins, 'In Progress', desc]
+           'Customer Visit', 'On-Site', spentMins, 'In Progress', desc, visit.id]
         );
         console.log(`📋 Visit work log auto-created — employee ${effectiveAssignedTo}, ${spentMins}m`);
       } catch (autoErr) {
@@ -228,6 +228,15 @@ router.put('/:id', verify, async (req, res) => {
     `, [customer_id, contact_person, channel, agenda, planned_date, duration,
         assigned_to, proof_file, status, work_done, issues_resolved, additional_reqs, visitId]);
     if (!rows.length) return res.status(404).json({ error: 'Visit not found' });
+
+    // If visit was just marked Completed, sync the linked work log
+    if (rows[0].status === 'Completed') {
+      await db.query(
+        `UPDATE tasks SET status = 'Completed' WHERE visit_id = $1 AND status != 'Completed'`,
+        [visitId]
+      ).catch(e => console.error('⚠️  Visit work log sync failed:', e.message));
+    }
+
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -256,6 +265,13 @@ router.put('/:id/close', verify, async (req, res) => {
       WHERE id = $5 RETURNING *
     `, [status, work_done, issues_resolved, additional_reqs, visitId]);
     if (!rows.length) return res.status(404).json({ error: 'Visit not found' });
+
+    // Sync linked work log to Completed
+    await db.query(
+      `UPDATE tasks SET status = 'Completed' WHERE visit_id = $1 AND status != 'Completed'`,
+      [visitId]
+    ).catch(e => console.error('⚠️  Visit work log sync failed:', e.message));
+
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -319,6 +335,9 @@ router.delete('/:id', verify, async (req, res) => {
         return res.status(403).json({ error: 'Access denied — visit not in your department' });
       }
     }
+
+    // Delete the auto-created work log linked to this visit (if any)
+    await db.query(`DELETE FROM tasks WHERE visit_id = $1`, [visitId]);
 
     await db.query(`DELETE FROM customer_visits WHERE id = $1`, [visitId]);
     res.json({ message: 'Visit deleted' });

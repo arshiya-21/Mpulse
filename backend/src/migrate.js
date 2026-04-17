@@ -353,6 +353,12 @@ module.exports = async function migrate() {
         ADD COLUMN IF NOT EXISTS worklog_digest_enabled BOOLEAN NOT NULL DEFAULT TRUE;
     `);
 
+    // ── Add visit_id to tasks (links auto-created visit work logs) ─────────
+    await db.query(`
+      ALTER TABLE tasks
+        ADD COLUMN IF NOT EXISTS visit_id INT REFERENCES customer_visits(id) ON DELETE SET NULL;
+    `);
+
     // ── project_assignees table ───────────────────────────────────
     await db.query(`
       CREATE TABLE IF NOT EXISTS project_assignees (
