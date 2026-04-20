@@ -282,52 +282,59 @@ function AdminManagerDashboard(){
   });
 
   const totalMins=filtered.reduce((s,t)=>s+(t.spent_mins||0),0);
-  const totalWSum=filtered.reduce((s,t)=>s+(t.spent_mins||0)*(parseFloat(t.utilization)||0),0);
-  const avgUtil=totalMins>0?Math.round(totalWSum/totalMins):0;
   const totalDelays=filtered.filter(t=>t.tat_days>0).length;
   const onTime=filtered.filter(t=>t.tat_days===0).length;
   const delayed=filtered.filter(t=>t.tat_days>0).length;
 
-  const empMap={};
+  // Step 1 — per (employee, date): sum all task utils → daily util for that employee on that day
+  // daily util = Σ(spent_mins for that day) / daily_target × 100
+  // Since t.utilization = spent_mins/daily_target×100, summing them = total_mins_that_day/daily_target×100
+  const empDayMap={};
   filtered.forEach(t=>{
-    const k=t.employee_name||"Unknown";
-    const u=parseFloat(t.utilization)||0;
-    const m=t.spent_mins||0;
-    if(!empMap[k])empMap[k]={utilSum:0,count:0,wSum:0,mSum:0,full:k,dept:t.department||""};
-    empMap[k].utilSum+=u;empMap[k].count++;
-    empMap[k].wSum+=m*u;empMap[k].mSum+=m;
+    const key=`${t.employee_name}||${t.task_date}`;
+    if(!empDayMap[key])empDayMap[key]={name:t.employee_name,dept:t.department||"",dayUtil:0};
+    empDayMap[key].dayUtil+=parseFloat(t.utilization)||0;
   });
-  const empChartData=Object.entries(empMap).map(([n,d])=>({
+
+  // Step 2 — per employee: avg of their daily utils over the period
+  const empPeriodMap={};
+  Object.values(empDayMap).forEach(({name,dept,dayUtil})=>{
+    if(!empPeriodMap[name])empPeriodMap[name]={dept,days:0,utilSum:0};
+    empPeriodMap[name].days++;
+    empPeriodMap[name].utilSum+=dayUtil;
+  });
+  const empChartData=Object.entries(empPeriodMap).map(([n,d])=>({
     n:n.split(" ")[0],full:n,dept:d.dept,
-    v:d.mSum>0?Math.round(d.wSum/d.mSum):0
+    v:d.days>0?Math.round(d.utilSum/d.days):0
   })).sort((a,b)=>a.dept.localeCompare(b.dept)||a.full.localeCompare(b.full));
 
-  const deptMap={};
-  filtered.forEach(t=>{
-    const d=t.department||"Unknown";
-    const u=parseFloat(t.utilization)||0;
-    const m=t.spent_mins||0;
-    if(!deptMap[d])deptMap[d]={utilSum:0,count:0,wSum:0,mSum:0};
-    deptMap[d].utilSum+=u;deptMap[d].count++;
-    deptMap[d].wSum+=m*u;deptMap[d].mSum+=m;
+  // Step 3 — per dept: avg of employee period utils in that dept
+  const deptPeriodMap={};
+  Object.entries(empPeriodMap).forEach(([,d])=>{
+    const dept=d.dept||"Unknown";
+    if(!deptPeriodMap[dept])deptPeriodMap[dept]={utilSum:0,count:0};
+    deptPeriodMap[dept].utilSum+=d.days>0?d.utilSum/d.days:0;
+    deptPeriodMap[dept].count++;
   });
-  const deptChartData=Object.entries(deptMap).map(([d,v])=>({
-    d,
-    v:v.mSum>0?Math.round(v.wSum/v.mSum):0
+  const deptChartData=Object.entries(deptPeriodMap).map(([d,v])=>({
+    d,v:v.count>0?Math.round(v.utilSum/v.count):0
   }));
 
-  const trendDayMap={};
+  // Step 4 — trend: for each date, avg of each employee's daily util on that date
+  const trendDayEmpMap={};
   filtered.forEach(t=>{
     const d=t.task_date;
-    if(!trendDayMap[d])trendDayMap[d]={wSum:0,mSum:0};
-    const m=t.spent_mins||0;
-    trendDayMap[d].wSum+=m*(parseFloat(t.utilization)||0);
-    trendDayMap[d].mSum+=m;
+    if(!trendDayEmpMap[d])trendDayEmpMap[d]={};
+    if(!trendDayEmpMap[d][t.employee_id])trendDayEmpMap[d][t.employee_id]=0;
+    trendDayEmpMap[d][t.employee_id]+=parseFloat(t.utilization)||0;
   });
-  const trendData=Object.keys(trendDayMap).sort().map(d=>({
-    x:d.slice(5),
-    v:trendDayMap[d].mSum>0?Math.round(trendDayMap[d].wSum/trendDayMap[d].mSum):0
-  }));
+  const trendData=Object.keys(trendDayEmpMap).sort().map(d=>{
+    const vals=Object.values(trendDayEmpMap[d]);
+    return{x:d.slice(5),v:Math.round(vals.reduce((s,v)=>s+v,0)/vals.length)};
+  });
+
+  // Step 5 — KPI avg util: avg of per-day team averages (day-first, then avg across days)
+  const avgUtil=trendData.length>0?Math.round(trendData.reduce((s,t)=>s+t.v,0)/trendData.length):0;
   const projStatusMap={};
   projects.forEach(p=>{projStatusMap[p.status]=(projStatusMap[p.status]||0)+1;});
   const pieData=Object.entries(projStatusMap).map(([name,value])=>({name,value})).filter(p=>p.value>0);

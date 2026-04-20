@@ -1414,8 +1414,8 @@ const FORMULA_DEFAULTS = [
 
   { section:"Daily Utilization", accent:"#4f46e5", id:"avg_util",
     label:"Avg Utilization (KPI Scorecard)",
-    formula:"Weighted average across all tasks in the selected date range and filters. Each task's utilization is weighted by its minutes so longer tasks carry more influence. Formula: Sum of (minutes × utilization%) for all tasks, divided by total minutes logged.",
-    example:"Example: Task A = 400m at 80% → 32,000. Task B = 100m at 20% → 2,000. Weighted Avg = (32,000 + 2,000) ÷ (400 + 100) = 34,000 ÷ 500 = 68%.",
+    formula:"Step 1 — For each (employee, date) pair: add up all their task utilizations for that day. This gives one daily-util number per employee per day (e.g. 60% + 30% = 90% for that day). Step 2 — Average all those daily-util values across the entire period and all employees. Formula: Avg of [Σ(task utils) for each employee-day].",
+    example:"Example: Murali on Apr 20 → 13%+13%+5%+6%+3%+25% = 65%. If he has 1 day and Gayathri has 1 day at 73%, KPI = (65+73)÷2 = 69%.",
     source:"worklog", sourceLabel:"Worklog entries" },
 
   { section:"Project TAT", accent:"#dc2626", id:"target_days",
@@ -1483,21 +1483,21 @@ const FORMULA_DEFAULTS = [
 
   { section:"Utilization Charts", accent:"#7c3aed", id:"emp_util_bar",
     label:"Employee Utilization % (Bar Chart)",
-    formula:"Weighted average of all tasks logged by the employee in the selected period. Longer tasks carry more weight. Formula: Sum of (minutes × utilization%) for all their tasks ÷ their total minutes logged. Employees who log more time on high-utilization tasks score higher.",
-    example:"Example: Task A = 400m at 100% → 40,000. Task B = 50m at 20% → 1,000. Weighted Avg = 41,000 ÷ 450 = 91%.",
-    source:"worklog", sourceLabel:"Worklog entries" },
+    formula:"Step 1 — For each day the employee worked: add up all their task utilizations for that day → daily util. Each task's utilization = minutes spent ÷ Daily Target Minutes × 100 (from Administration settings). Step 2 — Average those daily utils across all days they worked in the period. Formula: Avg of [Σ task utils per day] over all worked days.",
+    example:"Example: Murali worked 3 days. Day 1 = 65%, Day 2 = 50%, Day 3 = 40%. Employee bar = (65+50+40) ÷ 3 = 52%.",
+    source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
 
   { section:"Utilization Charts", accent:"#7c3aed", id:"dept_util_bar",
     label:"Department Utilization % (Bar Chart)",
-    formula:"Same weighted average method applied across all employees in a department. Every task from every member in the department is pooled together. Formula: Sum of (minutes × utilization%) for all department tasks ÷ total department minutes.",
-    example:"Example: 3 tasks — 300m@80%, 200m@60%, 100m@40% → (24,000+12,000+4,000) ÷ 600 = 67%.",
+    formula:"Step 1 — Calculate each employee's period utilization (avg daily util) as described above. Step 2 — Average those values across all employees in the department. Formula: Avg of [each employee's period util] for employees in that dept.",
+    example:"Example: CRM dept has 3 employees with period utils of 28%, 25%, 30%. Dept bar = (28+25+30) ÷ 3 = 28%.",
     source:"worklog", sourceLabel:"Worklog entries" },
 
   { section:"Utilization Charts", accent:"#7c3aed", id:"trend_admin",
     label:"Daily Utilization Trend",
-    formula:"Shows weighted average utilization for the whole team each day. For each day, all tasks from all employees on that day are pooled. Formula: Sum of (minutes × utilization%) for all tasks on that day ÷ total minutes logged on that day. This gives a single weighted number per day that reflects actual effort — heavier work carries more weight.",
-    example:"Example: Apr 10 — Syed: 350m@73% + 20m@4%. Gayathri: 100m@21%. Weighted Avg = (350×73 + 20×4 + 100×21) ÷ (350+20+100) = (25,550+80+2,100) ÷ 470 = 27,730 ÷ 470 = 59%.",
-    source:"worklog", sourceLabel:"Worklog entries" },
+    formula:"For each date on the trend line: Step 1 — For each employee who worked that day, sum their task utilizations to get their daily util. Step 2 — Average the daily utils of all employees who worked that day. Formula: Avg of [Σ task utils for each employee] on that date. Daily Target Minutes (from Administration) sets the 100% baseline for each task.",
+    example:"Example: Apr 20 — Murali daily util = 65%, Syed daily util = 97%, Gayathri daily util = 73%. Trend point = (65+97+73) ÷ 3 = 78%.",
+    source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
 ];
 
 const SOURCE_COLORS = {
@@ -1542,7 +1542,7 @@ function FormulasRef(){
       const sR=await settingsApi.get();
       // Only store id/formula/example to keep payload small
       const payload=next.map(r=>({id:r.id,formula:r.formula,example:r.example}));
-      await settingsApi.update({...sR.data,work_formulas:payload});
+      await settingsApi.update({...sR.data,work_formulas:JSON.stringify(payload)});
       setRows(next);
     }catch(e){ show(e?.response?.data?.error||"Save failed"); }
     finally{ setSaving(false); }

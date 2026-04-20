@@ -15,6 +15,7 @@ export default function Projects(){
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [stFilter,setStFilter]=useState("");
+  const [tatFilter,setTatFilter]=useState("");
   const [empF,setEmpF]=useState("");
   const [deptF,setDeptF]=useState("");
   const [page,setPage]=useState(1);
@@ -155,6 +156,8 @@ export default function Projects(){
       if(!isOwner&&!isAssignee&&!hasTask)return false;
     }
     if(stFilter&&p.status!==stFilter)return false;
+    if(tatFilter==="Overdue"&&!((!p.is_recurring)&&(p.tat_days||0)>0&&p.status!=="Closed"&&p.status!=="Completed"))return false;
+    if(tatFilter==="OnTime"&&!(p.is_recurring||(p.tat_days||0)===0||p.status==="Closed"||p.status==="Completed"))return false;
     if(empF&&String(p.owner_id)!==String(empF))return false;
     if(deptF&&String(p.department_id)!==String(deptF))return false;
     return true;
@@ -175,22 +178,33 @@ export default function Projects(){
         <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"flex-end"}}>
           {user.role==="Admin"&&(
             <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Owner</div>
-              <select value={empF} onChange={e=>setEmpF(e.target.value)} style={selS}>
-                <option value="">All Owners</option>
-                {managers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          )}
-          {user.role==="Admin"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
               <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
-              <select value={deptF} onChange={e=>setDeptF(e.target.value)} style={selS}>
+              <select value={deptF} onChange={e=>{setDeptF(e.target.value);setEmpF("");}} style={selS}>
                 <option value="">All Departments</option>
                 {depts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
           )}
+          {user.role==="Admin"&&(
+            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Owner</div>
+              <select value={empF} onChange={e=>setEmpF(e.target.value)} style={{...selS,color:deptF?"#111827":"#9ca3af"}} disabled={!deptF}>
+                <option value="">{deptF?"All Owners":"Select dept first"}</option>
+                {deptF&&managers.filter(m=>String(m.department_id)===String(deptF)).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>TAT</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {["Overdue","OnTime"].map(t=>{
+                const label=t==="Overdue"?"Overdue":"On Time";
+                const active=tatFilter===t;
+                return <div key={t} onClick={()=>setTatFilter(active?"":t)} style={{padding:"5px 12px",borderRadius:20,background:active?(t==="Overdue"?"#dc2626":"#059669"):(t==="Overdue"?"#fef2f2":"#ecfdf5"),color:active?"#fff":(t==="Overdue"?"#dc2626":"#059669"),fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid "+(t==="Overdue"?"#dc262655":"#05966955")}}>{label}</div>;
+              })}
+              {tatFilter&&<div onClick={()=>setTatFilter("")} style={{padding:"5px 12px",borderRadius:20,background:"#f8f9fb",color:"#9ca3af",fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid #e4e7ec"}}>✕</div>}
+            </div>
+          </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Status</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
