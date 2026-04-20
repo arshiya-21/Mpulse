@@ -35,7 +35,7 @@ export default function DailyTasks(){
   const {msg,show}=useToast();
   const [cats,setCats]=useState([...DEFAULT_CATS].sort((a,b)=>a.localeCompare(b)));
   const [dailyTarget,setDailyTarget]=useState(510);
-  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"In Progress",description:""};
+  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"Completed",description:""};
   const [form,setForm]=useState(blank);
 
   useEffect(()=>{
@@ -79,7 +79,7 @@ export default function DailyTasks(){
       category:    t.category||"",
       work_type:   t.work_type||"On Demand",
       spent_mins:  t.spent_mins||"",
-      status:      t.status||"In Progress",
+      status:      "Completed",
       description: t.description||""
     });
     setModal(true);
@@ -283,15 +283,10 @@ export default function DailyTasks(){
                 {WTYPES.map(w=><option key={w}>{w}</option>)}
               </select>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
               <label style={labelS}>Minutes Spent</label>
               <input type="number" value={form.spent_mins} min={1} max={720} placeholder="e.g. 400" onChange={e=>setForm({...form,spent_mins:+e.target.value})} style={inputS}/>
               {form.spent_mins>0&&<span style={{fontSize:12,color:"#9ca3af"}}>Utilization: {Math.round((form.spent_mins/dailyTarget)*100)}%</span>}
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Status</label>
-              <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
-                {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}
-              </select>
             </div>
           </div>
         </div>

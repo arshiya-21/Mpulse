@@ -10,6 +10,21 @@ import * as tasksApi from "../api/tasks.js";
 import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
+const PAGE_SIZE=10;
+function Pager({page,setPage,total}){
+  const pages=Math.ceil(total/PAGE_SIZE);
+  if(pages<=1)return null;
+  const btnS={padding:"3px 10px",fontSize:12,borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",cursor:"pointer",color:"#4b5563",fontWeight:600};
+  const disS={...btnS,background:"#f8f9fb",color:"#d1d5db",cursor:"default"};
+  return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"8px 14px",borderTop:"1px solid #f0f2f5"}}>
+      <button style={page===1?disS:btnS} disabled={page===1} onClick={()=>setPage(p=>p-1)}>‹ Prev</button>
+      <span style={{fontSize:12,color:"#6b7280",minWidth:60,textAlign:"center"}}>{page} / {pages}</span>
+      <button style={page===pages?disS:btnS} disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Next ›</button>
+    </div>
+  );
+}
+
 export default function Dashboard(){
   const {user}=useAuth();
   if(user.role==="User") return <UserDashboard user={user}/>;
@@ -39,17 +54,16 @@ function UserDashboard({user}){
 
   const totalMins=tasks.reduce((s,t)=>s+(t.spent_mins||0),0);
   const avgUtil=tasks.length?Math.round(tasks.reduce((s,t)=>s+(parseFloat(t.utilization)||0),0)/tasks.length):0;
-  const onTime=tasks.filter(t=>t.status==="On Time completion").length;
+  const onTime=tasks.filter(t=>t.tat_days===0).length;
   const delayed=tasks.filter(t=>t.tat_days>0).length;
-  const inProg=tasks.filter(t=>t.status==="In Progress").length;
 
   const trendMap={};
   tasks.forEach(t=>{
-    if(!trendMap[t.task_date])trendMap[t.task_date]={utilSum:0,count:0};
-    trendMap[t.task_date].utilSum+=parseFloat(t.utilization)||0;trendMap[t.task_date].count++;
+    if(!trendMap[t.task_date])trendMap[t.task_date]=0;
+    trendMap[t.task_date]+=parseFloat(t.utilization)||0;
   });
-  const trendData=Object.keys(trendMap).sort().map(d=>({x:d.slice(5),v:Math.round(trendMap[d].utilSum/trendMap[d].count)}));
-  const pieData=[{name:"On Time",value:onTime},{name:"In Progress",value:inProg},{name:"Delayed",value:delayed}].filter(p=>p.value>0);
+  const trendData=Object.keys(trendMap).sort().map(d=>({x:d.slice(5),v:Math.round(trendMap[d])}));
+  const pieData=[{name:"On Time",value:onTime},{name:"Delayed",value:delayed}].filter(p=>p.value>0);
 
   const catMap={};
   tasks.forEach(t=>{const c=t.category||"Other";catMap[c]=(catMap[c]||0)+(t.spent_mins||0);});
@@ -60,7 +74,6 @@ function UserDashboard({user}){
     {label:"Avg Utilization",value:avgUtil+"%",icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
     {label:"Total Hours",value:Math.round(totalMins/60)+"h",icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
     {label:"On Time",value:onTime,icon:"✅",accent:"#059669",bg:"#ecfdf5"},
-    {label:"In Progress",value:inProg,icon:"🔄",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Delayed",value:delayed,icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
   ];
   const ttip={contentStyle:{borderRadius:8,fontSize:12,padding:"6px 10px",border:"1px solid #e4e7ec"}};
@@ -113,7 +126,7 @@ function UserDashboard({user}){
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,100]}/>
+                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
                       <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#utg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5}}/>
                     </AreaChart>
@@ -221,15 +234,20 @@ function AdminManagerDashboard(){
   const [drillValue,setDrillValue]=useState(null);
   const [selProjId,setSelProjId]=useState(null);
   const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
+  const [drillPage,setDrillPage]=useState(1);
+  const [projPage,setProjPage]=useState(1);
   const {show,msg}=useToast();
   const drillRef=useRef(null);
   const projTeamRef=useRef(null);
 
   useEffect(()=>{
     if(drillType&&drillValue){
+      setDrillPage(1);
       setTimeout(()=>drillRef.current?.scrollIntoView({behavior:'smooth',block:'start'}),120);
     }
   },[drillType,drillValue]);
+
+  useEffect(()=>{ setProjPage(1); },[selProjId]);
 
   useEffect(()=>{
     Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll()])
@@ -257,7 +275,6 @@ function AdminManagerDashboard(){
   const avgUtil=filtered.length?Math.round(filtered.reduce((s,t)=>s+(parseFloat(t.utilization)||0),0)/filtered.length):0;
   const totalDelays=filtered.filter(t=>t.tat_days>0).length;
   const onTime=filtered.filter(t=>t.tat_days===0).length;
-  const inProg=filtered.filter(t=>t.status==="In Progress").length;
   const delayed=filtered.filter(t=>t.tat_days>0).length;
 
   const empMap={};
@@ -276,19 +293,25 @@ function AdminManagerDashboard(){
   });
   const deptChartData=Object.entries(deptMap).map(([d,v])=>({d,v:Math.round(v.utilSum/v.count)}));
 
-  const trendMap={};
+  const trendEmpMap={};
   filtered.forEach(t=>{
-    if(!trendMap[t.task_date])trendMap[t.task_date]={utilSum:0,count:0};
-    trendMap[t.task_date].utilSum+=parseFloat(t.utilization)||0;trendMap[t.task_date].count++;
+    const d=t.task_date;
+    if(!trendEmpMap[d])trendEmpMap[d]={};
+    if(!trendEmpMap[d][t.employee_id])trendEmpMap[d][t.employee_id]=0;
+    trendEmpMap[d][t.employee_id]+=parseFloat(t.utilization)||0;
   });
-  const trendData=Object.keys(trendMap).sort().map(d=>({x:d.slice(5),v:Math.round(trendMap[d].utilSum/trendMap[d].count)}));
-  const pieData=[{name:"On Time",value:onTime},{name:"In Progress",value:inProg},{name:"Delayed",value:delayed}].filter(p=>p.value>0);
+  const trendData=Object.keys(trendEmpMap).sort().map(d=>{
+    const vals=Object.values(trendEmpMap[d]);
+    return {x:d.slice(5),v:Math.round(vals.reduce((s,v)=>s+v,0)/vals.length)};
+  });
+  const projStatusMap={};
+  projects.forEach(p=>{projStatusMap[p.status]=(projStatusMap[p.status]||0)+1;});
+  const pieData=Object.entries(projStatusMap).map(([name,value])=>({name,value})).filter(p=>p.value>0);
 
   let drillTasks=[];
   if(drillType==="pie"&&drillValue){
-    if(drillValue==="On Time")drillTasks=filtered.filter(t=>t.tat_days===0);
-    else if(drillValue==="Delayed")drillTasks=filtered.filter(t=>t.tat_days>0);
-    else if(drillValue==="In Progress")drillTasks=filtered.filter(t=>t.status==="In Progress");
+    const projIds=new Set(projects.filter(p=>p.status===drillValue).map(p=>p.id));
+    drillTasks=filtered.filter(t=>projIds.has(t.project_id));
   }else if(drillType==="emp"&&drillValue)drillTasks=filtered.filter(t=>t.employee_name===drillValue);
   else if(drillType==="dept"&&drillValue)drillTasks=filtered.filter(t=>t.department===drillValue);
 
@@ -303,7 +326,7 @@ function AdminManagerDashboard(){
     projMemberMap[k].cats[t.category]=(projMemberMap[k].cats[t.category]||0)+1;
     if(t.task_date>projMemberMap[k].lastDate)projMemberMap[k].lastDate=t.task_date;
   });
-  const projMembers=Object.values(projMemberMap).map(m=>({...m,avgUtil:m.count?Math.round(m.utilSum/m.count):0})).sort((a,b)=>b.mins-a.mins);
+  const projMembers=Object.values(projMemberMap).map(m=>({...m,avgUtil:Math.round(m.utilSum)})).sort((a,b)=>b.mins-a.mins);
   const grandMins=projMembers.reduce((s,m)=>s+m.mins,0);
 
   const openProjects  = projects.filter(p=>["Not Started","In Progress","On Hold"].includes(p.status)).length;
@@ -429,7 +452,7 @@ function AdminManagerDashboard(){
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[50,100]}/>
+                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
                       <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#tg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5,fill:"#4f46e5"}}/>
                     </AreaChart>
@@ -439,7 +462,7 @@ function AdminManagerDashboard(){
             </div>
             <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
               <div style={{padding:"12px 14px 10px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:13,fontWeight:700}}>Task Status</span>
+                <span style={{fontSize:13,fontWeight:700}}>Project Status</span>
                 <span style={{fontSize:11,color:"#9ca3af"}}>· click to drill down</span>
               </div>
               <div style={{padding:"10px 4px 6px"}}>
@@ -479,7 +502,7 @@ function AdminManagerDashboard(){
                     ))}
                   </tr></thead>
                   <tbody>
-                    {drillTasks.map((t,i)=>(
+                    {drillTasks.slice((drillPage-1)*PAGE_SIZE,drillPage*PAGE_SIZE).map((t,i)=>(
                       <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontWeight:600,color:"#111827"}}>{t.employee_name}</td>
@@ -516,6 +539,7 @@ function AdminManagerDashboard(){
                   </tbody>
                 </table>
               </div>
+              <Pager page={drillPage} setPage={setDrillPage} total={drillTasks.length}/>
             </div>
 
             </>
@@ -551,7 +575,7 @@ function AdminManagerDashboard(){
                     <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
                       {projMembers.map((m,mi)=>{
                         const pct=grandMins>0?Math.round((m.mins/grandMins)*100):0;
-                        const uc=m.avgUtil>=85?"#059669":m.avgUtil>=65?"#d97706":"#dc2626";
+                        const uc=m.avgUtil>=100?"#059669":m.avgUtil>=50?"#d97706":"#dc2626";
                         return(
                           <div key={mi} onClick={()=>setSelMember(m.name)}
                             style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",borderRadius:9,border:"1px solid #e4e7ec",background:"#fafbff",minWidth:160,cursor:"pointer",transition:"border-color .15s"}}
@@ -581,13 +605,13 @@ function AdminManagerDashboard(){
                     <div style={{border:"1px solid #e4e7ec",borderRadius:8,overflow:"hidden"}}>
                       <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                         <thead><tr style={{background:"#f8f9fb"}}>
-                          {["Employee","Sessions","Minutes","Hours","Avg Util","Last Active"].map(h=>(
+                          {["Employee","Sessions","Minutes","Hours","Total Util","Last Active"].map(h=>(
                             <th key={h} style={{padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #f0f2f5"}}>{h}</th>
                           ))}
                         </tr></thead>
                         <tbody>
-                          {projMembers.map((m,mi)=>{
-                            const uc=m.avgUtil>=85?"#059669":m.avgUtil>=65?"#d97706":"#dc2626";
+                          {projMembers.slice((projPage-1)*PAGE_SIZE,projPage*PAGE_SIZE).map((m,mi)=>{
+                            const uc=m.avgUtil>=100?"#059669":m.avgUtil>=50?"#d97706":"#dc2626";
                             const isSelected=selMember===m.name;
                             const lastDate=fmtDate(m.lastDate);
                             return(
@@ -617,6 +641,7 @@ function AdminManagerDashboard(){
                           })}
                         </tbody>
                       </table>
+                      <Pager page={projPage} setPage={setProjPage} total={projMembers.length}/>
                     </div>
 
                     {/* Employee task drill-down (click a row above) */}
