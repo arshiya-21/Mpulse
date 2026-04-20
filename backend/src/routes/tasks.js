@@ -12,7 +12,7 @@ async function getDeptId(req) {
 // GET all with filters
 router.get('/', verify, async (req, res) => {
   try {
-    const { from, to, emp_id, dept_id, category, tat } = req.query;
+    const { from, to, emp_id, dept_id, category, tat, project_id } = req.query;
     let q = `
       SELECT t.id, TO_CHAR(t.task_date,'YYYY-MM-DD') AS task_date, t.employee_id, t.project_id, t.category,
              t.work_type, t.spent_mins,
@@ -37,11 +37,12 @@ router.get('/', verify, async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-    if (from)     { params.push(from);     q += ` AND t.task_date    >= $${params.length}`; }
-    if (to)       { params.push(to);       q += ` AND t.task_date    <= $${params.length}`; }
-    if (emp_id)   { params.push(emp_id);   q += ` AND t.employee_id  = $${params.length}`; }
-    if (dept_id)  { params.push(dept_id);  q += ` AND e.department_id = $${params.length}`; }
-    if (category) { params.push(category); q += ` AND t.category     = $${params.length}`; }
+    if (from)       { params.push(from);       q += ` AND t.task_date    >= $${params.length}`; }
+    if (to)         { params.push(to);         q += ` AND t.task_date    <= $${params.length}`; }
+    if (emp_id)     { params.push(emp_id);     q += ` AND t.employee_id  = $${params.length}`; }
+    if (dept_id)    { params.push(dept_id);    q += ` AND e.department_id = $${params.length}`; }
+    if (category)   { params.push(category);   q += ` AND t.category     = $${params.length}`; }
+    if (project_id) { params.push(project_id); q += ` AND t.project_id   = $${params.length}`; }
     if (tat === 'delayed') q += ` AND t.tat_days > 0`;
     if (tat === 'on_time') q += ` AND t.tat_days = 0`;
 

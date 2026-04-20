@@ -233,6 +233,7 @@ function AdminManagerDashboard(){
   const [drillType,setDrillType]=useState(null);
   const [drillValue,setDrillValue]=useState(null);
   const [selProjId,setSelProjId]=useState(null);
+  const [projAllTasks,setProjAllTasks]=useState([]);
   const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
   const [drillPage,setDrillPage]=useState(1);
   const [projPage,setProjPage]=useState(1);
@@ -249,7 +250,14 @@ function AdminManagerDashboard(){
     }
   },[drillType,drillValue]);
 
-  useEffect(()=>{ setProjPage(1); },[selProjId]);
+  useEffect(()=>{
+    setProjPage(1);setSelMember(null);
+    if(selProjId){
+      tasksApi.getAll({project_id:selProjId}).then(r=>setProjAllTasks(r.data||[])).catch(()=>{});
+    }else{
+      setProjAllTasks([]);
+    }
+  },[selProjId]);
   useEffect(()=>{ setEmpTaskPage(1); },[selMember]);
 
   useEffect(()=>{
@@ -332,8 +340,9 @@ function AdminManagerDashboard(){
   else if(drillType==="dept"&&drillValue)drillTasks=filtered.filter(t=>t.department===drillValue);
 
   const selProj=projects.find(p=>p.id===selProjId);
+  const projTaskSource=selProjId?projAllTasks:tasks;
   const projMemberMap={};
-  tasks.filter(t=>selProjId?t.project_id===selProjId:true).forEach(t=>{
+  projTaskSource.filter(t=>selProjId?true:true).forEach(t=>{
     const k=t.employee_id;
     if(!projMemberMap[k])projMemberMap[k]={name:t.employee_name,dept:t.department,mins:0,count:0,utilSum:0,delays:0,cats:{},lastDate:""};
     projMemberMap[k].mins+=t.spent_mins||0;projMemberMap[k].count++;
@@ -671,7 +680,7 @@ function AdminManagerDashboard(){
 
                     {/* Employee task drill-down (click a row above) */}
                     {selMember&&(()=>{
-                      const empTasks=tasks.filter(t=>(selProjId?t.project_id===selProjId:true)&&t.employee_name===selMember)
+                      const empTasks=projTaskSource.filter(t=>t.employee_name===selMember)
                         .sort((a,b)=>String(b.task_date).localeCompare(String(a.task_date)));
                       return(
                         <div style={{marginTop:14,border:"1px solid #e4e7ec",borderRadius:8,overflow:"hidden"}}>
