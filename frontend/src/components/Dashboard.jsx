@@ -553,7 +553,7 @@ function AdminManagerDashboard(){
                 <div style={{flex:1}}/>
                 <select value={selProjId||""} onChange={e=>{setSelProjId(e.target.value?Number(e.target.value):null);setSelMember(null);}} style={{...selS,fontWeight:600,maxWidth:280}}>
                   <option value="">Overall — All Projects</option>
-                  {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                  {[...projects].sort((a,b)=>a.name.localeCompare(b.name)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               {projMembers.length===0?(
