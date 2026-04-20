@@ -230,7 +230,6 @@ function AdminManagerDashboard(){
   const [dateTo,setDateTo]=useState(defTo);
   const [empF,setEmpF]=useState("");
   const [deptF,setDeptF]=useState("");
-  const [utilMode,setUtilMode]=useState("avg");
   const [drillType,setDrillType]=useState(null);
   const [drillValue,setDrillValue]=useState(null);
   const [selProjId,setSelProjId]=useState(null);
@@ -281,18 +280,30 @@ function AdminManagerDashboard(){
   const empMap={};
   filtered.forEach(t=>{
     const k=t.employee_name||"Unknown";
-    if(!empMap[k])empMap[k]={utilSum:0,count:0,full:k};
-    empMap[k].utilSum+=parseFloat(t.utilization)||0;empMap[k].count++;
+    const u=parseFloat(t.utilization)||0;
+    const m=t.spent_mins||0;
+    if(!empMap[k])empMap[k]={utilSum:0,count:0,wSum:0,mSum:0,full:k};
+    empMap[k].utilSum+=u;empMap[k].count++;
+    empMap[k].wSum+=m*u;empMap[k].mSum+=m;
   });
-  const empChartData=Object.entries(empMap).map(([n,d])=>({n:n.split(" ")[0],full:n,v:utilMode==="avg"?Math.round(d.utilSum/d.count):Math.round(d.utilSum)})).sort((a,b)=>a.v-b.v);
+  const empChartData=Object.entries(empMap).map(([n,d])=>({
+    n:n.split(" ")[0],full:n,
+    v:d.mSum>0?Math.round(d.wSum/d.mSum):0
+  })).sort((a,b)=>a.v-b.v);
 
   const deptMap={};
   filtered.forEach(t=>{
     const d=t.department||"Unknown";
-    if(!deptMap[d])deptMap[d]={utilSum:0,count:0};
-    deptMap[d].utilSum+=parseFloat(t.utilization)||0;deptMap[d].count++;
+    const u=parseFloat(t.utilization)||0;
+    const m=t.spent_mins||0;
+    if(!deptMap[d])deptMap[d]={utilSum:0,count:0,wSum:0,mSum:0};
+    deptMap[d].utilSum+=u;deptMap[d].count++;
+    deptMap[d].wSum+=m*u;deptMap[d].mSum+=m;
   });
-  const deptChartData=Object.entries(deptMap).map(([d,v])=>({d,v:utilMode==="avg"?Math.round(v.utilSum/v.count):Math.round(v.utilSum)}));
+  const deptChartData=Object.entries(deptMap).map(([d,v])=>({
+    d,
+    v:v.mSum>0?Math.round(v.wSum/v.mSum):0
+  }));
 
   const trendEmpMap={};
   filtered.forEach(t=>{
@@ -372,14 +383,7 @@ function AdminManagerDashboard(){
               {departments.map(d=><option key={d.id} value={d.name}>{d.name}</option>)}
             </select>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:3,alignSelf:"flex-end"}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Bar Chart Mode</div>
-            <div style={{display:"flex",borderRadius:6,overflow:"hidden",border:"1px solid #e4e7ec"}}>
-              <button onClick={()=>setUtilMode("avg")} style={{padding:"5px 12px",fontSize:12,border:"none",cursor:"pointer",fontWeight:600,background:utilMode==="avg"?"#4f46e5":"#f8f9fb",color:utilMode==="avg"?"#fff":"#6b7280"}}>Avg %</button>
-              <button onClick={()=>setUtilMode("total")} style={{padding:"5px 12px",fontSize:12,border:"none",cursor:"pointer",fontWeight:600,background:utilMode==="total"?"#4f46e5":"#f8f9fb",color:utilMode==="total"?"#fff":"#6b7280"}}>Total %</button>
-            </div>
-          </div>
-          <button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:"#f8f9fb",color:"#6b7280",cursor:"pointer",fontWeight:500,alignSelf:"flex-end"}}>↺ Reset</button>
+          <button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:"#f8f9fb",color:"#6b7280",cursor:"pointer",fontWeight:500,marginLeft:"auto",alignSelf:"flex-end"}}>↺ Reset</button>
         </div>
       </div>
 
@@ -410,7 +414,7 @@ function AdminManagerDashboard(){
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="d" tick={{fontSize:11,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
-                      <Tooltip {...ttip} formatter={v=>[v+"%",utilMode==="avg"?"Avg Util":"Total Util"]}/>
+                      <Tooltip {...ttip} formatter={v=>[v+"%","Weighted Avg"]}/>
                       <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={56} label={{position:"top",fontSize:11,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.d&&(setDrillType("dept"),setDrillValue(e.d))} style={{cursor:"pointer"}}>
                         {deptChartData.map((e,i)=><Cell key={i} fill={drillType==="dept"&&drillValue===e.d?"#059669":"#10b981"}/>)}
                       </Bar>
@@ -431,7 +435,7 @@ function AdminManagerDashboard(){
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="n" tick={{fontSize:11,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
-                      <Tooltip {...ttip} formatter={v=>[v+"%",utilMode==="avg"?"Avg Util":"Total Util"]}/>
+                      <Tooltip {...ttip} formatter={v=>[v+"%","Weighted Avg"]}/>
                       <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={32} label={{position:"top",fontSize:10,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.full&&(setDrillType("emp"),setDrillValue(e.full))} style={{cursor:"pointer"}}>
                         {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#7c3aed":"#4f46e5"}/>)}
                       </Bar>
