@@ -61,7 +61,7 @@ export default function DailyTasks(){
     finally{setLoading(false);}
   }
 
-  const filtered=[...tasks].sort((a,b)=>(a.employee_name||"").localeCompare(b.employee_name||"")||a.task_date?.localeCompare(b.task_date||"")).filter(t=>{
+  const filtered=[...tasks].sort((a,b)=>String(b.task_date||"").localeCompare(String(a.task_date||""))||(a.employee_name||"").localeCompare(b.employee_name||"")).filter(t=>{
     if(user.role==="User"&&String(t.employee_id)!==String(user.id))return false;
     if(catF&&t.category!==catF)return false;
     if(tatF==="Delay"&&t.tat_days===0)return false;
@@ -150,19 +150,19 @@ export default function DailyTasks(){
           </div>
           {user.role!=="User"&&(
             <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
-              <select value={empF} onChange={e=>setEmpF(e.target.value)} style={selS}>
-                <option value="">All Employees</option>
-                {empOptions.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}
-              </select>
-            </div>
-          )}
-          {user.role!=="User"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
               <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
               <select value={deptF} onChange={e=>{setDeptF(e.target.value);setEmpF("");}} style={selS}>
                 <option value="">All Departments</option>
                 {departments.map(d=><option key={d.id} value={d.name}>{d.name}</option>)}
+              </select>
+            </div>
+          )}
+          {user.role!=="User"&&(
+            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
+              <select value={empF} onChange={e=>setEmpF(e.target.value)} style={{...selS,color:deptF?"#111827":"#9ca3af"}} disabled={!deptF}>
+                <option value="">{deptF?"All in "+deptF:"Select dept first"}</option>
+                {deptF&&employees.filter(e=>e.department===deptF).map(e=><option key={e.id} value={e.name}>{e.name}</option>)}
               </select>
             </div>
           )}
