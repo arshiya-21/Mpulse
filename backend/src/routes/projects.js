@@ -218,7 +218,8 @@ router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => 
       const recurringClause = is_recurring != null ? `, is_recurring = $11` : '';
       params = [name || null, description || null, department_id || null, owner_id || null, status || null,
                 start_date || null, end_date || null,
-                pid, setClosedAt, reqClosedAt || null, is_recurring ?? null];
+                pid, setClosedAt, reqClosedAt || null];
+      if (is_recurring != null) params.push(is_recurring);
       sql = `
         UPDATE projects SET
           name          = COALESCE($1, name),
