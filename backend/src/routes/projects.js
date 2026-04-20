@@ -238,7 +238,10 @@ router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => 
     if (!rows.length) return res.status(404).json({ error: 'Project not found' });
     const p = rows[0];
     res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at) });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('❌ PUT /projects/:id error:', e.message, '| body:', JSON.stringify(req.body));
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // GET project overview (per-employee task breakdown)

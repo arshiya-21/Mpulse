@@ -93,7 +93,7 @@ export default function Projects(){
       setProjects(prev=>prev.map(p=>p.id===closePending.id?{...p,status:closePending.status,closed_at:closeDate,tat_days:0}:p));
       show("Status → "+closePending.status);
       if(closePending.fromOverview&&overview) setOverview(ov=>({...ov,project:{...ov.project,status:closePending.status}}));
-    }catch{show("Update failed");}
+    }catch(e){show(e?.response?.data?.error||"Update failed");}
     setClosePending(null);
   }
   async function openOverview(p){
@@ -117,7 +117,7 @@ export default function Projects(){
       setOverview(ov=>({...ov,project:{...ov.project,status}}));
       setProjects(prev=>prev.map(p=>p.id===overview.project.id?{...p,status}:p));
       show("Status → "+status);
-    }catch{ show("Update failed"); }
+    }catch(e){ show(e?.response?.data?.error||"Update failed"); }
   }
 
   function openEdit(p){

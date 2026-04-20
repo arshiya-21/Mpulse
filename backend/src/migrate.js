@@ -401,6 +401,17 @@ module.exports = async function migrate() {
       }
     }
 
+    // ── Fix projects.status CHECK constraint to include all valid statuses ───
+    // The original CREATE TABLE may have been created with an older/different
+    // set of statuses. Drop and recreate the constraint so all current statuses
+    // (including Cancelled and Closed) are accepted.
+    await db.query(`
+      ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+      ALTER TABLE projects ADD CONSTRAINT projects_status_check
+        CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled','Closed'));
+    `);
+    console.log('✅ projects.status CHECK constraint updated');
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);
