@@ -84,7 +84,7 @@ export default function Projects(){
       await projApi.update(id,{status});
       setProjects(prev=>prev.map(p=>p.id===id?{...p,status}:p));
       show("Status → "+status);
-    }catch{show("Update failed");}
+    }catch(e){show(e?.response?.data?.error||"Update failed");}
   }
   async function confirmClose(){
     if(!closePending)return;

@@ -199,7 +199,7 @@ router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => 
     let sql, params;
     if (is_recurring === true) {
       // Dates cleared to NULL — no date params needed ($6 = pid)
-      params = [name, description, department_id, owner_id, status,
+      params = [name || null, description || null, department_id || null, owner_id || null, status || null,
                 pid, setClosedAt, reqClosedAt || null, true];
       sql = `
         UPDATE projects SET
@@ -216,7 +216,7 @@ router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => 
       `;
     } else {
       const recurringClause = is_recurring != null ? `, is_recurring = $11` : '';
-      params = [name, description, department_id, owner_id, status,
+      params = [name || null, description || null, department_id || null, owner_id || null, status || null,
                 start_date || null, end_date || null,
                 pid, setClosedAt, reqClosedAt || null, is_recurring ?? null];
       sql = `
