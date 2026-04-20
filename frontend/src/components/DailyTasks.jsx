@@ -91,8 +91,9 @@ export default function DailyTasks(){
     if(!editing&&tasks.some(t=>
       String(t.employee_id)===String(form.employee_id)&&
       String(t.project_id)===String(form.project_id)&&
-      String(t.task_date).slice(0,10)===String(form.task_date).slice(0,10)
-    )) return show("A work log for this employee, project, and date already exists");
+      String(t.task_date).slice(0,10)===String(form.task_date).slice(0,10)&&
+      t.category===form.category
+    )) return show("A work log for this employee, project, date, and category already exists");
     setSaving(true);
     try{
       if(editing){
