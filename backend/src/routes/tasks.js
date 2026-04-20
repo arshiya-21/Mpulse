@@ -15,7 +15,13 @@ router.get('/', verify, async (req, res) => {
     const { from, to, emp_id, dept_id, category, tat } = req.query;
     let q = `
       SELECT t.id, TO_CHAR(t.task_date,'YYYY-MM-DD') AS task_date, t.employee_id, t.project_id, t.category,
-             t.work_type, t.spent_mins, t.tat_days, t.status, t.description,
+             t.work_type, t.spent_mins,
+             CASE
+               WHEN p.is_recurring = TRUE OR p.end_date IS NULL THEN 0
+               WHEN t.task_date > p.end_date THEN (t.task_date::date - p.end_date::date)::int
+               ELSE 0
+             END AS tat_days,
+             t.status, t.description,
              t.created_at, t.updated_at,
              ROUND((t.spent_mins::NUMERIC / COALESCE(
                (SELECT daily_target_mins FROM system_settings WHERE id = 1 LIMIT 1), 510
