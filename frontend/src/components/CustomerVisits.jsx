@@ -4,7 +4,7 @@ import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -41,6 +41,7 @@ export default function CustomerVisits(){
   const [delId,setDelId]   = useState(null);
   const [search,setSearch] = useState("");
   const [statusF,setStatusF]= useState("");
+  const [page,setPage]      = useState(1);
   const {msg,show}          = useToast();
   const taS = {...inputS, resize:"vertical", minHeight:72};
 
@@ -51,9 +52,10 @@ export default function CustomerVisits(){
       const [vR,cR,eR,sR] = await Promise.all([
         visitsApi.getAll(), custApi.getAll(), empApi.getAll(), settingsApi.get()
       ]);
-      setVisits(vR.data||[]);
-      setCustomers(cR.data||[]);
-      setEmployees(eR.data||[]);
+      const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
+      setVisits(srt(vR.data,"customer_name"));
+      setCustomers(srt(cR.data,"name"));
+      setEmployees(srt(eR.data,"name"));
       setAdminEmail(sR.data?.admin_email||"");
     }catch{ show("Failed to load"); }
     finally{ setLoading(false); }
@@ -61,6 +63,8 @@ export default function CustomerVisits(){
 
   async function save(){
     if(saving)return;
+    if(!editing&&visits.some(v=>String(v.customer_id)===String(form.customer_id)&&v.planned_date===form.planned_date))
+      return show("A visit already exists for this customer on this date");
     setSaving(true);
     try{
       if(editing){
@@ -186,7 +190,7 @@ export default function CustomerVisits(){
   }
   function removeTag(email){ setCcTags(t=>t.filter(x=>x!==email)); }
 
-  const filtered = visits.filter(v=>{
+  const filtered = [...visits].sort((a,b)=>(a.customer_name||"").localeCompare(b.customer_name||"")).filter(v=>{
     if(search && !v.customer_name?.toLowerCase().includes(search.toLowerCase()) && !v.assigned_to_name?.toLowerCase().includes(search.toLowerCase())) return false;
     if(statusF && v.status!==statusF) return false;
     return true;
@@ -252,7 +256,7 @@ export default function CustomerVisits(){
                 ))}
               </tr></thead>
               <tbody>
-                {filtered.map((v,i)=>{
+                {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((v,i)=>{
                   const ss=STATUS_STYLE[v.status]||{bg:"#f0f2f5",c:"#374151"};
                   return(
                     <tr key={v.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
@@ -289,6 +293,7 @@ export default function CustomerVisits(){
               </tbody>
             </table>
           </div>
+          <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
       )}
 

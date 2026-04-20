@@ -41,7 +41,8 @@ export default function DailyTasks(){
   useEffect(()=>{
     Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll(),settingsApi.get()])
       .then(([eR,dR,pR,sR])=>{
-        setEmployees(eR.data||[]);setDepartments(dR.data||[]);setProjects(pR.data||[]);
+        const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
+        setEmployees(srt(eR.data,"name"));setDepartments(srt(dR.data,"name"));setProjects(srt(pR.data,"name"));
         const raw=sR.data?.work_categories;
         if(raw) try{
           let val=raw;
@@ -60,7 +61,7 @@ export default function DailyTasks(){
     finally{setLoading(false);}
   }
 
-  const filtered=tasks.filter(t=>{
+  const filtered=[...tasks].sort((a,b)=>(a.employee_name||"").localeCompare(b.employee_name||"")||a.task_date?.localeCompare(b.task_date||"")).filter(t=>{
     if(user.role==="User"&&String(t.employee_id)!==String(user.id))return false;
     if(catF&&t.category!==catF)return false;
     if(tatF==="Delay"&&t.tat_days===0)return false;
@@ -87,6 +88,11 @@ export default function DailyTasks(){
 
   async function save(){
     if(saving)return;
+    if(!editing&&tasks.some(t=>
+      String(t.employee_id)===String(form.employee_id)&&
+      String(t.project_id)===String(form.project_id)&&
+      String(t.task_date).slice(0,10)===String(form.task_date).slice(0,10)
+    )) return show("A work log for this employee, project, and date already exists");
     setSaving(true);
     try{
       if(editing){
@@ -247,26 +253,30 @@ export default function DailyTasks(){
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Date</label><input type="date" value={form.task_date} onChange={e=>setForm({...form,task_date:e.target.value})} style={inputS}/></div>
             {user.role!=="User"&&(
               <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Employee</label>
-                <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value})} style={inputS}>
+                <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value,project_id:""})} style={inputS}>
                   <option value="">Select employee</option>
                   {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
             )}
             <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}><label style={labelS}>Project</label>
-              <select value={form.project_id} onChange={e=>setForm({...form,project_id:e.target.value})} style={inputS}>
-                <option value="">Select project</option>
-                {(user.role==="User"
-                  ? projects.filter(p=>p.status!=="Closed"&&p.status!=="Completed"&&(String(p.owner_id)===String(user.id)||(p.assignees||[]).some(a=>String(a.id)===String(user.id))))
-                  : projects.filter(p=>p.status!=="Closed"&&p.status!=="Completed")
-                ).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-                {projects.some(p=>p.status==="Closed"||p.status==="Completed")&&<optgroup label="─── Closed / Completed ───">
-                  {(user.role==="User"
-                    ? projects.filter(p=>(p.status==="Closed"||p.status==="Completed")&&(String(p.owner_id)===String(user.id)||(p.assignees||[]).some(a=>String(a.id)===String(user.id))))
-                    : projects.filter(p=>p.status==="Closed"||p.status==="Completed")
-                  ).map(p=><option key={p.id} value={p.id}>{p.name} [{p.status}]</option>)}
-                </optgroup>}
-              </select>
+              {(()=>{
+                const selEmpId=user.role==="User"?String(user.id):form.employee_id;
+                const projPool=selEmpId
+                  ?projects.filter(p=>String(p.owner_id)===selEmpId||(p.assignees||[]).some(a=>String(a.id)===selEmpId))
+                  :projects;
+                const active=projPool.filter(p=>p.status!=="Closed"&&p.status!=="Completed");
+                const closed=projPool.filter(p=>p.status==="Closed"||p.status==="Completed");
+                return(
+                  <select value={form.project_id} onChange={e=>setForm({...form,project_id:e.target.value})} style={inputS}>
+                    <option value="">{selEmpId?"Select project":"Select employee first"}</option>
+                    {active.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                    {closed.length>0&&<optgroup label="─── Closed / Completed ───">
+                      {closed.map(p=><option key={p.id} value={p.id}>{p.name} [{p.status}]</option>)}
+                    </optgroup>}
+                  </select>
+                );
+              })()}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}>
               <label style={labelS}>Description</label>

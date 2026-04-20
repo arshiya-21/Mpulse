@@ -7,7 +7,7 @@ import * as custApi          from "../api/customers.js";
 import * as emailSettingsApi from "../api/emailSettings.js";
 import * as permApi          from "../api/permissions.js";
 import * as settingsApi      from "../api/settings.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, inputS, labelS, LICENSE_COLORS } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, inputS, labelS, LICENSE_COLORS, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 // ─── DEPARTMENTS ──────────────────────────────────────────────────────────────
@@ -20,16 +20,19 @@ function Departments(){
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [form,setForm]=useState({name:"",status:"active"});
+  const [page,setPage]=useState(1);
   const {msg,show}=useToast();
 
   useEffect(()=>{load();},[]);
   async function load(){
-    try{const r=await deptApi.getAll();setDepts(r.data||[]);}
+    try{const r=await deptApi.getAll();setDepts([...(r.data||[])].sort((a,b)=>a.name.localeCompare(b.name)));}
     catch{show("Failed to load");}
     finally{setLoading(false);}
   }
   async function save(){
     if(saving)return;
+    if(!editing&&depts.some(d=>d.name.trim().toLowerCase()===form.name.trim().toLowerCase()))
+      return show("Department already exists");
     setSaving(true);
     try{
       if(editing){await deptApi.update(editing.id,form);show("Updated");}
@@ -57,7 +60,7 @@ function Departments(){
                 {["#","Department","Members","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec"}}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {depts.map((d,i)=>(
+                {depts.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((d,i)=>(
                   <tr key={d.id}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#9ca3af"}}>{String(i+1).padStart(2,"0")}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -80,6 +83,7 @@ function Departments(){
               </tbody>
             </table>
           </div>
+          <Pager page={page} setPage={setPage} total={depts.length}/>
         </div>
       )}
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Department":"New Department"} width={380}>
@@ -191,6 +195,7 @@ function Employees(){
   const [inviteUrl,setInviteUrl]=useState("");
   const [copied,setCopied]=useState(false);
   const [search,setSearch]=useState("");
+  const [page,setPage]=useState(1);
   const {msg,show}=useToast();
   const blank={name:"",email:"",department_id:"",secondary_department_id:"",role_id:"",manager_ids:[],status:"active"};
   const [form,setForm]=useState(blank);
@@ -203,7 +208,8 @@ function Employees(){
       const [eR,dR,rR,mR]=await Promise.all([
         empApi.getAll(),deptApi.getAll(),rolesApi.getAll(),empApi.getAllManagers()
       ]);
-      setEmps(eR.data||[]);setDepts(dR.data||[]);setRoles(rR.data||[]);setAllMgrs(mR.data||[]);
+      const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
+      setEmps(srt(eR.data,"name"));setDepts(srt(dR.data,"name"));setRoles(srt(rR.data,"name"));setAllMgrs(srt(mR.data,"name"));
     }catch{show("Failed to load");}
     finally{setLoading(false);}
   }
@@ -223,6 +229,8 @@ function Employees(){
   }
   async function save(){
     if(saving)return;
+    if(!editing&&emps.some(e=>e.email.trim().toLowerCase()===form.email.trim().toLowerCase()))
+      return show("An employee with this email already exists");
     setSaving(true);
     try{
       if(editing){
@@ -261,7 +269,7 @@ function Employees(){
   const teamEmps=restrictToTeam&&user?.department_id
     ?emps.filter(e=>String(e.department_id)===String(user.department_id))
     :emps;
-  const filtered=teamEmps.filter(e=>!search||e.name.toLowerCase().includes(search.toLowerCase())||e.email.toLowerCase().includes(search.toLowerCase()));
+  const filtered=[...teamEmps].sort((a,b)=>a.name.localeCompare(b.name)).filter(e=>!search||e.name.toLowerCase().includes(search.toLowerCase())||e.email.toLowerCase().includes(search.toLowerCase()));
   const pendingCount=teamEmps.filter(e=>e.invite_status==="pending").length;
 
   return(
@@ -280,7 +288,7 @@ function Employees(){
                 {["Employee","Email","Department","Role","Manager","Status","Invite",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec",whiteSpace:"nowrap"}}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {filtered.map(e=>(
+                {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map(e=>(
                   <tr key={e.id}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -321,6 +329,7 @@ function Employees(){
               </tbody>
             </table>
           </div>
+          <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
       )}
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Employee":"Add Employee"} width={500}>
@@ -425,7 +434,7 @@ function Licenses(){
 
   useEffect(()=>{load();},[]);
   async function load(){
-    try{const r=await licApi.getAll();setLicenses(r.data||[]);}
+    try{const r=await licApi.getAll();setLicenses([...(r.data||[])].sort((a,b)=>a.name.localeCompare(b.name)));}
     catch{show("Failed to load");}
     finally{setLoading(false);}
   }
@@ -515,6 +524,7 @@ function CustomerMaster(){
   const [search,setSearch]=useState("");
   const [statusF,setStatusF]=useState("");
   const [licF,setLicF]=useState("");
+  const [page,setPage]=useState(1);
   const {msg,show}=useToast();
   const selS={padding:"6px 9px",fontSize:12,border:"1px solid #e4e7ec",borderRadius:6,background:"#fff",color:"#111827",outline:"none",cursor:"pointer"};
 
@@ -522,12 +532,16 @@ function CustomerMaster(){
   async function load(){
     try{
       const [cR,lR]=await Promise.all([custApi.getAll(),licApi.getAll({status:"active"})]);
-      setCustomers(cR.data||[]);setLicenses(lR.data||[]);
+      setCustomers([...(cR.data||[])].sort((a,b)=>a.name.localeCompare(b.name)));
+      setLicenses([...(lR.data||[])].sort((a,b)=>a.name.localeCompare(b.name)));
     }catch{show("Failed to load");}
     finally{setLoading(false);}
   }
   async function save(){
     if(saving)return;
+    const dupName=form.name.trim().toLowerCase();
+    if(!editing&&customers.some(c=>c.name.trim().toLowerCase()===dupName))
+      return show("A customer with this name already exists");
     setSaving(true);
     try{
       if(editing){await custApi.update(editing.id,form);show("Updated");}
@@ -542,7 +556,7 @@ function CustomerMaster(){
   }
   function openEdit(c){setEditing(c);setForm({name:c.name,license_id:c.license_id||"",status:c.status});setModal(true);}
 
-  const filtered=customers.filter(c=>{
+  const filtered=[...customers].sort((a,b)=>a.name.localeCompare(b.name)).filter(c=>{
     if(search&&!c.name.toLowerCase().includes(search.toLowerCase()))return false;
     if(statusF&&c.status!==statusF)return false;
     if(licF&&String(c.license_id)!==String(licF))return false;
@@ -600,11 +614,11 @@ function CustomerMaster(){
                 {["#","Customer Name","License","Status",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec",whiteSpace:"nowrap"}}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {filtered.map((c,i)=>{
+                {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((c,i)=>{
                   const lc=LICENSE_COLORS[c.license_name]||{bg:"#f0f2f5",c:"#374151"};
                   return(
                     <tr key={c.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#9ca3af"}}>{String(i+1).padStart(2,"0")}</td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#9ca3af"}}>{String((page-1)*PAGE_SIZE+i+1).padStart(2,"0")}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",alignItems:"center",gap:10}}>
                           <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#312e81,#4f46e5)",color:"#e0e7ff",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.name[0]}</div>
@@ -628,6 +642,7 @@ function CustomerMaster(){
               </tbody>
             </table>
           </div>
+          <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
       )}
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?"Edit Customer":"Add Customer"} width={420}>
@@ -1391,31 +1406,97 @@ function CategoriesConfig(){
 
 // ─── FORMULAS REFERENCE ───────────────────────────────────────────────────────
 const FORMULA_DEFAULTS = [
-  { section:"Daily Utilization", accent:"#4f46e5", id:"util_pct",    label:"Utilization %",         formula:"Minutes you worked on a task divided by your daily target minutes, shown as a percentage.",          example:"Example: You worked 480 minutes. Daily target is 510 minutes. 480 ÷ 510 × 100 = 94%", source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
-  { section:"Daily Utilization", accent:"#4f46e5", id:"avg_util",    label:"Daily Utilization Trend", formula:"For each day, all task utilizations are added together to get that day's total utilization. If you log multiple tasks in a day, their percentages are summed — not averaged.",  example:"Example: Two tasks on Monday — 60% and 40% — gives 100% for that day.", source:"worklog",  sourceLabel:"Worklog entries" },
-  { section:"Project TAT",        accent:"#dc2626", id:"target_days", label:"Target Days",            formula:"The total number of working days planned for the project, counted from the start date to the end date (both days included).", example:"Example: Project runs from Apr 1 to Apr 10 = 10 target days.", source:"project",  sourceLabel:"Project start & end date" },
-  { section:"Project TAT",        accent:"#dc2626", id:"ref_date",    label:"Reference Date",         formula:"For projects that are Closed or Completed: the date the project was actually closed. For all other projects: today's date is used.",   example:"",                          source:"project",  sourceLabel:"Project status & close date" },
-  { section:"Project TAT",        accent:"#dc2626", id:"actual_days", label:"Actual Days",            formula:"The number of days from the project start date up to the reference date (minimum 1 day).", example:"Example: Project started Apr 1, reference date is Apr 23 = 23 actual days.", source:"project",  sourceLabel:"Project start date" },
-  { section:"Project TAT",        accent:"#dc2626", id:"tat_overrun", label:"TAT Overrun (days)",     formula:"How many days the project ran over its planned target. If the project finished on time or early, this is 0.", example:"Example: Target was 10 days, actual was 23 days → 13 days late.", source:"computed", sourceLabel:"Computed" },
-  { section:"Time Distribution",  accent:"#059669", id:"member_pct",  label:"Member Contribution %",  formula:"The percentage of total hours on a project that this team member contributed.", example:"Example: Member logged 120 mins out of 600 total team minutes = 20%.", source:"worklog",  sourceLabel:"Worklog entries" },
-  { section:"Time Distribution",  accent:"#059669", id:"proj_hours",  label:"Total Project Hours",    formula:"All the minutes logged by everyone on the project added together, then converted to hours.", example:"Example: 1,200 total minutes = 20 hours.", source:"worklog",  sourceLabel:"Worklog entries" },
-  { section:"Visit Reminders",    accent:"#f59e0b", id:"upcoming",    label:"Upcoming Reminder",      formula:"A visit shows as 'Upcoming' if it is scheduled for tomorrow and is still in Planned status.", example:"Example: Today is Apr 20 — a visit planned for Apr 21 with status Planned will show as upcoming.", source:"visits",   sourceLabel:"Customer Visits" },
-  { section:"Visit Reminders",    accent:"#f59e0b", id:"overdue",     label:"Overdue Alert",          formula:"A visit is overdue if its planned date has already passed and it has not been marked Completed or Cancelled.", example:"Example: A visit planned for Apr 15 that is still Planned will show as overdue after Apr 15.", source:"visits",   sourceLabel:"Customer Visits" },
-  { section:"Work Status",        accent:"#8b5cf6", id:"on_time",     label:"On Time",                formula:"A work log entry is on time if it was logged on or before the project's end date.",               example:"",                          source:"worklog",  sourceLabel:"Set in Worklog" },
-  { section:"Work Status",        accent:"#8b5cf6", id:"in_progress", label:"In Progress",            formula:"A work log entry is In Progress if the task has been started but not yet completed.",             example:"",                          source:"worklog",  sourceLabel:"Set in Worklog" },
-  { section:"Work Status",        accent:"#8b5cf6", id:"delayed",     label:"Delayed",                formula:"A work log entry is delayed if it was logged after the project's end date has passed.",           example:"",                          source:"worklog",  sourceLabel:"Set in Worklog" },
-  { section:"Category Utilization", accent:"#0891b2", id:"cat_util",  label:"Utilization by Category", formula:"Each work log entry belongs to a category (e.g. Development, Testing, Meeting). The utilization for that entry is calculated the same way — minutes spent divided by the daily target — regardless of the category. Categories are used to group and compare where your time is going, not to change how utilization is calculated.", example:"Example: A 'Meeting' task of 120 minutes and a 'Development' task of 120 minutes both give the same utilization (e.g. 30% each if the daily target is 400 minutes).", source:"worklog",  sourceLabel:"Worklog entries" },
-  { section:"Utilization Charts",   accent:"#7c3aed", id:"emp_util_bar", label:"Employee Utilization % (Bar Chart)",
-    formula:"Uses weighted average — longer tasks carry more weight than shorter ones. How it works: for each task, multiply the minutes spent by that task's utilization %. Sum all those results, then divide by the employee's total minutes logged. This means an employee who spends 6 hours at 90% is rated higher than someone who spent 6 hours doing one 10-minute task at 90% and the rest at 10%.",
-    example:"Example: Task A = 400m at 100% → 400×100 = 40,000. Task B = 50m at 20% → 50×20 = 1,000. Weighted Avg = (40,000+1,000) ÷ (400+50) = 41,000 ÷ 450 = 91%.",
+  { section:"Daily Utilization", accent:"#4f46e5", id:"util_pct",
+    label:"Task Utilization %",
+    formula:"Minutes spent on a single task divided by the daily target minutes, multiplied by 100. This is the base value stored for every work log entry.",
+    example:"Example: 480 minutes spent, daily target is 510 minutes → 480 ÷ 510 × 100 = 94%",
+    source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
+
+  { section:"Daily Utilization", accent:"#4f46e5", id:"avg_util",
+    label:"Avg Utilization (KPI Scorecard)",
+    formula:"Weighted average across all tasks in the selected date range and filters. Each task's utilization is weighted by its minutes so longer tasks carry more influence. Formula: Sum of (minutes × utilization%) for all tasks, divided by total minutes logged.",
+    example:"Example: Task A = 400m at 80% → 32,000. Task B = 100m at 20% → 2,000. Weighted Avg = (32,000 + 2,000) ÷ (400 + 100) = 34,000 ÷ 500 = 68%.",
     source:"worklog", sourceLabel:"Worklog entries" },
-  { section:"Utilization Charts",   accent:"#7c3aed", id:"dept_util_bar", label:"Department Utilization % (Bar Chart)",
-    formula:"Same weighted average method applied across the whole department. Every task logged by any employee in that department is included. Each task's minutes × utilization is summed, then divided by the department's total minutes. Departments where employees spend more time on high-utilization tasks will score higher.",
-    example:"Example: 3 tasks — 300m@80%, 200m@60%, 100m@40% → (300×80 + 200×60 + 100×40) ÷ (300+200+100) = (24,000+12,000+4,000) ÷ 600 = 40,000 ÷ 600 = 67%.",
+
+  { section:"Project TAT", accent:"#dc2626", id:"target_days",
+    label:"Target Days",
+    formula:"Total working days planned for the project, from start date to end date (both included).",
+    example:"Example: Project runs Apr 1 to Apr 10 = 10 target days.",
+    source:"project", sourceLabel:"Project start & end date" },
+  { section:"Project TAT", accent:"#dc2626", id:"ref_date",
+    label:"Reference Date",
+    formula:"For Closed or Completed projects: the actual close date. For all other statuses: today's date.",
+    example:"",
+    source:"project", sourceLabel:"Project status & close date" },
+  { section:"Project TAT", accent:"#dc2626", id:"actual_days",
+    label:"Actual Days",
+    formula:"Days from the project start date to the reference date (minimum 1).",
+    example:"Example: Started Apr 1, reference date Apr 23 = 23 actual days.",
+    source:"project", sourceLabel:"Project start date" },
+  { section:"Project TAT", accent:"#dc2626", id:"tat_overrun",
+    label:"TAT Overrun (days)",
+    formula:"How many days the project ran past its planned end. If on time or early, this is 0.",
+    example:"Example: Target 10 days, actual 23 days → 13 days overrun.",
+    source:"computed", sourceLabel:"Computed" },
+
+  { section:"Time Distribution", accent:"#059669", id:"member_pct",
+    label:"Member Contribution %",
+    formula:"The share of the project's total time that one team member contributed. Formula: member's minutes ÷ total project minutes × 100.",
+    example:"Example: Member logged 120 mins out of 600 total = 120 ÷ 600 × 100 = 20%.",
     source:"worklog", sourceLabel:"Worklog entries" },
-  { section:"Utilization Charts",   accent:"#7c3aed", id:"trend_admin",   label:"Daily Utilization Trend (Admin/Manager view)",
-    formula:"Shows how the team's utilization changes day by day. Each point on the line is calculated in 3 steps: (1) For each employee who logged work on that day, add up all their task utilizations to get their personal day total. (2) Average those day totals across all employees who worked that day. (3) That average is plotted as the point for that date. Why can it go above 100%? If an employee logs multiple tasks whose combined minutes exceed the daily target, their day total exceeds 100%. The chart shows real effort — it is not capped.",
-    example:"Example: Apr 10 — Employee A: 50%+40% = 90% day total. Employee B: 80%+50% = 130% day total. Trend point = (90+130) ÷ 2 = 110%.",
+  { section:"Time Distribution", accent:"#059669", id:"proj_hours",
+    label:"Total Project Hours",
+    formula:"Sum of all minutes logged by every team member on the project, converted to hours.",
+    example:"Example: 1,200 total minutes = 1,200 ÷ 60 = 20 hours.",
+    source:"worklog", sourceLabel:"Worklog entries" },
+  { section:"Time Distribution", accent:"#059669", id:"proj_util",
+    label:"Project Util % (Employee breakdown)",
+    formula:"Each employee's share of the total time logged on a project. This tells you how much of the project's overall effort that person contributed. Formula: employee's minutes on the project ÷ total minutes logged on the project × 100. Used in both the Project Overview modal and the Dashboard Project Team Utilization section.",
+    example:"Example: Project total = 3,295 mins. Syed = 3,250m → 3,250 ÷ 3,295 × 100 = 99%. Gayathri = 530m ÷ 3,295 × 100 = 16%. (Note: percentages are per-project, not across all projects in Overall view.)",
+    source:"worklog", sourceLabel:"Worklog entries" },
+
+  { section:"Visit Reminders", accent:"#f59e0b", id:"upcoming",
+    label:"Upcoming Reminder",
+    formula:"A visit shows as 'Upcoming' if it is scheduled for tomorrow and still has Planned status.",
+    example:"Example: Today is Apr 20 — a visit planned for Apr 21 with status Planned shows as upcoming.",
+    source:"visits", sourceLabel:"Customer Visits" },
+  { section:"Visit Reminders", accent:"#f59e0b", id:"overdue",
+    label:"Overdue Alert",
+    formula:"A visit is overdue if its planned date has already passed and it has not been marked Completed or Cancelled.",
+    example:"Example: A visit planned for Apr 15 that is still Planned shows as overdue after Apr 15.",
+    source:"visits", sourceLabel:"Customer Visits" },
+
+  { section:"Work Status", accent:"#8b5cf6", id:"on_time",
+    label:"On Time",
+    formula:"A work log entry is On Time if it was logged on or before the project's end date.",
+    example:"", source:"worklog", sourceLabel:"Set in Worklog" },
+  { section:"Work Status", accent:"#8b5cf6", id:"delayed",
+    label:"Delayed",
+    formula:"A work log entry is Delayed if it was logged after the project's end date has passed.",
+    example:"", source:"worklog", sourceLabel:"Set in Worklog" },
+
+  { section:"Category Utilization", accent:"#0891b2", id:"cat_util",
+    label:"Utilization by Category",
+    formula:"Categories (Development, Testing, Meeting, etc.) group your work log entries. The utilization of each entry is calculated exactly the same way — minutes ÷ daily target × 100 — regardless of category. Categories let you see where your time goes, not change how utilization is calculated.",
+    example:"Example: A 'Meeting' entry of 120m and a 'Development' entry of 120m both give 24% utilization if daily target is 510 minutes.",
+    source:"worklog", sourceLabel:"Worklog entries" },
+
+  { section:"Utilization Charts", accent:"#7c3aed", id:"emp_util_bar",
+    label:"Employee Utilization % (Bar Chart)",
+    formula:"Weighted average of all tasks logged by the employee in the selected period. Longer tasks carry more weight. Formula: Sum of (minutes × utilization%) for all their tasks ÷ their total minutes logged. Employees who log more time on high-utilization tasks score higher.",
+    example:"Example: Task A = 400m at 100% → 40,000. Task B = 50m at 20% → 1,000. Weighted Avg = 41,000 ÷ 450 = 91%.",
+    source:"worklog", sourceLabel:"Worklog entries" },
+
+  { section:"Utilization Charts", accent:"#7c3aed", id:"dept_util_bar",
+    label:"Department Utilization % (Bar Chart)",
+    formula:"Same weighted average method applied across all employees in a department. Every task from every member in the department is pooled together. Formula: Sum of (minutes × utilization%) for all department tasks ÷ total department minutes.",
+    example:"Example: 3 tasks — 300m@80%, 200m@60%, 100m@40% → (24,000+12,000+4,000) ÷ 600 = 67%.",
+    source:"worklog", sourceLabel:"Worklog entries" },
+
+  { section:"Utilization Charts", accent:"#7c3aed", id:"trend_admin",
+    label:"Daily Utilization Trend",
+    formula:"Shows weighted average utilization for the whole team each day. For each day, all tasks from all employees on that day are pooled. Formula: Sum of (minutes × utilization%) for all tasks on that day ÷ total minutes logged on that day. This gives a single weighted number per day that reflects actual effort — heavier work carries more weight.",
+    example:"Example: Apr 10 — Syed: 350m@73% + 20m@4%. Gayathri: 100m@21%. Weighted Avg = (350×73 + 20×4 + 100×21) ÷ (350+20+100) = (25,550+80+2,100) ÷ 470 = 27,730 ÷ 470 = 59%.",
     source:"worklog", sourceLabel:"Worklog entries" },
 ];
 

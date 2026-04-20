@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as projApi from "../api/projects.js";
 import * as deptApi from "../api/departments.js";
 import * as empApi  from "../api/employees.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 
@@ -17,6 +17,7 @@ export default function Projects(){
   const [stFilter,setStFilter]=useState("");
   const [empF,setEmpF]=useState("");
   const [deptF,setDeptF]=useState("");
+  const [page,setPage]=useState(1);
   const {msg,show}=useToast();
   const today=new Date().toLocaleDateString('en-CA');
   const blank={name:"",description:"",start_date:today,end_date:"",department_id:"",owner_id:"",status:"Not Started",assignee_ids:[],is_recurring:false};
@@ -35,7 +36,8 @@ export default function Projects(){
   async function load(){
     try{
       const [pR,dR,eR]=await Promise.all([projApi.getAll(),deptApi.getAll(),empApi.getAll()]);
-      setProjects(pR.data||[]);setDepts(dR.data||[]);setEmployees(eR.data||[]);
+      const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
+      setProjects(srt(pR.data,"name"));setDepts(srt(dR.data,"name"));setEmployees(srt(eR.data,"name"));
       if(user.role==="User"){
         const tR=await import("../api/tasks.js").then(m=>m.getAll());
         const ids=new Set((tR.data||[]).filter(t=>String(t.employee_id)===String(user.id)).map(t=>t.project_id));
@@ -46,6 +48,9 @@ export default function Projects(){
   }
   async function save(){
     if(saving) return;
+    const dupName=form.name.trim().toLowerCase();
+    if(projects.some(p=>p.name.trim().toLowerCase()===dupName&&p.id!==editing?.id))
+      return show("A project with this name already exists");
     setSaving(true);
     try{
       if(editing){
@@ -142,7 +147,7 @@ export default function Projects(){
     : managerDeptIds.size>0 ? depts.filter(d=>managerDeptIds.has(String(d.id)))
     : depts;
 
-  const filtered=projects.filter(p=>{
+  const filtered=[...projects].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>{
     if(user.role==="User"){
       const isOwner=String(p.owner_id)===String(user.id);
       const isAssignee=(p.assignees||[]).some(a=>String(a.id)===String(user.id));
@@ -210,7 +215,7 @@ export default function Projects(){
                 ))}
               </tr></thead>
               <tbody>
-                {filtered.map(p=>{
+                {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map(p=>{
                   const tat=p.tat_days||0;
                   const cs=p.is_recurring?"Recurring":p.status==="Closed"||p.status==="Completed"?"On Time":tat>0?"Delayed":"In Progress";
                   const overdue=!p.is_recurring&&tat>0&&p.status!=="Closed"&&p.status!=="Completed";
@@ -276,6 +281,7 @@ export default function Projects(){
               </tbody>
             </table>
           </div>
+          <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
       )}
       {/* ── Project Overview Modal ── */}
@@ -357,12 +363,15 @@ export default function Projects(){
                   ?<div style={{textAlign:"center",padding:"20px 0",color:"#9ca3af",fontSize:13}}>No task entries yet for this project.</div>
                   :<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                     <thead><tr style={{background:"#f8f9fb"}}>
-                      {["Employee","Sessions","Minutes","Hours","Avg Util","Last Active"].map(h=>(
+                      {["Employee","Sessions","Minutes","Hours","Project Util","Last Active"].map(h=>(
                         <th key={h} style={{padding:"8px 10px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec"}}>{h}</th>
                       ))}
                     </tr></thead>
                     <tbody>
-                      {emps.map((e,i)=>(
+                      {emps.map((e,i)=>{
+                        const projUtil=totalMins>0?Math.round((e.total_mins/totalMins)*100):0;
+                        const uc=projUtil>=50?"#059669":projUtil>=25?"#d97706":"#dc2626";
+                        return(
                         <tr key={e.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                           <td style={{padding:"10px 10px",borderBottom:"1px solid #f0f2f5"}}>
                             <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -376,14 +385,14 @@ export default function Projects(){
                           <td style={{padding:"10px 10px",borderBottom:"1px solid #f0f2f5"}}>
                             <div style={{display:"flex",alignItems:"center",gap:6}}>
                               <div style={{flex:1,height:6,borderRadius:3,background:"#f0f2f5",overflow:"hidden"}}>
-                                <div style={{width:`${Math.min(e.avg_util,100)}%`,height:"100%",background:e.avg_util>=80?"#059669":e.avg_util>=50?"#d97706":"#dc2626",borderRadius:3}}/>
+                                <div style={{width:`${projUtil}%`,height:"100%",background:uc,borderRadius:3}}/>
                               </div>
-                              <span style={{fontSize:11,fontWeight:700,color:e.avg_util>=80?"#059669":e.avg_util>=50?"#d97706":"#dc2626",minWidth:34}}>{e.avg_util}%</span>
+                              <span style={{fontSize:11,fontWeight:700,color:uc,minWidth:34}}>{projUtil}%</span>
                             </div>
                           </td>
                           <td style={{padding:"10px 10px",borderBottom:"1px solid #f0f2f5",color:"#9ca3af"}}>{e.last_active||"—"}</td>
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 }

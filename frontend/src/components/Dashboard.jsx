@@ -236,6 +236,8 @@ function AdminManagerDashboard(){
   const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
   const [drillPage,setDrillPage]=useState(1);
   const [projPage,setProjPage]=useState(1);
+  const [empTaskPage,setEmpTaskPage]=useState(1);
+  const EMP_TASK_PAGE=5;
   const {show,msg}=useToast();
   const drillRef=useRef(null);
   const projTeamRef=useRef(null);
@@ -248,12 +250,12 @@ function AdminManagerDashboard(){
   },[drillType,drillValue]);
 
   useEffect(()=>{ setProjPage(1); },[selProjId]);
+  useEffect(()=>{ setEmpTaskPage(1); },[selMember]);
 
   useEffect(()=>{
     Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll()])
       .then(([eR,dR,pR])=>{
         setEmployees(eR.data||[]);setDepartments(dR.data||[]);setProjects(pR.data||[]);
-        if((pR.data||[]).length)setSelProjId((pR.data||[])[0].id);
       }).catch(()=>show("Failed to load data"));
   },[]);
 
@@ -272,7 +274,8 @@ function AdminManagerDashboard(){
   });
 
   const totalMins=filtered.reduce((s,t)=>s+(t.spent_mins||0),0);
-  const avgUtil=filtered.length?Math.round(filtered.reduce((s,t)=>s+(parseFloat(t.utilization)||0),0)/filtered.length):0;
+  const totalWSum=filtered.reduce((s,t)=>s+(t.spent_mins||0)*(parseFloat(t.utilization)||0),0);
+  const avgUtil=totalMins>0?Math.round(totalWSum/totalMins):0;
   const totalDelays=filtered.filter(t=>t.tat_days>0).length;
   const onTime=filtered.filter(t=>t.tat_days===0).length;
   const delayed=filtered.filter(t=>t.tat_days>0).length;
@@ -282,14 +285,14 @@ function AdminManagerDashboard(){
     const k=t.employee_name||"Unknown";
     const u=parseFloat(t.utilization)||0;
     const m=t.spent_mins||0;
-    if(!empMap[k])empMap[k]={utilSum:0,count:0,wSum:0,mSum:0,full:k};
+    if(!empMap[k])empMap[k]={utilSum:0,count:0,wSum:0,mSum:0,full:k,dept:t.department||""};
     empMap[k].utilSum+=u;empMap[k].count++;
     empMap[k].wSum+=m*u;empMap[k].mSum+=m;
   });
   const empChartData=Object.entries(empMap).map(([n,d])=>({
-    n:n.split(" ")[0],full:n,
+    n:n.split(" ")[0],full:n,dept:d.dept,
     v:d.mSum>0?Math.round(d.wSum/d.mSum):0
-  })).sort((a,b)=>a.v-b.v);
+  })).sort((a,b)=>a.dept.localeCompare(b.dept)||a.full.localeCompare(b.full));
 
   const deptMap={};
   filtered.forEach(t=>{
@@ -305,17 +308,18 @@ function AdminManagerDashboard(){
     v:v.mSum>0?Math.round(v.wSum/v.mSum):0
   }));
 
-  const trendEmpMap={};
+  const trendDayMap={};
   filtered.forEach(t=>{
     const d=t.task_date;
-    if(!trendEmpMap[d])trendEmpMap[d]={};
-    if(!trendEmpMap[d][t.employee_id])trendEmpMap[d][t.employee_id]=0;
-    trendEmpMap[d][t.employee_id]+=parseFloat(t.utilization)||0;
+    if(!trendDayMap[d])trendDayMap[d]={wSum:0,mSum:0};
+    const m=t.spent_mins||0;
+    trendDayMap[d].wSum+=m*(parseFloat(t.utilization)||0);
+    trendDayMap[d].mSum+=m;
   });
-  const trendData=Object.keys(trendEmpMap).sort().map(d=>{
-    const vals=Object.values(trendEmpMap[d]);
-    return {x:d.slice(5),v:Math.round(vals.reduce((s,v)=>s+v,0)/vals.length)};
-  });
+  const trendData=Object.keys(trendDayMap).sort().map(d=>({
+    x:d.slice(5),
+    v:trendDayMap[d].mSum>0?Math.round(trendDayMap[d].wSum/trendDayMap[d].mSum):0
+  }));
   const projStatusMap={};
   projects.forEach(p=>{projStatusMap[p.status]=(projStatusMap[p.status]||0)+1;});
   const pieData=Object.entries(projStatusMap).map(([name,value])=>({name,value})).filter(p=>p.value>0);
@@ -338,8 +342,9 @@ function AdminManagerDashboard(){
     projMemberMap[k].cats[t.category]=(projMemberMap[k].cats[t.category]||0)+1;
     if(t.task_date>projMemberMap[k].lastDate)projMemberMap[k].lastDate=t.task_date;
   });
-  const projMembers=Object.values(projMemberMap).map(m=>({...m,avgUtil:Math.round(m.utilSum)})).sort((a,b)=>b.mins-a.mins);
-  const grandMins=projMembers.reduce((s,m)=>s+m.mins,0);
+  const projMemberRaw=Object.values(projMemberMap);
+  const grandMins=projMemberRaw.reduce((s,m)=>s+m.mins,0);
+  const projMembers=projMemberRaw.map(m=>({...m,projUtil:grandMins>0?Math.round((m.mins/grandMins)*100):0})).sort((a,b)=>b.mins-a.mins);
 
   const openProjects  = projects.filter(p=>["Not Started","In Progress","On Hold"].includes(p.status)).length;
   const closedProjects= projects.filter(p=>["Completed","Cancelled"].includes(p.status)).length;
@@ -373,7 +378,10 @@ function AdminManagerDashboard(){
             <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
             <select value={empF} onChange={e=>setEmpF(e.target.value)} style={selS}>
               <option value="">All Employees</option>
-              {employees.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}
+              {departments.map(d=>{
+                const depEmps=[...employees].filter(e=>e.department===d.name).sort((a,b)=>a.name.localeCompare(b.name));
+                return depEmps.length>0&&<optgroup key={d.id} label={d.name}>{depEmps.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</optgroup>;
+              })}
             </select>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:130}}>
@@ -586,8 +594,8 @@ function AdminManagerDashboard(){
                     {!selMember&&(
                     <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
                       {projMembers.map((m,mi)=>{
-                        const pct=grandMins>0?Math.round((m.mins/grandMins)*100):0;
-                        const uc=m.avgUtil>=100?"#059669":m.avgUtil>=50?"#d97706":"#dc2626";
+                        const pct=m.projUtil;
+                        const uc=m.projUtil>=50?"#059669":m.projUtil>=25?"#d97706":"#dc2626";
                         return(
                           <div key={mi} onClick={()=>setSelMember(m.name)}
                             style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",borderRadius:9,border:"1px solid #e4e7ec",background:"#fafbff",minWidth:160,cursor:"pointer",transition:"border-color .15s"}}
@@ -604,8 +612,8 @@ function AdminManagerDashboard(){
                               </div>
                             </div>
                             <div style={{textAlign:"right",flexShrink:0}}>
-                              <div style={{fontSize:12,fontWeight:700,color:uc}}>{m.avgUtil}%</div>
-                              <div style={{fontSize:10,color:"#9ca3af"}}>{Math.floor(m.mins/60)}h util</div>
+                              <div style={{fontSize:12,fontWeight:700,color:uc}}>{m.projUtil}%</div>
+                              <div style={{fontSize:10,color:"#9ca3af"}}>{Math.floor(m.mins/60)}h spent</div>
                             </div>
                           </div>
                         );
@@ -617,13 +625,13 @@ function AdminManagerDashboard(){
                     <div style={{border:"1px solid #e4e7ec",borderRadius:8,overflow:"hidden"}}>
                       <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
                         <thead><tr style={{background:"#f8f9fb"}}>
-                          {["Employee","Sessions","Minutes","Hours","Total Util","Last Active"].map(h=>(
+                          {["Employee","Sessions","Minutes","Hours","Project Util","Last Active"].map(h=>(
                             <th key={h} style={{padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #f0f2f5"}}>{h}</th>
                           ))}
                         </tr></thead>
                         <tbody>
                           {projMembers.slice((projPage-1)*PAGE_SIZE,projPage*PAGE_SIZE).map((m,mi)=>{
-                            const uc=m.avgUtil>=100?"#059669":m.avgUtil>=50?"#d97706":"#dc2626";
+                            const uc=m.projUtil>=50?"#059669":m.projUtil>=25?"#d97706":"#dc2626";
                             const isSelected=selMember===m.name;
                             const lastDate=fmtDate(m.lastDate);
                             return(
@@ -642,9 +650,9 @@ function AdminManagerDashboard(){
                                 <td style={{padding:"9px 12px",borderBottom:"1px solid #f0f2f5"}}>
                                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                                     <div style={{width:40,height:4,background:"#f0f2f5",borderRadius:2,overflow:"hidden"}}>
-                                      <div style={{height:"100%",width:Math.min(m.avgUtil,100)+"%",background:uc,borderRadius:2}}/>
+                                      <div style={{height:"100%",width:Math.min(m.projUtil,100)+"%",background:uc,borderRadius:2}}/>
                                     </div>
-                                    <span style={{fontWeight:700,color:uc}}>{m.avgUtil}%</span>
+                                    <span style={{fontWeight:700,color:uc}}>{m.projUtil}%</span>
                                   </div>
                                 </td>
                                 <td style={{padding:"9px 12px",borderBottom:"1px solid #f0f2f5",color:"#6b7280"}}>{lastDate}</td>
@@ -675,7 +683,7 @@ function AdminManagerDashboard(){
                               ))}
                             </tr></thead>
                             <tbody>
-                              {empTasks.map((t,i)=>(
+                              {empTasks.slice((empTaskPage-1)*EMP_TASK_PAGE,empTaskPage*EMP_TASK_PAGE).map((t,i)=>(
                                 <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:11,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",color:"#6b7280"}}>{t.category}</td>
@@ -699,6 +707,13 @@ function AdminManagerDashboard(){
                               {empTasks.length===0&&<tr><td colSpan={6} style={{padding:16,textAlign:"center",color:"#9ca3af"}}>No tasks in selected date range</td></tr>}
                             </tbody>
                           </table>
+                          {empTasks.length>EMP_TASK_PAGE&&(
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"6px 12px",borderTop:"1px solid #f0f2f5"}}>
+                              <button onClick={()=>setEmpTaskPage(p=>Math.max(1,p-1))} disabled={empTaskPage===1} style={{padding:"3px 10px",fontSize:11,borderRadius:5,border:"1px solid #e4e7ec",background:empTaskPage===1?"#f8f9fb":"#fff",color:empTaskPage===1?"#d1d5db":"#4b5563",cursor:empTaskPage===1?"default":"pointer",fontWeight:600}}>‹ Prev</button>
+                              <span style={{fontSize:11,color:"#6b7280"}}>{empTaskPage} / {Math.ceil(empTasks.length/EMP_TASK_PAGE)}</span>
+                              <button onClick={()=>setEmpTaskPage(p=>Math.min(Math.ceil(empTasks.length/EMP_TASK_PAGE),p+1))} disabled={empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)} style={{padding:"3px 10px",fontSize:11,borderRadius:5,border:"1px solid #e4e7ec",background:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"#f8f9fb":"#fff",color:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"#d1d5db":"#4b5563",cursor:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"default":"pointer",fontWeight:600}}>Next ›</button>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}

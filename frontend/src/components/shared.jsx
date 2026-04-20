@@ -1,5 +1,20 @@
 import { useState, useCallback } from 'react';
 
+export const PAGE_SIZE = 10;
+export function Pager({page,setPage,total}){
+  const pages=Math.ceil(total/PAGE_SIZE);
+  if(pages<=1)return null;
+  const btn={padding:"3px 10px",fontSize:12,borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",cursor:"pointer",color:"#4b5563",fontWeight:600};
+  const dis={...btn,background:"#f8f9fb",color:"#d1d5db",cursor:"default"};
+  return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"8px 14px",borderTop:"1px solid #f0f2f5"}}>
+      <button style={page===1?dis:btn} disabled={page===1} onClick={()=>setPage(p=>p-1)}>‹ Prev</button>
+      <span style={{fontSize:12,color:"#6b7280",minWidth:60,textAlign:"center"}}>{page} / {pages}</span>
+      <button style={page===pages?dis:btn} disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Next ›</button>
+    </div>
+  );
+}
+
 // ── Colors ────────────────────────────────────────────────────
 export const COLORS = ['#4f46e5','#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777'];
 export const PIE_CLR = ['#4f46e5','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#2563eb'];
