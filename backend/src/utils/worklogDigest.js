@@ -13,15 +13,20 @@ async function runWorklogDigest({ force = false } = {}) {
       return { skipped: true, reason: 'Digest is disabled in Notification Settings' };
     }
 
-    // All distinct managers (any role) who have at least one managed employee
-    // and have an active account with an email address
+    // All distinct managers who have at least one managed employee —
+    // covers both the many-to-many employee_managers table AND the
+    // direct employees.manager_id FK so Admins assigned via either
+    // path receive the digest.
     const { rows: managers } = await db.query(`
       SELECT DISTINCT m.id, m.name, m.email
-      FROM employee_managers em
-      JOIN employees m ON m.id = em.manager_id
-      WHERE m.email   IS NOT NULL
-        AND m.email   != ''
-        AND m.status  = 'active'
+      FROM employees m
+      WHERE m.email  IS NOT NULL
+        AND m.email  != ''
+        AND m.status = 'active'
+        AND (
+          m.id IN (SELECT manager_id FROM employee_managers)
+          OR m.id IN (SELECT DISTINCT manager_id FROM employees WHERE manager_id IS NOT NULL)
+        )
     `);
 
     if (managers.length === 0) {
@@ -54,6 +59,8 @@ async function runWorklogDigest({ force = false } = {}) {
         JOIN projects    p ON p.id = t.project_id
         WHERE e.id IN (
           SELECT employee_id FROM employee_managers WHERE manager_id = $1
+          UNION
+          SELECT id FROM employees WHERE manager_id = $1
         )
           AND t.task_date = CURRENT_DATE
         ORDER BY e.name, t.id

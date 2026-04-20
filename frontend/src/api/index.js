@@ -14,7 +14,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('mpulse_token');
       localStorage.removeItem('mpulse_user');
-      window.location.href = '/login';
+      window.location.href = '/?expired=1';
     }
     return Promise.reject(err);
   }

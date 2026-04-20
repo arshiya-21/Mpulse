@@ -284,10 +284,12 @@ function AdminManagerDashboard(){
   const trendData=Object.keys(trendMap).sort().map(d=>({x:d.slice(5),v:Math.round(trendMap[d].utilSum/trendMap[d].count)}));
   const pieData=[{name:"On Time",value:onTime},{name:"In Progress",value:inProg},{name:"Delayed",value:delayed}].filter(p=>p.value>0);
 
-  const statusMap={"On Time":"On Time completion","In Progress":"In Progress","Delayed":"Delayed"};
   let drillTasks=[];
-  if(drillType==="pie"&&drillValue)drillTasks=filtered.filter(t=>t.status===drillValue);
-  else if(drillType==="emp"&&drillValue)drillTasks=filtered.filter(t=>t.employee_name===drillValue);
+  if(drillType==="pie"&&drillValue){
+    if(drillValue==="On Time")drillTasks=filtered.filter(t=>t.tat_days===0);
+    else if(drillValue==="Delayed")drillTasks=filtered.filter(t=>t.tat_days>0);
+    else if(drillValue==="In Progress")drillTasks=filtered.filter(t=>t.status==="In Progress");
+  }else if(drillType==="emp"&&drillValue)drillTasks=filtered.filter(t=>t.employee_name===drillValue);
   else if(drillType==="dept"&&drillValue)drillTasks=filtered.filter(t=>t.department===drillValue);
 
   const selProj=projects.find(p=>p.id===selProjId);
@@ -445,7 +447,7 @@ function AdminManagerDashboard(){
                   <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={62} innerRadius={28} paddingAngle={3} style={{cursor:"pointer"}}
-                        onClick={e=>{if(e&&e.name){setDrillType("pie");setDrillValue(statusMap[e.name]||e.name);}}}>
+                        onClick={e=>{if(e&&e.name){setDrillType("pie");setDrillValue(e.name);}}}>
                         {pieData.map((_,i)=><Cell key={i} fill={PIE_CLR[i]} opacity={.85}/>)}
                       </Pie>
                       <Tooltip {...ttip}/><Legend iconSize={8} wrapperStyle={{fontSize:11}}/>
@@ -463,7 +465,7 @@ function AdminManagerDashboard(){
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:4,height:16,background:"#4f46e5",borderRadius:2}}/>
                   <span style={{fontSize:13,fontWeight:700}}>
-                    {drillType==="dept"?`Tasks — ${drillValue} Dept`:drillType==="emp"?`Tasks — ${drillValue}`:`Tasks — ${drillValue==="On Time completion"?"On Time":drillValue}`}
+                    {drillType==="dept"?`Tasks — ${drillValue} Dept`:drillType==="emp"?`Tasks — ${drillValue}`:`Tasks — ${drillValue}`}
                   </span>
                   <span style={{background:"#eff6ff",color:"#1d4ed8",fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:20}}>{drillTasks.length} records</span>
                 </div>

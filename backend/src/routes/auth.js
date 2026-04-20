@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role_name, department_id: user.department_id },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     console.log('✅ User logged in:', user.email);
@@ -158,7 +158,7 @@ router.post('/reset-first-time-password', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: roleName, department_id: deptId },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     console.log('✅ First-time password reset successful:', user.email);

@@ -202,13 +202,17 @@ function Login({onLogin}){
   const [pw,setPw]=useState("");
   const [loading,setLoading]=useState(false);
   const [err,setErr]=useState("");
+  const [sessionMsg,setSessionMsg]=useState(()=>
+    new URLSearchParams(window.location.search).get('expired')==='1'
+      ?"Your session has expired. Please sign in again.":""
+  );
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetToken, setResetToken] = useState('');
   const [userName, setUserName] = useState('');
 
   async function go(){
     if(!email||!pw){setErr("Please enter your email and password.");return;}
-    setErr("");setLoading(true);
+    setErr("");setSessionMsg("");setLoading(true);
     try{
       const r=await authApi.login(email,pw);
       if (r.data.requirePasswordReset) {
@@ -254,6 +258,7 @@ function Login({onLogin}){
               <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Enter your password" onKeyDown={e=>e.key==="Enter"&&go()} style={iS}/>
             </div>
           </div>
+          {sessionMsg&&<div style={{background:"rgba(234,179,8,0.15)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fde68a",marginBottom:12}}>{sessionMsg}</div>}
           {err&&<div style={{background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fca5a5",marginBottom:12}}>{err}</div>}
           <button onClick={go} disabled={loading} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:11,borderRadius:9,border:"none",background:"#4f46e5",color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 14px rgba(79,70,229,0.4)",opacity:loading?0.8:1}}>
             {loading?"Signing in…":"Sign in →"}
