@@ -346,11 +346,19 @@ function AdminManagerDashboard(){
   const grandMins=projMemberRaw.reduce((s,m)=>s+m.mins,0);
   const projMembers=projMemberRaw.map(m=>({...m,projUtil:grandMins>0?Math.round((m.mins/grandMins)*100):0})).sort((a,b)=>b.mins-a.mins);
 
-  const openProjects  = projects.filter(p=>["Not Started","In Progress","On Hold"].includes(p.status)).length;
-  const closedProjects= projects.filter(p=>["Completed","Cancelled"].includes(p.status)).length;
+  const filteredProjIds=new Set(filtered.map(t=>t.project_id));
+  const activeEmpCount=(empF||deptF)
+    ?new Set(filtered.map(t=>t.employee_id)).size
+    :employees.length;
+  const openProjects  = (empF||deptF)
+    ?projects.filter(p=>filteredProjIds.has(p.id)&&["Not Started","In Progress","On Hold"].includes(p.status)).length
+    :projects.filter(p=>["Not Started","In Progress","On Hold"].includes(p.status)).length;
+  const closedProjects= (empF||deptF)
+    ?projects.filter(p=>filteredProjIds.has(p.id)&&["Completed","Cancelled"].includes(p.status)).length
+    :projects.filter(p=>["Completed","Cancelled"].includes(p.status)).length;
   const onTimeTasks   = filtered.filter(t=>t.tat_days===0).length;
   const kpis=[
-    {label:"Active Employees",  value:employees.length,                icon:"👥",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Active Employees",  value:activeEmpCount,                  icon:"👥",accent:"#7c3aed",bg:"#ede9fe"},
     {label:"Open Projects",     value:openProjects,                    icon:"📁",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Tasks Logged",      value:filtered.length,                 icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",   value:avgUtil+"%",                     icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
@@ -375,20 +383,17 @@ function AdminManagerDashboard(){
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:130}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
-            <select value={empF} onChange={e=>setEmpF(e.target.value)} style={selS}>
-              <option value="">All Employees</option>
-              {departments.map(d=>{
-                const depEmps=[...employees].filter(e=>e.department===d.name).sort((a,b)=>a.name.localeCompare(b.name));
-                return depEmps.length>0&&<optgroup key={d.id} label={d.name}>{depEmps.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</optgroup>;
-              })}
-            </select>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:130}}>
             <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
             <select value={deptF} onChange={e=>{setDeptF(e.target.value);setEmpF("");}} style={selS}>
               <option value="">All Departments</option>
               {departments.map(d=><option key={d.id} value={d.name}>{d.name}</option>)}
+            </select>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:150}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
+            <select value={empF} onChange={e=>setEmpF(e.target.value)} style={{...selS,color:deptF?"#111827":"#9ca3af"}} disabled={!deptF}>
+              <option value="">{deptF?"All in "+deptF:"Select a department first"}</option>
+              {deptF&&employees.filter(e=>e.department===deptF).sort((a,b)=>a.name.localeCompare(b.name)).map(e=><option key={e.id} value={e.name}>{e.name}</option>)}
             </select>
           </div>
           <button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:"#f8f9fb",color:"#6b7280",cursor:"pointer",fontWeight:500,marginLeft:"auto",alignSelf:"flex-end"}}>↺ Reset</button>
