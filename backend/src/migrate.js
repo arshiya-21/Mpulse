@@ -126,7 +126,7 @@ module.exports = async function migrate() {
         tat_alert_days          INT          NOT NULL DEFAULT 2,
         email_notif             BOOLEAN      NOT NULL DEFAULT TRUE,
         auto_close              BOOLEAN      NOT NULL DEFAULT FALSE,
-        session_timeout         INT          NOT NULL DEFAULT 30,
+        session_timeout         INT          NOT NULL DEFAULT 0,
         admin_email             VARCHAR(200),
         visit_reminder_enabled  BOOLEAN      NOT NULL DEFAULT TRUE,
         work_categories         TEXT,
@@ -137,7 +137,7 @@ module.exports = async function migrate() {
         (id, company_name, daily_target_mins, work_days, timezone, tat_alert_days,
          email_notif, auto_close, session_timeout, admin_email, visit_reminder_enabled)
       VALUES
-        (1, 'MPulse', 510, 'Mon-Fri', 'Asia/Kolkata', 2, TRUE, FALSE, 30, NULL, TRUE)
+        (1, 'MPulse', 510, 'Mon-Fri', 'Asia/Kolkata', 2, TRUE, FALSE, 0, NULL, TRUE)
       ON CONFLICT (id) DO NOTHING;
     `);
     console.log('✅ Core tables ready');

@@ -3,7 +3,7 @@ import * as settingsApi from "../api/settings.js";
 import { useToast, Toast, Spinner, inputS, labelS } from "./shared.jsx";
 
 export default function Administration(){
-  const [s,setS]=useState({company_name:"",daily_target_mins:510,work_days:"Mon–Fri",timezone:"Asia/Kolkata",tat_alert_days:2,email_notif:true,auto_close:false,session_timeout:30});
+  const [s,setS]=useState({company_name:"",daily_target_mins:510,work_days:"Mon–Fri",timezone:"Asia/Kolkata",tat_alert_days:2,email_notif:true,auto_close:false,session_timeout:0});
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const {msg,show}=useToast();

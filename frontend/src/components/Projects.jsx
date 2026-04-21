@@ -19,7 +19,6 @@ export default function Projects(){
   const [empF,setEmpF]=useState("");
   const [deptF,setDeptF]=useState("");
   const [assigneeF,setAssigneeF]=useState("");
-  const [searchQ,setSearchQ]=useState("");
   const [projF,setProjF]=useState("");
   const [page,setPage]=useState(1);
   const {msg,show}=useToast();
@@ -158,7 +157,6 @@ export default function Projects(){
       const hasTask=myTaskProjectIds.has(p.id);
       if(!isOwner&&!isAssignee&&!hasTask)return false;
     }
-    if(searchQ&&!p.name.toLowerCase().includes(searchQ.toLowerCase()))return false;
     if(projF&&String(p.id)!==String(projF))return false;
     if(stFilter&&p.status!==stFilter)return false;
     if(tatFilter==="Overdue"&&!((!p.is_recurring)&&(p.tat_days||0)>0&&p.status!=="Closed"&&p.status!=="Completed"))return false;
@@ -180,71 +178,59 @@ export default function Projects(){
           <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ New Project</button>
         )}
       </div>
-      <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"14px 16px",marginBottom:14,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
-        <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"flex-end"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:180,flex:1}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Search</div>
-            <input value={searchQ} onChange={e=>{setSearchQ(e.target.value);setProjF("");setPage(1);}} placeholder="Search projects…" style={{...selS,minWidth:180}}/>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:180}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Project</div>
+      <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 16px",marginBottom:14,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
+        <div style={{display:"flex",flexWrap:"nowrap",gap:8,alignItems:"flex-end",overflowX:"auto"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:160}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Search / Project</div>
             <SearchSelect
               value={projF}
-              onChange={v=>{setProjF(v);setSearchQ("");setPage(1);}}
+              onChange={v=>{setProjF(v);setPage(1);}}
               placeholder="All Projects"
               options={[...projects].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>({value:p.id,label:p.name}))}
-              style={selS}
+              style={{...selS,fontSize:12}}
             />
           </div>
           {user.role==="Admin"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
-              <select value={deptF} onChange={e=>{setDeptF(e.target.value);setPage(1);}} style={selS}>
-                <option value="">All Departments</option>
+            <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:130}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
+              <select value={deptF} onChange={e=>{setDeptF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
+                <option value="">All Depts</option>
                 {depts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
           )}
           {user.role==="Admin"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Owner</div>
-              <select value={empF} onChange={e=>{setEmpF(e.target.value);setPage(1);}} style={selS}>
+            <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:120}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Owner</div>
+              <select value={empF} onChange={e=>{setEmpF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
                 <option value="">All Owners</option>
                 {managers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             </div>
           )}
           {user.role!=="User"&&(
-            <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Assignee</div>
-              <select value={assigneeF} onChange={e=>{setAssigneeF(e.target.value);setPage(1);}} style={selS}>
+            <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:120}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Assignee</div>
+              <select value={assigneeF} onChange={e=>{setAssigneeF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
                 <option value="">All Assignees</option>
                 {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
           )}
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>TAT</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",height:34}}>
-              {["Overdue","OnTime"].map(t=>{
-                const label=t==="Overdue"?"Overdue":"On Time";
-                const active=tatFilter===t;
-                return <div key={t} onClick={()=>{setTatFilter(active?"":t);setPage(1);}} style={{padding:"5px 12px",borderRadius:20,background:active?(t==="Overdue"?"#dc2626":"#059669"):(t==="Overdue"?"#fef2f2":"#ecfdf5"),color:active?"#fff":(t==="Overdue"?"#dc2626":"#059669"),fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid "+(t==="Overdue"?"#dc262655":"#05966955")}}>{label}</div>;
-              })}
-              {tatFilter&&<div onClick={()=>{setTatFilter("");setPage(1);}} style={{padding:"5px 10px",borderRadius:20,background:"#f8f9fb",color:"#9ca3af",fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid #e4e7ec"}}>✕</div>}
-            </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:110}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>TAT</div>
+            <select value={tatFilter} onChange={e=>{setTatFilter(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
+              <option value="">All</option>
+              <option value="Overdue">Overdue</option>
+              <option value="OnTime">On Time</option>
+            </select>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Status</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",height:34}}>
-              {ALL_STATUSES.map(s=>{
-                const cnt=filtered.filter(p=>p.status===s).length;
-                if(!cnt)return null;
-                const cfg=STATUS_CFG[s];
-                return <div key={s} onClick={()=>{setStFilter(stFilter===s?"":s);setPage(1);}} style={{padding:"5px 12px",borderRadius:20,background:stFilter===s?cfg.dot:cfg.bg,color:stFilter===s?"#fff":cfg.color,fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid "+cfg.dot+"55"}}>{s} ({cnt})</div>;
-              })}
-              {stFilter&&<div onClick={()=>{setStFilter("");setPage(1);}} style={{padding:"5px 10px",borderRadius:20,background:"#f8f9fb",color:"#9ca3af",fontSize:12,fontWeight:600,cursor:"pointer",border:"1px solid #e4e7ec"}}>✕ Clear</div>}
-            </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:120}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Status</div>
+            <select value={stFilter} onChange={e=>{setStFilter(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
+              <option value="">All Status</option>
+              {ALL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
           </div>
         </div>
       </div>

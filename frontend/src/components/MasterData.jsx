@@ -1351,7 +1351,7 @@ function CategoriesConfig(){
         tat_alert_days:       base.tat_alert_days       || 2,
         email_notif:          base.email_notif          ?? true,
         auto_close:           base.auto_close           ?? false,
-        session_timeout:      base.session_timeout      || 30,
+        session_timeout:      base.session_timeout      ?? 0,
         admin_email:          base.admin_email          || null,
         visit_reminder_enabled: base.visit_reminder_enabled ?? true,
         work_categories:      list,
