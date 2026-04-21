@@ -1408,7 +1408,9 @@ function CategoriesConfig(){
 const FORMULA_DEFAULTS = [
   { section:"Daily Utilization", accent:"#4f46e5", id:"util_pct",
     label:"Task Utilization %",
-    formula:"Minutes spent on a single task divided by the daily target minutes, multiplied by 100. This is the base value stored for every work log entry.",
+    expr:"spent_mins / daily_target * 100",
+    vars:[{name:"spent_mins",desc:"Minutes logged for the task"},{name:"daily_target",desc:"Daily target minutes (Administration)"}],
+    formula:"Minutes spent on a single task divided by the daily target minutes, multiplied by 100.",
     example:"Example: 480 minutes spent, daily target is 510 minutes → 480 ÷ 510 × 100 = 94%",
     source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
 
@@ -1451,8 +1453,10 @@ const FORMULA_DEFAULTS = [
     source:"worklog", sourceLabel:"Worklog entries" },
   { section:"Time Distribution", accent:"#059669", id:"proj_util",
     label:"Project Util % (Employee breakdown)",
-    formula:"Each employee's share of the total time logged on a project. This tells you how much of the project's overall effort that person contributed. Formula: employee's minutes on the project ÷ total minutes logged on the project × 100. Used in both the Project Overview modal and the Dashboard Project Team Utilization section.",
-    example:"Example: Project total = 3,295 mins. Syed = 3,250m → 3,250 ÷ 3,295 × 100 = 99%. Gayathri = 530m ÷ 3,295 × 100 = 16%. (Note: percentages are per-project, not across all projects in Overall view.)",
+    expr:"member_mins / total_mins * 100",
+    vars:[{name:"member_mins",desc:"Minutes logged by this member on the project"},{name:"total_mins",desc:"Total minutes logged on the project by all members"}],
+    formula:"Each employee's share of the total time logged on a project.",
+    example:"Example: Project total = 3,295 mins. Syed = 3,250m → 3,250 ÷ 3,295 × 100 = 99%.",
     source:"worklog", sourceLabel:"Worklog entries" },
 
   { section:"Visit Reminders", accent:"#f59e0b", id:"upcoming",
@@ -1512,7 +1516,7 @@ function FormulasRef(){
   const [rows,setRows] = useState(FORMULA_DEFAULTS);
   const [liveSettings,setLiveSettings] = useState({});
   const [editId,setEditId] = useState(null);
-  const [editVal,setEditVal] = useState({formula:"",example:""});
+  const [editVal,setEditVal] = useState({formula:"",example:"",expr:""});
   const [loading,setLoading] = useState(true);
   const [saving,setSaving] = useState(false);
   const {msg,show} = useToast();
@@ -1527,7 +1531,7 @@ function FormulasRef(){
             // Merge saved overrides onto defaults (keeps new defaults for new IDs)
             const merged=FORMULA_DEFAULTS.map(def=>{
               const s=saved.find(x=>x.id===def.id);
-              return s?{...def,formula:s.formula,example:s.example}:def;
+              return s?{...def,formula:s.formula,example:s.example,...(s.expr!==undefined?{expr:s.expr}:{})}:def;
             });
             setRows(merged);
           }catch{}
@@ -1541,14 +1545,14 @@ function FormulasRef(){
     try{
       const sR=await settingsApi.get();
       // Only store id/formula/example to keep payload small
-      const payload=next.map(r=>({id:r.id,formula:r.formula,example:r.example}));
+      const payload=next.map(r=>({id:r.id,formula:r.formula,example:r.example,...(r.expr!==undefined?{expr:r.expr}:{})}));
       await settingsApi.update({...sR.data,work_formulas:JSON.stringify(payload)});
       setRows(next);
     }catch(e){ show(e?.response?.data?.error||"Save failed"); }
     finally{ setSaving(false); }
   }
 
-  function startEdit(row){ setEditId(row.id); setEditVal({formula:row.formula,example:row.example}); }
+  function startEdit(row){ setEditId(row.id); setEditVal({formula:row.formula,example:row.example,expr:row.expr??""}); }
   function cancelEdit(){ setEditId(null); }
   async function saveEdit(id){
     const next=rows.map(r=>r.id===id?{...r,...editVal}:r);
@@ -1577,7 +1581,7 @@ function FormulasRef(){
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
         <div>
           <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>Calculation Formulas</div>
-          <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>Click ✏️ on any row to edit the formula text and example — saved to the database.</div>
+          <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>Rows marked <span style={{background:"#ecfdf5",color:"#059669",padding:"1px 5px",borderRadius:4,fontWeight:700,fontSize:11}}>⚡ Live</span> have an editable expression that drives the actual calculation in Worklog and Dashboard.</div>
         </div>
         <button onClick={resetAll} disabled={saving}
           style={{padding:"5px 12px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",fontSize:12,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.6:1}}>
@@ -1607,11 +1611,29 @@ function FormulasRef(){
                   <tr key={row.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                     <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontWeight:600,color:"#374151",whiteSpace:"nowrap",verticalAlign:"middle"}}>{row.label}</td>
                     <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",verticalAlign:"middle"}}>
-                      {editId===row.id
-                        ?<textarea value={editVal.formula} onChange={e=>setEditVal(v=>({...v,formula:e.target.value}))} rows={2}
-                            style={{width:"100%",padding:"4px 8px",borderRadius:5,border:"1px solid #c7d2fe",fontSize:12,fontFamily:"monospace",resize:"vertical"}}/>
-                        :<span style={{fontFamily:"monospace",color:"#1e1b4b"}}>{row.formula}</span>
-                      }
+                      {row.expr!==undefined?(
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{background:"#ecfdf5",color:"#059669",padding:"1px 6px",borderRadius:4,fontWeight:700,fontSize:10}}>⚡ Live</span>
+                            <span style={{fontSize:10,color:"#9ca3af"}}>Edit expression below — drives real calculations</span>
+                          </div>
+                          {editId===row.id
+                            ?<input value={editVal.expr} onChange={e=>setEditVal(v=>({...v,expr:e.target.value}))}
+                                style={{width:"100%",padding:"6px 10px",borderRadius:6,border:"2px solid #4f46e5",fontSize:13,fontFamily:"monospace",background:"#fafffe",boxSizing:"border-box"}}/>
+                            :<code style={{display:"block",padding:"6px 10px",borderRadius:6,background:"#f0fdf4",border:"1px solid #bbf7d0",fontSize:13,color:"#065f46",fontFamily:"monospace"}}>{row.expr}</code>
+                          }
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {(row.vars||[]).map(v=>(
+                              <span key={v.name} style={{fontSize:10,padding:"2px 7px",borderRadius:4,background:"#eff6ff",color:"#1d4ed8",fontFamily:"monospace"}} title={v.desc}>{v.name}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ):(
+                        editId===row.id
+                          ?<textarea value={editVal.formula} onChange={e=>setEditVal(v=>({...v,formula:e.target.value}))} rows={2}
+                              style={{width:"100%",padding:"4px 8px",borderRadius:5,border:"1px solid #c7d2fe",fontSize:12,fontFamily:"monospace",resize:"vertical"}}/>
+                          :<span style={{fontFamily:"monospace",color:"#1e1b4b"}}>{row.formula}</span>
+                      )}
                     </td>
                     <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",verticalAlign:"middle"}}>
                       <div style={{display:"flex",flexDirection:"column",gap:3}}>

@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -35,6 +35,7 @@ export default function DailyTasks(){
   const {msg,show}=useToast();
   const [cats,setCats]=useState([...DEFAULT_CATS].sort((a,b)=>a.localeCompare(b)));
   const [dailyTarget,setDailyTarget]=useState(510);
+  const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
   const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"Completed",description:""};
   const [form,setForm]=useState(blank);
 
@@ -50,6 +51,7 @@ export default function DailyTasks(){
           if(Array.isArray(val)) setCats(val.sort((a,b)=>a.localeCompare(b)));
         }catch{}
         if(sR.data?.daily_target_mins) setDailyTarget(sR.data.daily_target_mins);
+        if(sR.data?.work_formulas){try{const fs=JSON.parse(sR.data.work_formulas);const u=fs.find(f=>f.id==="util_pct");if(u?.expr)setUtilExpr(u.expr);}catch{}}
       });
   },[]);
   useEffect(()=>{load();},[dateFrom,dateTo]);
@@ -206,8 +208,7 @@ export default function DailyTasks(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
-                        <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                        {(()=>{const u=evalFormula(utilExpr,{spent_mins:t.spent_mins||0,daily_target:dailyTarget});return(<><Pb value={Math.min(100,Math.round(u))} color={u>200?"#059669":u>=80?"#f59e0b":"#ef4444"}/><span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(u)}%</span></>);})()}
                       </div>
                     </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -339,7 +340,7 @@ export default function DailyTasks(){
                   {label:"Work Type",   value:descView.work_type||"—",    color:"#111827"},
                   {label:"Status",      value:descView.status||"—",       color:SC2C[descView.status]||"#111827"},
                   {label:"Mins Spent",  value:(descView.spent_mins||0)+"m", color:"#4f46e5"},
-                  {label:"Utilization", value:Math.round(parseFloat(descView.utilization)||0)+"%", color:"#059669"},
+                  {label:"Utilization", value:Math.round(evalFormula(utilExpr,{spent_mins:descView.spent_mins||0,daily_target:dailyTarget}))+"%", color:"#059669"},
                   {label:"TAT",         value:descView.tat_days>0?"+"+descView.tat_days+"d late":"On Time", color:descView.tat_days>0?"#dc2626":"#059669"},
                 ].map(s=>(
                   <div key={s.label} style={{background:"#fff",padding:"11px 14px"}}>

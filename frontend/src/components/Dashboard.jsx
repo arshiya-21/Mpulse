@@ -3,11 +3,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
 } from "recharts";
-import * as empApi   from "../api/employees.js";
-import * as deptApi  from "../api/departments.js";
-import * as projApi  from "../api/projects.js";
-import * as tasksApi from "../api/tasks.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate } from "./shared.jsx";
+import * as empApi      from "../api/employees.js";
+import * as deptApi     from "../api/departments.js";
+import * as projApi     from "../api/projects.js";
+import * as tasksApi    from "../api/tasks.js";
+import * as settingsApi from "../api/settings.js";
+import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate, evalFormula } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const PAGE_SIZE=10;
@@ -193,8 +194,8 @@ function UserDashboard({user}){
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
-                          <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                          <Pb value={Math.min(100,Math.round(calcUtil(t)))} color={calcUtil(t)>200?"#059669":calcUtil(t)>=80?"#f59e0b":"#ef4444"}/>
+                          <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(calcUtil(t))}%</span>
                         </div>
                       </td>
                       <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}>
@@ -234,11 +235,14 @@ function AdminManagerDashboard(){
   const [drillValue,setDrillValue]=useState(null);
   const [selProjId,setSelProjId]=useState(null);
   const [projAllTasks,setProjAllTasks]=useState([]);
-  const [selMember,setSelMember]=useState(null);   // employee id clicked in project team
+  const [selMember,setSelMember]=useState(null);
   const [drillPage,setDrillPage]=useState(1);
   const [projPage,setProjPage]=useState(1);
   const [empTaskPage,setEmpTaskPage]=useState(1);
   const EMP_TASK_PAGE=5;
+  const [dailyTarget,setDailyTarget]=useState(510);
+  const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
+  const [projUtilExpr,setProjUtilExpr]=useState("member_mins / total_mins * 100");
   const {show,msg}=useToast();
   const drillRef=useRef(null);
   const projTeamRef=useRef(null);
@@ -261,9 +265,19 @@ function AdminManagerDashboard(){
   useEffect(()=>{ setEmpTaskPage(1); },[selMember]);
 
   useEffect(()=>{
-    Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll()])
-      .then(([eR,dR,pR])=>{
+    Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll(),settingsApi.get()])
+      .then(([eR,dR,pR,sR])=>{
         setEmployees(eR.data||[]);setDepartments(dR.data||[]);setProjects(pR.data||[]);
+        if(sR.data?.daily_target_mins) setDailyTarget(sR.data.daily_target_mins);
+        if(sR.data?.work_formulas){
+          try{
+            const fs=JSON.parse(sR.data.work_formulas);
+            const u=fs.find(f=>f.id==="util_pct");
+            const p=fs.find(f=>f.id==="proj_util");
+            if(u?.expr) setUtilExpr(u.expr);
+            if(p?.expr) setProjUtilExpr(p.expr);
+          }catch{}
+        }
       }).catch(()=>show("Failed to load data"));
   },[]);
 
@@ -286,14 +300,14 @@ function AdminManagerDashboard(){
   const onTime=filtered.filter(t=>t.tat_days===0).length;
   const delayed=filtered.filter(t=>t.tat_days>0).length;
 
+  const calcUtil=t=>evalFormula(utilExpr,{spent_mins:t.spent_mins||0,daily_target:dailyTarget});
+
   // Step 1 — per (employee, date): sum all task utils → daily util for that employee on that day
-  // daily util = Σ(spent_mins for that day) / daily_target × 100
-  // Since t.utilization = spent_mins/daily_target×100, summing them = total_mins_that_day/daily_target×100
   const empDayMap={};
   filtered.forEach(t=>{
     const key=`${t.employee_name}||${t.task_date}`;
     if(!empDayMap[key])empDayMap[key]={name:t.employee_name,dept:t.department||"",dayUtil:0};
-    empDayMap[key].dayUtil+=parseFloat(t.utilization)||0;
+    empDayMap[key].dayUtil+=calcUtil(t);
   });
 
   // Step 2 — per employee: avg of their daily utils over the period
@@ -326,7 +340,7 @@ function AdminManagerDashboard(){
     const d=t.task_date;
     if(!trendDayEmpMap[d])trendDayEmpMap[d]={};
     if(!trendDayEmpMap[d][t.employee_id])trendDayEmpMap[d][t.employee_id]=0;
-    trendDayEmpMap[d][t.employee_id]+=parseFloat(t.utilization)||0;
+    trendDayEmpMap[d][t.employee_id]+=calcUtil(t);
   });
   const trendData=Object.keys(trendDayEmpMap).sort().map(d=>{
     const vals=Object.values(trendDayEmpMap[d]);
@@ -353,7 +367,7 @@ function AdminManagerDashboard(){
     const k=t.employee_id;
     if(!projMemberMap[k])projMemberMap[k]={name:t.employee_name,dept:t.department,mins:0,count:0,utilSum:0,delays:0,cats:{},lastDate:""};
     projMemberMap[k].mins+=t.spent_mins||0;projMemberMap[k].count++;
-    projMemberMap[k].utilSum+=parseFloat(t.utilization)||0;
+    projMemberMap[k].utilSum+=calcUtil(t);
     if(t.tat_days>0)projMemberMap[k].delays++;
     projMemberMap[k].cats[t.category]=(projMemberMap[k].cats[t.category]||0)+1;
     if(t.task_date>projMemberMap[k].lastDate)projMemberMap[k].lastDate=t.task_date;
@@ -564,8 +578,8 @@ function AdminManagerDashboard(){
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12}}>{t.spent_mins}m</td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
                           <div style={{display:"flex",alignItems:"center",gap:6}}>
-                            <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
-                            <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                            <Pb value={Math.min(100,Math.round(calcUtil(t)))} color={calcUtil(t)>200?"#059669":calcUtil(t)>=80?"#f59e0b":"#ef4444"}/>
+                            <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(calcUtil(t))}%</span>
                           </div>
                         </td>
                         <td style={{padding:"10px 12px",borderBottom:"1px solid #f0f2f5"}}>
@@ -713,8 +727,8 @@ function AdminManagerDashboard(){
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace"}}>{t.spent_mins}m</td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",minWidth:100}}>
                                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                      <Pb value={Math.min(100,Math.round(parseFloat(t.utilization)||0))} color={parseFloat(t.utilization)>200?"#059669":parseFloat(t.utilization)>=80?"#f59e0b":"#ef4444"}/>
-                                      <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(parseFloat(t.utilization)||0)}%</span>
+                                      <Pb value={Math.min(100,Math.round(calcUtil(t)))} color={calcUtil(t)>200?"#059669":calcUtil(t)>=80?"#f59e0b":"#ef4444"}/>
+                                      <span style={{fontSize:11,color:"#6b7280",whiteSpace:"nowrap",fontFamily:"monospace"}}>{Math.round(calcUtil(t))}%</span>
                                     </div>
                                   </td>
                                   <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5"}}>

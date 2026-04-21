@@ -20,6 +20,7 @@ export default function Projects(){
   const [deptF,setDeptF]=useState("");
   const [assigneeF,setAssigneeF]=useState("");
   const [projF,setProjF]=useState("");
+  const [searchQ,setSearchQ]=useState("");
   const [page,setPage]=useState(1);
   const {msg,show}=useToast();
   const today=new Date().toLocaleDateString('en-CA');
@@ -157,6 +158,15 @@ export default function Projects(){
       const hasTask=myTaskProjectIds.has(p.id);
       if(!isOwner&&!isAssignee&&!hasTask)return false;
     }
+    if(searchQ){
+      const q=searchQ.toLowerCase();
+      const deptName=(depts.find(d=>String(d.id)===String(p.department_id))?.name||"").toLowerCase();
+      const matches=p.name.toLowerCase().includes(q)||
+        (p.owner_name||"").toLowerCase().includes(q)||
+        deptName.includes(q)||
+        (p.assignees||[]).some(a=>a.name.toLowerCase().includes(q));
+      if(!matches)return false;
+    }
     if(projF&&String(p.id)!==String(projF))return false;
     if(stFilter&&p.status!==stFilter)return false;
     if(tatFilter==="Overdue"&&!((!p.is_recurring)&&(p.tat_days||0)>0&&p.status!=="Closed"&&p.status!=="Completed"))return false;
@@ -180,9 +190,18 @@ export default function Projects(){
       </div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 16px",marginBottom:14,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
         <div style={{display:"flex",flexWrap:"nowrap",gap:8,alignItems:"flex-end",overflowX:"auto"}}>
-          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:160}}>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:160,flex:1}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Search</div>
+            <input
+              value={searchQ}
+              onChange={e=>{setSearchQ(e.target.value);setProjF("");setPage(1);}}
+              placeholder="Name, owner, dept, assignee…"
+              style={{...selS,fontSize:12}}
+            />
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:150}}>
             <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Project</div>
-            <select value={projF} onChange={e=>{setProjF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
+            <select value={projF} onChange={e=>{setProjF(e.target.value);setSearchQ("");setPage(1);}} style={{...selS,fontSize:12}}>
               <option value="">All Projects</option>
               {[...projects].sort((a,b)=>a.name.localeCompare(b.name)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>

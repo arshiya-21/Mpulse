@@ -15,6 +15,16 @@ export function Pager({page,setPage,total}){
   );
 }
 
+// ── Formula evaluator ─────────────────────────────────────────
+// Safely evaluates a math expression string with named variables.
+// e.g. evalFormula("spent_mins / daily_target * 100", {spent_mins:300, daily_target:510}) → 58.82
+export function evalFormula(expr, vars = {}) {
+  try {
+    const result = new Function(...Object.keys(vars), `"use strict"; return +(${expr});`)(...Object.values(vars));
+    return isFinite(result) && !isNaN(result) ? Math.round(result * 100) / 100 : 0;
+  } catch { return 0; }
+}
+
 // ── Searchable Select ─────────────────────────────────────────
 // options: [{value, label}]
 // groups:  [{label, options:[{value, label}]}]  (optional, appended after options)
