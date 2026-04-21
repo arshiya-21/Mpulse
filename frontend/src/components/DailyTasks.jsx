@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula, Pager, PAGE_SIZE } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -195,7 +195,7 @@ export default function DailyTasks(){
                 ))}
               </tr></thead>
               <tbody>
-                {filtered.slice((page-1)*PAGE,page*PAGE).map((t,i)=>(
+                {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((t,i)=>(
                   <tr key={t.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#4b5563"}}>{fmtDate(t.task_date)}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#111827",fontWeight:600}}>{t.employee_name}</td>
@@ -230,16 +230,7 @@ export default function DailyTasks(){
               </tbody>
             </table>
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderTop:"1px solid #f0f2f5",flexWrap:"wrap",gap:8}}>
-            <span style={{fontSize:12,color:"#9ca3af"}}>Showing {Math.min(page*PAGE,filtered.length)} of {filtered.length} records</span>
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
-              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{padding:"5px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:page===1?"#f8f9fb":"#fff",color:page===1?"#c1c8d4":"#374151",cursor:page===1?"not-allowed":"pointer",fontWeight:600}}>← Prev</button>
-              {Array.from({length:Math.ceil(filtered.length/PAGE)},(_,i)=>i+1).map(n=>(
-                <button key={n} onClick={()=>setPage(n)} style={{padding:"5px 10px",fontSize:12,borderRadius:6,border:"1px solid "+(n===page?"#4f46e5":"#e4e7ec"),background:n===page?"#4f46e5":"#fff",color:n===page?"#fff":"#374151",cursor:"pointer",fontWeight:600,minWidth:30}}>{n}</button>
-              ))}
-              <button onClick={()=>setPage(p=>Math.min(Math.ceil(filtered.length/PAGE),p+1))} disabled={page>=Math.ceil(filtered.length/PAGE)} style={{padding:"5px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:page>=Math.ceil(filtered.length/PAGE)?"#f8f9fb":"#fff",color:page>=Math.ceil(filtered.length/PAGE)?"#c1c8d4":"#374151",cursor:page>=Math.ceil(filtered.length/PAGE)?"not-allowed":"pointer",fontWeight:600}}>Next →</button>
-            </div>
-          </div>
+          <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
       )}
 

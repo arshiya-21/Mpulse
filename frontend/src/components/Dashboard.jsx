@@ -8,23 +8,8 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate, evalFormula } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, selS, COLORS, PIE_CLR, SC2, SC2C, fmtDate, evalFormula, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-
-const PAGE_SIZE=10;
-function Pager({page,setPage,total}){
-  const pages=Math.ceil(total/PAGE_SIZE);
-  if(pages<=1)return null;
-  const btnS={padding:"3px 10px",fontSize:12,borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",cursor:"pointer",color:"#4b5563",fontWeight:600};
-  const disS={...btnS,background:"#f8f9fb",color:"#d1d5db",cursor:"default"};
-  return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"8px 14px",borderTop:"1px solid #f0f2f5"}}>
-      <button style={page===1?disS:btnS} disabled={page===1} onClick={()=>setPage(p=>p-1)}>‹ Prev</button>
-      <span style={{fontSize:12,color:"#6b7280",minWidth:60,textAlign:"center"}}>{page} / {pages}</span>
-      <button style={page===pages?disS:btnS} disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Next ›</button>
-    </div>
-  );
-}
 
 export default function Dashboard(){
   const {user}=useAuth();
@@ -127,7 +112,7 @@ function UserDashboard({user}){
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
+                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
                       <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#utg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5}}/>
                     </AreaChart>
@@ -220,15 +205,16 @@ function UserDashboard({user}){
 
 function AdminManagerDashboard(){
   const today=new Date(),fmt=d=>d.toISOString().slice(0,10);
-  const defFrom=fmt(new Date(new Date().setMonth(today.getMonth()-1)));
-  const defTo=fmt(today);
+  const yesterday=fmt(new Date(today.getTime()-86400000));
+  const thisMonthStart=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  const lastMonthStart=fmt(new Date(today.getFullYear(),today.getMonth()-1,1));
   const [tasks,setTasks]=useState([]);
   const [employees,setEmployees]=useState([]);
   const [departments,setDepartments]=useState([]);
   const [projects,setProjects]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [dateFrom,setDateFrom]=useState(defFrom);
-  const [dateTo,setDateTo]=useState(defTo);
+  const [dateFrom,setDateFrom]=useState(yesterday);
+  const [dateTo,setDateTo]=useState(yesterday);
   const [empF,setEmpF]=useState("");
   const [deptF,setDeptF]=useState("");
   const [drillType,setDrillType]=useState(null);
@@ -405,6 +391,23 @@ function AdminManagerDashboard(){
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
         <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"flex-end"}}>
           <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Quick Select</div>
+            <div style={{display:"flex",gap:4}}>
+              {[
+                {label:"Yesterday",fn:()=>{setDateFrom(yesterday);setDateTo(yesterday);}},
+                {label:"Today",fn:()=>{setDateFrom(fmt(today));setDateTo(fmt(today));}},
+                {label:"This Month",fn:()=>{setDateFrom(thisMonthStart);setDateTo(fmt(today));}},
+                {label:"Last Month",fn:()=>{setDateFrom(lastMonthStart);setDateTo(yesterday);}},
+              ].map(q=>{
+                const active=q.label==="Yesterday"?dateFrom===yesterday&&dateTo===yesterday
+                  :q.label==="Today"?dateFrom===fmt(today)&&dateTo===fmt(today)
+                  :q.label==="This Month"?dateFrom===thisMonthStart&&dateTo===fmt(today)
+                  :dateFrom===lastMonthStart&&dateTo===yesterday;
+                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#4f46e5":"#e4e7ec"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
+              })}
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
             <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Date Range</div>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={selS}/>
@@ -456,7 +459,7 @@ function AdminManagerDashboard(){
                     <BarChart data={deptChartData} margin={{left:-20,right:8,top:4,bottom:0}} barCategoryGap="35%">
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="d" tick={{fontSize:11,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
+                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Avg Util"]}/>
                       <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={56} label={{position:"top",fontSize:11,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.d&&(setDrillType("dept"),setDrillValue(e.d))} style={{cursor:"pointer"}}>
                         {deptChartData.map((e,i)=><Cell key={i} fill={drillType==="dept"&&drillValue===e.d?"#059669":"#10b981"}/>)}
@@ -478,7 +481,7 @@ function AdminManagerDashboard(){
                       <BarChart data={empChartData} margin={{left:-20,right:8,top:18,bottom:40}} barCategoryGap="30%">
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                         <XAxis dataKey="n" tick={{fontSize:11,fill:"#9ca3af",angle:-35,textAnchor:"end",dy:6}} axisLine={false} tickLine={false} interval={0}/>
-                        <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
+                        <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                         <Tooltip {...ttip} formatter={v=>[v+"%","Avg Util"]}/>
                         <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={36} label={{position:"top",fontSize:10,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.full&&(setDrillType("emp"),setDrillValue(e.full))} style={{cursor:"pointer"}}>
                           {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#7c3aed":"#4f46e5"}/>)}
@@ -509,7 +512,7 @@ function AdminManagerDashboard(){
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
+                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
                       <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#tg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5,fill:"#4f46e5"}}/>
                     </AreaChart>
@@ -744,13 +747,7 @@ function AdminManagerDashboard(){
                               {empTasks.length===0&&<tr><td colSpan={6} style={{padding:16,textAlign:"center",color:"#9ca3af"}}>No tasks in selected date range</td></tr>}
                             </tbody>
                           </table>
-                          {empTasks.length>EMP_TASK_PAGE&&(
-                            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"6px 12px",borderTop:"1px solid #f0f2f5"}}>
-                              <button onClick={()=>setEmpTaskPage(p=>Math.max(1,p-1))} disabled={empTaskPage===1} style={{padding:"3px 10px",fontSize:11,borderRadius:5,border:"1px solid #e4e7ec",background:empTaskPage===1?"#f8f9fb":"#fff",color:empTaskPage===1?"#d1d5db":"#4b5563",cursor:empTaskPage===1?"default":"pointer",fontWeight:600}}>‹ Prev</button>
-                              <span style={{fontSize:11,color:"#6b7280"}}>{empTaskPage} / {Math.ceil(empTasks.length/EMP_TASK_PAGE)}</span>
-                              <button onClick={()=>setEmpTaskPage(p=>Math.min(Math.ceil(empTasks.length/EMP_TASK_PAGE),p+1))} disabled={empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)} style={{padding:"3px 10px",fontSize:11,borderRadius:5,border:"1px solid #e4e7ec",background:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"#f8f9fb":"#fff",color:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"#d1d5db":"#4b5563",cursor:empTaskPage>=Math.ceil(empTasks.length/EMP_TASK_PAGE)?"default":"pointer",fontWeight:600}}>Next ›</button>
-                            </div>
-                          )}
+                          <Pager page={empTaskPage} setPage={setEmpTaskPage} total={empTasks.length} pageSize={EMP_TASK_PAGE}/>
                         </div>
                       );
                     })()}

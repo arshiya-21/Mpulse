@@ -1,16 +1,22 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 export const PAGE_SIZE = 10;
-export function Pager({page,setPage,total}){
-  const pages=Math.ceil(total/PAGE_SIZE);
+export function Pager({page,setPage,total,pageSize:ps}){
+  const sz=ps||PAGE_SIZE;
+  const pages=Math.ceil(total/sz);
   if(pages<=1)return null;
-  const btn={padding:"3px 10px",fontSize:12,borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",cursor:"pointer",color:"#4b5563",fontWeight:600};
+  const from=(page-1)*sz+1;
+  const to=Math.min(page*sz,total);
+  const btn={width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",cursor:"pointer",color:"#4b5563",fontWeight:700,fontSize:12,flexShrink:0};
   const dis={...btn,background:"#f8f9fb",color:"#d1d5db",cursor:"default"};
+  const first=page===1,last=page===pages;
   return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,padding:"8px 14px",borderTop:"1px solid #f0f2f5"}}>
-      <button style={page===1?dis:btn} disabled={page===1} onClick={()=>setPage(p=>p-1)}>‹ Prev</button>
-      <span style={{fontSize:12,color:"#6b7280",minWidth:60,textAlign:"center"}}>{page} / {pages}</span>
-      <button style={page===pages?dis:btn} disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Next ›</button>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:4,padding:"8px 14px",borderTop:"1px solid #f0f2f5"}}>
+      <span style={{fontSize:12,color:"#6b7280",marginRight:6}}>{from}–{to} of {total}</span>
+      <button style={first?dis:btn} disabled={first} onClick={()=>setPage(1)} title="First">⏮</button>
+      <button style={first?dis:btn} disabled={first} onClick={()=>setPage(p=>p-1)} title="Previous">◀</button>
+      <button style={last?dis:btn} disabled={last} onClick={()=>setPage(p=>p+1)} title="Next">▶</button>
+      <button style={last?dis:btn} disabled={last} onClick={()=>setPage(pages)} title="Last">⏭</button>
     </div>
   );
 }
