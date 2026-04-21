@@ -39,6 +39,9 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify password
+    if (!user.password_hash) {
+      return res.status(401).json({ error: 'Account setup incomplete. Please contact administrator.' });
+    }
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid email or password' });

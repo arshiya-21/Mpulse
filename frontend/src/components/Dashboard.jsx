@@ -25,7 +25,22 @@ function UserDashboard({user}){
   const [loading,setLoading]=useState(true);
   const [dateFrom,setDateFrom]=useState(defFrom);
   const [dateTo,setDateTo]=useState(defTo);
+  const [dailyTarget,setDailyTarget]=useState(510);
+  const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
   const {show,msg}=useToast();
+
+  useEffect(()=>{
+    settingsApi.get().then(r=>{
+      if(r.data?.daily_target_mins) setDailyTarget(r.data.daily_target_mins);
+      if(r.data?.work_formulas){
+        try{
+          const fs=JSON.parse(r.data.work_formulas);
+          const u=fs.find(f=>f.id==="util_pct");
+          if(u?.expr) setUtilExpr(u.expr);
+        }catch{}
+      }
+    }).catch(()=>{});
+  },[]);
 
   useEffect(()=>{
     setLoading(true);
@@ -38,17 +53,23 @@ function UserDashboard({user}){
       .finally(()=>setLoading(false));
   },[dateFrom,dateTo]);
 
+  const calcUtil=t=>evalFormula(utilExpr,{spent_mins:t.spent_mins||0,daily_target:dailyTarget});
+
   const totalMins=tasks.reduce((s,t)=>s+(t.spent_mins||0),0);
-  const avgUtil=tasks.length?Math.round(tasks.reduce((s,t)=>s+(parseFloat(t.utilization)||0),0)/tasks.length):0;
   const onTime=tasks.filter(t=>t.tat_days===0).length;
   const delayed=tasks.filter(t=>t.tat_days>0).length;
 
-  const trendMap={};
+  // Per-day: sum all spent_mins → util = total_day_mins / daily_target * 100
+  const dayMins={};
   tasks.forEach(t=>{
-    if(!trendMap[t.task_date])trendMap[t.task_date]=0;
-    trendMap[t.task_date]+=parseFloat(t.utilization)||0;
+    if(!dayMins[t.task_date])dayMins[t.task_date]=0;
+    dayMins[t.task_date]+=t.spent_mins||0;
   });
-  const trendData=Object.keys(trendMap).sort().map(d=>({x:d.slice(5),v:Math.round(trendMap[d])}));
+  const trendData=Object.keys(dayMins).sort().map(d=>({
+    x:d.slice(5),
+    v:Math.round(evalFormula(utilExpr,{spent_mins:dayMins[d],daily_target:dailyTarget}))
+  }));
+  const avgUtil=trendData.length?Math.round(trendData.reduce((s,t)=>s+t.v,0)/trendData.length):0;
   const pieData=[{name:"On Time",value:onTime},{name:"Delayed",value:delayed}].filter(p=>p.value>0);
 
   const catMap={};
