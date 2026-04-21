@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as projApi from "../api/projects.js";
 import * as deptApi from "../api/departments.js";
 import * as empApi  from "../api/employees.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate, Pager, PAGE_SIZE, SearchSelect } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 
@@ -181,14 +181,11 @@ export default function Projects(){
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 16px",marginBottom:14,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
         <div style={{display:"flex",flexWrap:"nowrap",gap:8,alignItems:"flex-end",overflowX:"auto"}}>
           <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:160}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Search / Project</div>
-            <SearchSelect
-              value={projF}
-              onChange={v=>{setProjF(v);setPage(1);}}
-              placeholder="All Projects"
-              options={[...projects].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>({value:p.id,label:p.name}))}
-              style={{...selS,fontSize:12}}
-            />
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Project</div>
+            <select value={projF} onChange={e=>{setProjF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
+              <option value="">All Projects</option>
+              {[...projects].sort((a,b)=>a.name.localeCompare(b.name)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
           </div>
           {user.role==="Admin"&&(
             <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:130}}>
