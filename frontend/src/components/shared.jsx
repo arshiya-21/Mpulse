@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export const PAGE_SIZE = 10;
 export function Pager({page,setPage,total}){
@@ -11,6 +11,87 @@ export function Pager({page,setPage,total}){
       <button style={page===1?dis:btn} disabled={page===1} onClick={()=>setPage(p=>p-1)}>‹ Prev</button>
       <span style={{fontSize:12,color:"#6b7280",minWidth:60,textAlign:"center"}}>{page} / {pages}</span>
       <button style={page===pages?dis:btn} disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Next ›</button>
+    </div>
+  );
+}
+
+// ── Searchable Select ─────────────────────────────────────────
+// options: [{value, label}]
+// groups:  [{label, options:[{value, label}]}]  (optional, appended after options)
+export function SearchSelect({value,onChange,options=[],groups=[],placeholder="Select",disabledPlaceholder,disabled,style={}}){
+  const [open,setOpen]=useState(false);
+  const [q,setQ]=useState("");
+  const ref=useRef(null);
+
+  useEffect(()=>{
+    function handler(e){ if(ref.current&&!ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown",handler);
+    return()=>document.removeEventListener("mousedown",handler);
+  },[]);
+
+  const allOpts=[...options,...groups.flatMap(g=>g.options)];
+  const selected=allOpts.find(o=>String(o.value)===String(value));
+  const ql=q.toLowerCase();
+
+  const filtOpts=options.filter(o=>o.label.toLowerCase().includes(ql));
+  const filtGroups=groups.map(g=>({...g,options:g.options.filter(o=>o.label.toLowerCase().includes(ql))})).filter(g=>g.options.length>0);
+
+  const baseStyle={
+    position:"relative",width:"100%",boxSizing:"border-box",
+    border:"1px solid #d1d5db",borderRadius:6,background:disabled?"#f9fafb":"#fff",
+    cursor:disabled?"not-allowed":"pointer",fontSize:13,...style,
+    padding:0,
+  };
+  const rowStyle={padding:"7px 10px",cursor:"pointer",fontSize:13,color:"#111827",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"};
+  const groupLabelStyle={padding:"5px 10px 3px",fontSize:11,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",background:"#f8f9fb",borderTop:"1px solid #f0f2f5",borderBottom:"1px solid #f0f2f5"};
+
+  return(
+    <div ref={ref} style={baseStyle}>
+      <div
+        onClick={()=>{ if(!disabled){setOpen(o=>!o); setQ("");} }}
+        style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",minHeight:36,color:selected?"#111827":"#9ca3af",userSelect:"none"}}
+      >
+        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
+          {disabled?(disabledPlaceholder||placeholder):selected?selected.label:placeholder}
+        </span>
+        <span style={{marginLeft:6,fontSize:10,color:"#9ca3af",flexShrink:0}}>{open?"▲":"▼"}</span>
+      </div>
+      {open&&!disabled&&(
+        <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:9999,background:"#fff",border:"1px solid #d1d5db",borderRadius:6,boxShadow:"0 4px 16px rgba(0,0,0,.12)",marginTop:2,maxHeight:240,overflowY:"auto"}}>
+          <div style={{padding:"6px 8px",borderBottom:"1px solid #f0f2f5",position:"sticky",top:0,background:"#fff",zIndex:1}}>
+            <input
+              autoFocus
+              value={q}
+              onChange={e=>setQ(e.target.value)}
+              onClick={e=>e.stopPropagation()}
+              placeholder="Search..."
+              style={{width:"100%",boxSizing:"border-box",border:"1px solid #e4e7ec",borderRadius:5,padding:"5px 8px",fontSize:12,outline:"none"}}
+            />
+          </div>
+          {filtOpts.length===0&&filtGroups.length===0&&(
+            <div style={{padding:"10px",color:"#9ca3af",fontSize:12,textAlign:"center"}}>No results</div>
+          )}
+          {filtOpts.map(o=>(
+            <div key={o.value} onMouseDown={()=>{onChange(o.value);setOpen(false);setQ("");}}
+              style={{...rowStyle,background:String(o.value)===String(value)?"#ede9fe":"transparent"}}
+              onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"#f5f3ff"}
+              onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"transparent"}
+            >{o.label}</div>
+          ))}
+          {filtGroups.map(g=>(
+            <div key={g.label}>
+              <div style={groupLabelStyle}>{g.label}</div>
+              {g.options.map(o=>(
+                <div key={o.value} onMouseDown={()=>{onChange(o.value);setOpen(false);setQ("");}}
+                  style={{...rowStyle,paddingLeft:16,color:"#6b7280",background:String(o.value)===String(value)?"#ede9fe":"transparent"}}
+                  onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"#f5f3ff"}
+                  onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"transparent"}
+                >{o.label}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -443,7 +443,7 @@ function AdminManagerDashboard(){
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="d" tick={{fontSize:11,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
-                      <Tooltip {...ttip} formatter={v=>[v+"%","Weighted Avg"]}/>
+                      <Tooltip {...ttip} formatter={v=>[v+"%","Avg Util"]}/>
                       <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={56} label={{position:"top",fontSize:11,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.d&&(setDrillType("dept"),setDrillValue(e.d))} style={{cursor:"pointer"}}>
                         {deptChartData.map((e,i)=><Cell key={i} fill={drillType==="dept"&&drillValue===e.d?"#059669":"#10b981"}/>)}
                       </Bar>
@@ -457,20 +457,22 @@ function AdminManagerDashboard(){
                 <span style={{fontSize:13,fontWeight:700}}>Employee Utilization %</span>
                 <span style={{fontSize:11,color:"#9ca3af"}}>· click to drill down</span>
               </div>
-              <div style={{padding:"10px 6px 6px"}}>
+              <div style={{padding:"10px 6px 6px",overflowX:"auto"}}>
                 {empChartData.length>0?(
-                  <ResponsiveContainer width="100%" height={170}>
-                    <BarChart data={empChartData} margin={{left:-20,right:8,top:4,bottom:0}} barCategoryGap="30%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
-                      <XAxis dataKey="n" tick={{fontSize:11,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
-                      <Tooltip {...ttip} formatter={v=>[v+"%","Weighted Avg"]}/>
-                      <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={32} label={{position:"top",fontSize:10,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.full&&(setDrillType("emp"),setDrillValue(e.full))} style={{cursor:"pointer"}}>
-                        {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#7c3aed":"#4f46e5"}/>)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ):<div style={{height:170,display:"flex",alignItems:"center",justifyContent:"center",color:"#9ca3af",fontSize:13}}>No data</div>}
+                  <div style={{minWidth:Math.max(300,empChartData.length*52)}}>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={empChartData} margin={{left:-20,right:8,top:18,bottom:40}} barCategoryGap="30%">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
+                        <XAxis dataKey="n" tick={{fontSize:11,fill:"#9ca3af",angle:-35,textAnchor:"end",dy:6}} axisLine={false} tickLine={false} interval={0}/>
+                        <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,'auto']}/>
+                        <Tooltip {...ttip} formatter={v=>[v+"%","Avg Util"]}/>
+                        <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={36} label={{position:"top",fontSize:10,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.full&&(setDrillType("emp"),setDrillValue(e.full))} style={{cursor:"pointer"}}>
+                          {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#7c3aed":"#4f46e5"}/>)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ):<div style={{height:220,display:"flex",alignItems:"center",justifyContent:"center",color:"#9ca3af",fontSize:13}}>No data</div>}
               </div>
             </div>
           </div>

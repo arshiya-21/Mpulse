@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect } from "./shared.jsx";
 import { DEFAULT_CATS } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -263,13 +263,15 @@ export default function DailyTasks(){
                 const active=projPool.filter(p=>p.status!=="Closed"&&p.status!=="Completed");
                 const closed=projPool.filter(p=>p.status==="Closed"||p.status==="Completed");
                 return(
-                  <select value={form.project_id} onChange={e=>setForm({...form,project_id:e.target.value})} style={inputS}>
-                    <option value="">{selEmpId?"Select project":"Select employee first"}</option>
-                    {active.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-                    {closed.length>0&&<optgroup label="─── Closed / Completed ───">
-                      {closed.map(p=><option key={p.id} value={p.id}>{p.name} [{p.status}]</option>)}
-                    </optgroup>}
-                  </select>
+                  <SearchSelect
+                    value={form.project_id}
+                    onChange={v=>setForm({...form,project_id:v})}
+                    disabled={!selEmpId&&user.role!=="Admin"}
+                    placeholder="Select project"
+                    disabledPlaceholder="Select employee first"
+                    options={active.map(p=>({value:p.id,label:p.name}))}
+                    groups={closed.length>0?[{label:"Closed / Completed",options:closed.map(p=>({value:p.id,label:`${p.name} [${p.status}]`}))}]:[]}
+                  />
                 );
               })()}
             </div>
