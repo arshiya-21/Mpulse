@@ -19,12 +19,13 @@ export default function Dashboard(){
 
 function UserDashboard({user}){
   const today=new Date(),fmt=d=>d.toISOString().slice(0,10);
-  const defFrom=fmt(new Date(new Date().setMonth(today.getMonth()-1)));
-  const defTo=fmt(today);
+  const yesterday=fmt(new Date(today.getTime()-86400000));
+  const thisMonthStart=fmt(new Date(today.getFullYear(),today.getMonth(),1));
+  const lastMonthStart=fmt(new Date(today.getFullYear(),today.getMonth()-1,1));
   const [tasks,setTasks]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [dateFrom,setDateFrom]=useState(defFrom);
-  const [dateTo,setDateTo]=useState(defTo);
+  const [dateFrom,setDateFrom]=useState(yesterday);
+  const [dateTo,setDateTo]=useState(yesterday);
   const [dailyTarget,setDailyTarget]=useState(510);
   const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
   const {show,msg}=useToast();
@@ -88,17 +89,40 @@ function UserDashboard({user}){
 
   return(
     <div>
-      <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,.04)",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-        <div style={{width:38,height:38,borderRadius:"50%",background:"#312e81",color:"#a5b4fc",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name?.[0]}</div>
-        <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:700,color:"#111827"}}>My Dashboard — {user.name}</div>
-          <div style={{fontSize:12,color:"#9ca3af"}}>Your personal utilization overview</div>
+      <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <div style={{width:38,height:38,borderRadius:"50%",background:"#312e81",color:"#a5b4fc",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name?.[0]}</div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:"#111827"}}>My Dashboard — {user.name}</div>
+            <div style={{fontSize:12,color:"#9ca3af"}}>Your personal utilization overview</div>
+          </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Range</div>
-          <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={selS}/>
-          <span style={{fontSize:11,color:"#9ca3af"}}>to</span>
-          <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={selS}/>
+        <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"flex-end"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Quick Select</div>
+            <div style={{display:"flex",gap:4}}>
+              {[
+                {label:"Yesterday",fn:()=>{setDateFrom(yesterday);setDateTo(yesterday);}},
+                {label:"Today",fn:()=>{setDateFrom(fmt(today));setDateTo(fmt(today));}},
+                {label:"This Month",fn:()=>{setDateFrom(thisMonthStart);setDateTo(fmt(today));}},
+                {label:"Last Month",fn:()=>{setDateFrom(lastMonthStart);setDateTo(yesterday);}},
+              ].map(q=>{
+                const active=q.label==="Yesterday"?dateFrom===yesterday&&dateTo===yesterday
+                  :q.label==="Today"?dateFrom===fmt(today)&&dateTo===fmt(today)
+                  :q.label==="This Month"?dateFrom===thisMonthStart&&dateTo===fmt(today)
+                  :dateFrom===lastMonthStart&&dateTo===yesterday;
+                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#4f46e5":"#e4e7ec"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
+              })}
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Date Range</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={selS}/>
+              <span style={{fontSize:11,color:"#9ca3af"}}>to</span>
+              <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={selS}/>
+            </div>
+          </div>
         </div>
       </div>
 
