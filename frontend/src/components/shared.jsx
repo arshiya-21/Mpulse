@@ -21,6 +21,51 @@ export function Pager({page,setPage,total,pageSize:ps}){
   );
 }
 
+// ── Tooltip ───────────────────────────────────────────────────
+export function Tooltip({ text, children, placement = 'top' }) {
+  const [show, setShow] = useState(false);
+  const above = placement !== 'bottom';
+  const tipStyle = {
+    position:"absolute",
+    [above ? "bottom" : "top"]: "calc(100% + 7px)",
+    left:"50%",
+    transform:"translateX(-50%)",
+    background:"#1f2937",
+    color:"#fff",
+    padding:"4px 10px",
+    borderRadius:5,
+    fontSize:11,
+    fontWeight:500,
+    whiteSpace:"nowrap",
+    pointerEvents:"none",
+    zIndex:200,
+    boxShadow:"0 2px 8px rgba(0,0,0,.22)",
+  };
+  const arrowStyle = {
+    position:"absolute",
+    [above ? "top" : "bottom"]:"100%",
+    left:"50%",
+    transform:"translateX(-50%)",
+    borderLeft:"5px solid transparent",
+    borderRight:"5px solid transparent",
+    [above ? "borderTop" : "borderBottom"]:"5px solid #1f2937",
+  };
+  return (
+    <div style={{position:"relative",display:"inline-flex"}}
+      onMouseEnter={()=>setShow(true)}
+      onMouseLeave={()=>setShow(false)}
+    >
+      {children}
+      {show&&text&&(
+        <div style={tipStyle}>
+          {text}
+          <div style={arrowStyle}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Formula evaluator ─────────────────────────────────────────
 // Safely evaluates a math expression string with named variables.
 // e.g. evalFormula("spent_mins / daily_target * 100", {spent_mins:300, daily_target:510}) → 58.82

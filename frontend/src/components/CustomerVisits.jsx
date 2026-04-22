@@ -5,7 +5,7 @@ import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, Tooltip, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -287,17 +287,27 @@ export default function CustomerVisits(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",gap:2,alignItems:"center"}}>
                           {v.proof_file&&(
-                            <a href={fileUrl(v.proof_file)} target="_blank" rel="noreferrer"
-                              style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}} title={fileName(v.proof_file)}>📎</a>
+                            <Tooltip text={`View: ${fileName(v.proof_file)}`}>
+                              <a href={fileUrl(v.proof_file)} target="_blank" rel="noreferrer"
+                                style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
+                            </Tooltip>
                           )}
                           {(v.status==="Planned"||v.status==="In Progress"||v.status==="Pending")&&(
-                            <button onClick={()=>openClose(v)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #a7f3d0",background:"#ecfdf5",color:"#059669",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
+                            <Tooltip text="Close / Update Outcome">
+                              <button onClick={()=>openClose(v)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #a7f3d0",background:"#ecfdf5",color:"#059669",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
+                            </Tooltip>
                           )}
                           {canRelog&&v.assigned_to&&(
-                            <button onClick={()=>relogVisit(v)} title="Recreate worklog entries" style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📋</button>
+                            <Tooltip text="Recreate Worklog Entries">
+                              <button onClick={()=>relogVisit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📋</button>
+                            </Tooltip>
                           )}
-                          <button onClick={()=>openEdit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
-                          <button onClick={()=>setDelId(v.id)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
+                          <Tooltip text="Edit Visit">
+                            <button onClick={()=>openEdit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
+                          </Tooltip>
+                          <Tooltip text="Delete Visit">
+                            <button onClick={()=>setDelId(v.id)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>
