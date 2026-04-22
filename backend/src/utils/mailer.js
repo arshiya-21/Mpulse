@@ -423,4 +423,86 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
   console.log(`📧 Worklog digest sent to ${toEmail}`);
 }
 
-module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail };
+// ── Send NO-LOG ALERT email when none of a manager's team logged today ────
+async function sendNoLogAlertEmail({ toName, toEmail, date, teamMembers = [] }) {
+  const { fromEmail, appPassword } = await getEmailConfig();
+  const resendClient = new Resend(appPassword);
+
+  const memberRows = teamMembers.map((m, i) => `
+    <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'};">
+      <td style="padding:8px 14px;font-size:13px;font-weight:600;color:#111827;border-bottom:1px solid #f0f2f5;">${m.name}</td>
+      <td style="padding:8px 14px;font-size:12px;color:#6b7280;border-bottom:1px solid #f0f2f5;">${m.department_name}</td>
+      <td style="padding:8px 14px;text-align:center;border-bottom:1px solid #f0f2f5;">
+        <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#fef2f2;color:#dc2626;">Not Logged</span>
+      </td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;">
+        <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
+        <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Daily Work Log Alert</div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div style="background:#fef2f2;border-bottom:2px solid #fca5a5;padding:16px 32px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:22px;">⚠️</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#dc2626;">No Work Logged Today</div>
+          <div style="font-size:12px;color:#b91c1c;margin-top:2px;">None of your team members have logged work for <strong>${date}</strong></div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="font-size:15px;font-weight:600;color:#111827;margin:0 0 6px;">Hi ${toName},</p>
+        <p style="font-size:13px;color:#4b5563;line-height:1.7;margin:0 0 20px;">
+          This is an automated reminder that <strong>no work log entries</strong> have been recorded by your team on <strong>${date}</strong>.
+          Please follow up with the team members listed below.
+        </p>
+
+        ${teamMembers.length > 0 ? `
+        <!-- Team Member Table -->
+        <div style="border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+          <div style="background:#f8f9fb;padding:10px 14px;border-bottom:1px solid #e4e7ec;">
+            <span style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">Team Members — ${teamMembers.length} total</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#f8f9fb;">
+                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:#9ca3af;border-bottom:1px solid #e4e7ec;">Name</th>
+                <th style="padding:8px 14px;text-align:left;font-size:11px;font-weight:700;color:#9ca3af;border-bottom:1px solid #e4e7ec;">Department</th>
+                <th style="padding:8px 14px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;border-bottom:1px solid #e4e7ec;">Status</th>
+              </tr>
+            </thead>
+            <tbody>${memberRows}</tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;font-size:12px;color:#92400e;line-height:1.6;">
+          Please remind your team to log their daily work on MPulse before end of day.
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:16px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
+        <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
+        <p style="font-size:10px;color:#9ca3af;margin:6px 0 0;">Automated daily digest sent at 7:00 PM IST</p>
+      </div>
+    </div>
+  `;
+
+  await resendClient.emails.send({
+    from:    `"MPulse" <${fromEmail}>`,
+    to:      toEmail,
+    subject: `⚠️ No Work Logged Today — Your Team · ${date}`,
+    html,
+  });
+  console.log(`📧 No-log alert sent to ${toEmail}`);
+}
+
+module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail };

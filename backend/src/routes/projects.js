@@ -125,7 +125,7 @@ router.get('/:id', verify, async (req, res) => {
 });
 
 // POST assignees
-router.post('/:id/assignees', verify, requireRole('Admin','Manager'), async (req, res) => {
+router.post('/:id/assignees', verify, requireRole('Admin','Manager','User'), async (req, res) => {
   try {
     const pid = req.params.id;
 
@@ -149,7 +149,7 @@ router.post('/:id/assignees', verify, requireRole('Admin','Manager'), async (req
 });
 
 // POST create
-router.post('/', verify, requireRole('Admin', 'Manager'), async (req, res) => {
+router.post('/', verify, requireRole('Admin', 'Manager', 'User'), async (req, res) => {
   try {
     let { name, description, department_id, owner_id, status = 'Not Started', start_date, end_date, is_recurring = false } = req.body;
     if (!name) return res.status(400).json({ error: 'Project name is required' });
@@ -173,7 +173,7 @@ router.post('/', verify, requireRole('Admin', 'Manager'), async (req, res) => {
 });
 
 // PUT update
-router.put('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => {
+router.put('/:id', verify, requireRole('Admin', 'Manager', 'User'), async (req, res) => {
   try {
     const pid = req.params.id;
 
@@ -299,7 +299,7 @@ router.get('/:id/overview', verify, async (req, res) => {
 });
 
 // DELETE — blocked if tasks exist
-router.delete('/:id', verify, requireRole('Admin', 'Manager'), async (req, res) => {
+router.delete('/:id', verify, requireRole('Admin', 'Manager', 'User'), async (req, res) => {
   try {
     const pid = req.params.id;
 

@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const db   = require('../config/db');
-const { sendWorklogDigestEmail } = require('./mailer');
+const { sendWorklogDigestEmail, sendNoLogAlertEmail } = require('./mailer');
 
 // force=true bypasses the toggle check (used by the "Send Now" test button)
 async function runWorklogDigest({ force = false } = {}) {
@@ -40,6 +40,20 @@ async function runWorklogDigest({ force = false } = {}) {
 
     let sent = 0;
     for (const manager of managers) {
+      // All active team members this manager oversees
+      const { rows: teamMembers } = await db.query(`
+        SELECT e.id, e.name, COALESCE(d.name, '—') AS department_name
+        FROM employees e
+        LEFT JOIN departments d ON d.id = e.department_id
+        WHERE e.id IN (
+          SELECT employee_id FROM employee_managers WHERE manager_id = $1
+          UNION
+          SELECT id FROM employees WHERE manager_id = $1
+        )
+          AND e.status = 'active'
+        ORDER BY e.name
+      `, [manager.id]);
+
       // Today's tasks for all employees this manager oversees
       const { rows: tasks } = await db.query(`
         SELECT
@@ -67,7 +81,19 @@ async function runWorklogDigest({ force = false } = {}) {
       `, [manager.id]);
 
       if (tasks.length === 0) {
-        console.log(`⏭️  No tasks today for ${manager.name}'s team — skipping`);
+        // No one logged today — send an alert so the manager knows
+        try {
+          await sendNoLogAlertEmail({
+            toName:      manager.name,
+            toEmail:     manager.email,
+            date:        today,
+            teamMembers,
+          });
+          sent++;
+          console.log(`📧 No-log alert sent → ${manager.email} (${teamMembers.length} team members)`);
+        } catch (e) {
+          console.error(`⚠️  No-log alert to ${manager.email} failed:`, e.message);
+        }
         continue;
       }
 

@@ -4,6 +4,7 @@ import * as deptApi from "../api/departments.js";
 import * as empApi  from "../api/employees.js";
 import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { getAccessConfig } from "./MasterData.jsx";
 
 
 export default function Projects(){
@@ -180,11 +181,12 @@ export default function Projects(){
   const CS_BG={"On Time":"#ecfdf5","In Progress":"#eff6ff","Delayed":"#fef2f2"};
   const CS_C={"On Time":"#059669","In Progress":"#2563eb","Delayed":"#dc2626"};
   const managers=employees.filter(e=>e.role==="Manager"||e.role==="Admin");
+  const perm=getAccessConfig()[user.role]?.projects||{};
 
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:14}}>
-        {user.role!=="User"&&(
+        {perm.create&&(
           <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ New Project</button>
         )}
       </div>
@@ -310,12 +312,12 @@ export default function Projects(){
                           : <span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:CS_BG[cs]||"#f8f9fb",color:CS_C[cs]||"#4b5563"}}>{cs}</span>
                         }
                       </td>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{user.role!=="User"?<StatusDrop value={p.status} onChange={v=>updateStatus(p.id,v)}/>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:STATUS_CFG[p.status]?.bg||"#f8f9fb",color:STATUS_CFG[p.status]?.color||"#4b5563"}}>{p.status}</span>}</td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{perm.update?<StatusDrop value={p.status} onChange={v=>updateStatus(p.id,v)}/>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:STATUS_CFG[p.status]?.bg||"#f8f9fb",color:STATUS_CFG[p.status]?.color||"#4b5563"}}>{p.status}</span>}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                        {user.role!=="User"&&(
+                        {(perm.update||perm.delete)&&(
                           <div style={{display:"flex",gap:2}}>
-                            <button onClick={()=>openEdit(p)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
-                            <button onClick={()=>del(p.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
+                            {perm.update&&<button onClick={()=>openEdit(p)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
+                            {perm.delete&&<button onClick={()=>del(p.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}
                           </div>
                         )}
                       </td>
@@ -346,7 +348,7 @@ export default function Projects(){
                 {/* Status — dropdown */}
                 <div style={{background:"#f0f4ff",borderRadius:10,padding:"14px 16px"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Status</div>
-                  {user.role!=="User"
+                  {perm.update
                     ?<select value={pv.status} onChange={e=>ovUpdateStatus(e.target.value)}
                         style={{width:"100%",border:"none",background:"transparent",fontSize:15,fontWeight:700,color:"#4f46e5",cursor:"pointer",padding:0,outline:"none"}}>
                         {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}

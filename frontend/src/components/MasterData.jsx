@@ -13,7 +13,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 // ─── DEPARTMENTS ──────────────────────────────────────────────────────────────
 function Departments(){
   const {user}=useAuth();
-  const isAdmin=user?.role==="Admin";
+  const perm=getAccessConfig()[user?.role]?.md_departments||{};
   const [depts,setDepts]=useState([]);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -50,7 +50,7 @@ function Departments(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        {isAdmin&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
+        {perm.create&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
       </div>
       {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -72,9 +72,9 @@ function Departments(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#eff6ff",color:"#2563eb"}}>{d.employee_count||0} members</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:d.status==="active"?"#ecfdf5":"#fffbeb",color:d.status==="active"?"#059669":"#d97706"}}>{d.status}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                      {isAdmin&&<div style={{display:"flex",gap:2}}>
-                        <button onClick={()=>openEdit(d)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
-                        <button onClick={()=>del(d.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
+                      {(perm.update||perm.delete)&&<div style={{display:"flex",gap:2}}>
+                        {perm.update&&<button onClick={()=>openEdit(d)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
+                        {perm.delete&&<button onClick={()=>del(d.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}
                       </div>}
                     </td>
                   </tr>
@@ -108,7 +108,7 @@ function Departments(){
 // ─── ROLES ────────────────────────────────────────────────────────────────────
 function Roles(){
   const {user}=useAuth();
-  const isAdmin=user?.role==="Admin";
+  const perm=getAccessConfig()[user?.role]?.md_roles||{};
   const [roles,setRoles]=useState([]);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -139,7 +139,7 @@ function Roles(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        {isAdmin&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
+        {perm.create&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
       </div>
       {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -155,7 +155,7 @@ function Roles(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:ROLE_BG[r.name]||"#f8f9fb",color:ROLE_C[r.name]||"#475569"}}>{r.name}</span></td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#4b5563",maxWidth:260}}>{r.description||"—"}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:"#eff6ff",color:"#2563eb"}}>{r.member_count||0} members</span></td>
-                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{isAdmin&&<button onClick={()=>del(r.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}</td>
+                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{perm.delete&&<button onClick={()=>del(r.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}</td>
                   </tr>
                 ))}
                 {roles.length===0&&<tr><td colSpan={5} style={{padding:20,textAlign:"center",color:"#9ca3af"}}>No roles yet.</td></tr>}
@@ -262,6 +262,7 @@ function Employees(){
   function copyLink(link){navigator.clipboard.writeText(link).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2000);}
 
   const scopeCfg=getAccessConfig();
+  const empPerm=scopeCfg[user?.role]?.md_employees||{};
   // Admin sees all employees always — never restrict by team
   // Manager: backend already returns dept-employees + cross-dept direct reports — show all of them
   // Other roles with _team_only flag: apply client-side dept filter
@@ -275,7 +276,7 @@ function Employees(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        <button onClick={openAdd} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Employee</button>
+        {empPerm.create&&<button onClick={openAdd} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Employee</button>}
       </div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
         <input placeholder="Search by name or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{...inputS,maxWidth:280}}/>
@@ -318,10 +319,10 @@ function Employees(){
                         :<span style={{fontSize:11,color:"#059669",fontWeight:500}}>✅ Accepted</span>}
                     </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                      <div style={{display:"flex",gap:2}}>
-                        <button onClick={()=>openEdit(e)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
-                        <button onClick={()=>setDelId(e.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>
-                      </div>
+                      {(empPerm.update||empPerm.delete)&&<div style={{display:"flex",gap:2}}>
+                        {empPerm.update&&<button onClick={()=>openEdit(e)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
+                        {empPerm.delete&&<button onClick={()=>setDelId(e.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}
+                      </div>}
                     </td>
                   </tr>
                 ))}
@@ -772,13 +773,13 @@ export function getAccessConfig(){
     const s=localStorage.getItem(ACCESS_KEY);
     if(!s)return DEFAULT_ACCESS;
     const stored=JSON.parse(s);
-    // Merge stored with defaults so newly added keys are always present
     const merged={};
-    for(const role of ROLES_LIST){
-      merged[role]={...DEFAULT_ACCESS[role],...(stored[role]||{})};
+    // Include hardcoded roles + any custom roles stored from DB
+    const allRoles=new Set([...ROLES_LIST,...Object.keys(stored)]);
+    for(const role of allRoles){
+      merged[role]={...(DEFAULT_ACCESS[role]||{}),...(stored[role]||{})};
     }
-    // Admin can never be restricted to team-only — enforce regardless of stored value
-    merged["Admin"]={...merged["Admin"],_team_only:{view:false,create:false,update:false,delete:false}};
+    if(merged["Admin"]) merged["Admin"]._team_only={view:false,create:false,update:false,delete:false};
     return merged;
   }catch{return DEFAULT_ACCESS;}
 }

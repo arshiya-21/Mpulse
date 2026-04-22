@@ -6,3 +6,4 @@ export const update  = (id, d)  => api.put(`/visits/${id}`, d);
 export const close   = (id, d)  => api.put(`/visits/${id}/close`, d);
 export const remove  = (id)     => api.delete(`/visits/${id}`);
 export const notify  = (id, cc) => api.post(`/visits/${id}/notify`, { cc });
+export const relog   = (id)     => api.post(`/visits/${id}/relog`);

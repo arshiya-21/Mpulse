@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth }      from "../context/AuthContext.jsx";
 import * as visitsApi   from "../api/visits.js";
 import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
@@ -13,6 +14,9 @@ function fileName(p) { return p ? decodeURIComponent(p.split('/').pop().replace(
 const BLANK = { customer_id:"", contact_person:"", channel:"Email", agenda:"", planned_date:"", duration:"1 Day", assigned_to:"", proof_file:"", status:"Planned" };
 
 export default function CustomerVisits(){
+  const { user } = useAuth();
+  const canRelog = user?.role === 'Admin' || user?.role === 'Manager';
+
   const [visits,setVisits]       = useState([]);
   const [customers,setCustomers] = useState([]);
   const [employees,setEmployees] = useState([]);
@@ -136,6 +140,13 @@ export default function CustomerVisits(){
     }catch(e){ show(e?.response?.data?.error||"Cannot delete"); }
   }
 
+  async function relogVisit(v){
+    try{
+      const res = await visitsApi.relog(v.id);
+      show(res.data?.message || "Worklog created");
+    }catch(e){ show(e?.response?.data?.error||"Relog failed"); }
+  }
+
   async function handleFile(e){
     const file = e.target.files?.[0];
     if(!file) return;
@@ -251,7 +262,7 @@ export default function CustomerVisits(){
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead><tr style={{background:"#f8f9fb"}}>
-                {["Customer","Contact","Channel","Agenda","Date","Duration","Assigned To","Status",""].map(h=>(
+                {["Customer","Contact","Channel","Agenda","Date","Duration","Assigned To","Status","Action"].map(h=>(
                   <th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec",whiteSpace:"nowrap"}}>{h}</th>
                 ))}
               </tr></thead>
@@ -281,6 +292,9 @@ export default function CustomerVisits(){
                           )}
                           {(v.status==="Planned"||v.status==="In Progress"||v.status==="Pending")&&(
                             <button onClick={()=>openClose(v)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #a7f3d0",background:"#ecfdf5",color:"#059669",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
+                          )}
+                          {canRelog&&v.assigned_to&&(
+                            <button onClick={()=>relogVisit(v)} title="Recreate worklog entries" style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📋</button>
                           )}
                           <button onClick={()=>openEdit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
                           <button onClick={()=>setDelId(v.id)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>

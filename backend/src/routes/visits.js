@@ -148,29 +148,38 @@ router.post('/', verify, async (req, res) => {
     `, [customer_id, contact_person, channel, agenda, planned_date, duration,
         effectiveAssignedTo, proof_file, status, work_done, issues_resolved, additional_reqs, req.user.userId]);
 
-    // ── Auto work log: only when visit is scheduled for today and has an assignee ──
-    const visit      = rows[0];
-    const todayIST   = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
-    const visitDate  = new Date(visit.planned_date).toISOString().slice(0, 10); // always YYYY-MM-DD
+    // ── Auto work log: one 480-min entry per day for every day of the visit ──
+    const visit = rows[0];
 
-    if (visitDate === todayIST && effectiveAssignedTo) {
+    if (effectiveAssignedTo) {
       try {
-        const days      = parseDurationDays(duration);
-        const spentMins = Math.round(days * 8 * 60);
-        const projId    = await getOrCreateVisitProject();
+        const days   = parseDurationDays(duration);
+        const total  = Math.ceil(days);
+        const projId = await getOrCreateVisitProject();
 
         const { rows: cr } = await db.query('SELECT name FROM customers WHERE id = $1', [customer_id]);
         const customerName  = cr[0]?.name || '';
         const desc = `Auto-logged: Customer visit${customerName ? ' — ' + customerName : ''}${agenda ? ' | ' + agenda : ''}`;
 
-        await db.query(
-          `INSERT INTO tasks
-             (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description, visit_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8,$9)`,
-          [visitDate, effectiveAssignedTo, projId,
-           'Customer Visit', 'On-Site', spentMins, 'In Progress', desc, visit.id]
-        );
-        console.log(`📋 Visit work log auto-created — employee ${effectiveAssignedTo}, ${spentMins}m`);
+        const baseDate = new Date(visit.planned_date.toISOString
+          ? visit.planned_date.toISOString().slice(0, 10)
+          : String(visit.planned_date).slice(0, 10));
+
+        for (let i = 0; i < total; i++) {
+          const d = new Date(baseDate);
+          d.setUTCDate(d.getUTCDate() + i);
+          const dateStr    = d.toISOString().slice(0, 10);
+          const isLastHalf = i === Math.floor(days) && days % 1 !== 0;
+          const spentMins  = isLastHalf ? 240 : 480;
+          await db.query(
+            `INSERT INTO tasks
+               (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description, visit_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8,$9)`,
+            [dateStr, effectiveAssignedTo, projId,
+             'Customer Visit', 'On-Site', spentMins, 'In Progress', desc, visit.id]
+          );
+        }
+        console.log(`📋 Visit work log auto-created — ${total} entries for employee ${effectiveAssignedTo}`);
       } catch (autoErr) {
         // Don't fail visit creation because of work-log error
         console.error('⚠️  Auto visit work log failed:', autoErr.message);
@@ -229,34 +238,51 @@ router.put('/:id', verify, async (req, res) => {
         assigned_to, proof_file, status, work_done, issues_resolved, additional_reqs, visitId]);
     if (!rows.length) return res.status(404).json({ error: 'Visit not found' });
 
-    // Sync linked work log: status and/or spent_mins
+    // Sync linked work log
     const updatedVisit = rows[0];
-    const syncUpdates = [];
-    const syncParams  = [];
 
-    if (updatedVisit.status === 'Completed') {
-      syncUpdates.push(`status = 'Completed'`);
-    }
+    if (planned_date !== undefined || duration !== undefined) {
+      // Date or duration changed — delete all existing task entries and recreate per-day
+      await db.query(`DELETE FROM tasks WHERE visit_id = $1`, [visitId]).catch(() => {});
 
-    if (duration !== undefined) {
-      const days      = parseDurationDays(updatedVisit.duration);
-      const spentMins = Math.round(days * 8 * 60);
-      syncParams.push(spentMins);
-      syncUpdates.push(`spent_mins = $${syncParams.length}`);
-    }
+      if (updatedVisit.assigned_to) {
+        try {
+          const days    = parseDurationDays(updatedVisit.duration);
+          const total   = Math.ceil(days);
+          const projId  = await getOrCreateVisitProject();
+          const { rows: cr } = await db.query('SELECT name FROM customers WHERE id = $1', [updatedVisit.customer_id]);
+          const customerName = cr[0]?.name || '';
+          const desc = `Auto-logged: Customer visit${customerName ? ' — ' + customerName : ''}${updatedVisit.agenda ? ' | ' + updatedVisit.agenda : ''}`;
+          const plannedStr = new Date(updatedVisit.planned_date).toISOString().slice(0, 10);
+          const baseDate = new Date(plannedStr);
 
-    if (planned_date !== undefined) {
-      const newDate = new Date(updatedVisit.planned_date).toISOString().slice(0, 10);
-      syncParams.push(newDate);
-      syncUpdates.push(`task_date = $${syncParams.length}`);
-    }
-
-    if (syncUpdates.length) {
-      syncParams.push(visitId);
-      await db.query(
-        `UPDATE tasks SET ${syncUpdates.join(', ')} WHERE visit_id = $${syncParams.length}`,
-        syncParams
-      ).catch(e => console.error('⚠️  Visit work log sync failed:', e.message));
+          for (let i = 0; i < total; i++) {
+            const d = new Date(baseDate);
+            d.setUTCDate(d.getUTCDate() + i);
+            const dateStr   = d.toISOString().slice(0, 10);
+            const isLastHalf = i === Math.floor(days) && days % 1 !== 0;
+            const spentMins = isLastHalf ? 240 : 480;
+            await db.query(
+              `INSERT INTO tasks
+                 (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description, visit_id)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8,$9)`,
+              [dateStr, updatedVisit.assigned_to, projId,
+               'Customer Visit', 'On-Site', spentMins, 'In Progress', desc, visitId]
+            );
+          }
+        } catch (autoErr) {
+          console.error('⚠️  Visit work log recreate failed:', autoErr.message);
+        }
+      }
+    } else if (status !== undefined) {
+      // Only status changed — sync to all linked tasks
+      const taskStatus = ['Completed','Cancelled'].includes(updatedVisit.status) ? updatedVisit.status : null;
+      if (taskStatus) {
+        await db.query(
+          `UPDATE tasks SET status = $1 WHERE visit_id = $2`,
+          [taskStatus, visitId]
+        ).catch(e => console.error('⚠️  Visit work log sync failed:', e.message));
+      }
     }
 
     res.json(updatedVisit);
@@ -334,6 +360,51 @@ router.post('/:id/notify', verify, async (req, res) => {
     console.error('❌ POST /visits/:id/notify:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// POST /:id/relog — recreate worklog entries for an existing visit (Admin/Manager only)
+router.post('/:id/relog', verify, async (req, res) => {
+  try {
+    if (!['Admin','Manager'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    const visitId = req.params.id;
+    const { rows } = await db.query(`
+      SELECT v.*, c.name AS customer_name
+      FROM customer_visits v
+      JOIN customers c ON c.id = v.customer_id
+      WHERE v.id = $1
+    `, [visitId]);
+    if (!rows[0]) return res.status(404).json({ error: 'Visit not found' });
+    const visit = rows[0];
+    if (!visit.assigned_to) return res.status(400).json({ error: 'Visit has no assignee — cannot create worklog' });
+
+    // Delete existing tasks for this visit and recreate
+    await db.query(`DELETE FROM tasks WHERE visit_id = $1`, [visitId]);
+
+    const days       = parseDurationDays(visit.duration);
+    const total      = Math.ceil(days);
+    const projId     = await getOrCreateVisitProject();
+    const desc       = `Auto-logged: Customer visit${visit.customer_name ? ' — ' + visit.customer_name : ''}${visit.agenda ? ' | ' + visit.agenda : ''}`;
+    const plannedStr = new Date(visit.planned_date).toISOString().slice(0, 10);
+    const baseDate   = new Date(plannedStr);
+
+    for (let i = 0; i < total; i++) {
+      const d = new Date(baseDate);
+      d.setUTCDate(d.getUTCDate() + i);
+      const dateStr    = d.toISOString().slice(0, 10);
+      const isLastHalf = i === Math.floor(days) && days % 1 !== 0;
+      const spentMins  = isLastHalf ? 240 : 480;
+      await db.query(
+        `INSERT INTO tasks
+           (task_date, employee_id, project_id, category, work_type, spent_mins, status, tat_days, description, visit_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,0,$8,$9)`,
+        [dateStr, visit.assigned_to, projId,
+         'Customer Visit', 'On-Site', spentMins, 'In Progress', desc, visitId]
+      );
+    }
+    res.json({ message: `${total} worklog ${total === 1 ? 'entry' : 'entries'} created` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // DELETE

@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   status      VARCHAR(30)  NOT NULL DEFAULT 'In Progress'
                 CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled')),
   utilization NUMERIC(6,2) NOT NULL DEFAULT 0,
+  description TEXT,
   created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
@@ -145,7 +146,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
   tat_alert_days          INT          NOT NULL DEFAULT 2,
   email_notif             BOOLEAN      NOT NULL DEFAULT TRUE,
   auto_close              BOOLEAN      NOT NULL DEFAULT FALSE,
-  session_timeout         INT          NOT NULL DEFAULT 30,
+  session_timeout         INT          NOT NULL DEFAULT 0,
   admin_email             VARCHAR(200),
   visit_reminder_enabled  BOOLEAN      NOT NULL DEFAULT TRUE,
   work_categories         TEXT,
@@ -210,7 +211,7 @@ INSERT INTO system_settings
   (id, company_name, daily_target_mins, work_days, timezone, tat_alert_days,
    email_notif, auto_close, session_timeout, admin_email, visit_reminder_enabled)
 VALUES
-  (1, 'MPulse', 510, 'Mon-Fri', 'Asia/Kolkata', 2, TRUE, FALSE, 30, NULL, TRUE)
+  (1, 'MPulse', 510, 'Mon-Fri', 'Asia/Kolkata', 2, TRUE, FALSE, 0, NULL, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Seed: Default department ─────────────────────────────────────────────
@@ -318,3 +319,8 @@ INSERT INTO role_permissions (role_name, page_key, can_view, can_create, can_upd
   ('User','md_categories',  false, false, false, false),
   ('User','_team_only',     false, false, false, false)
 ON CONFLICT (role_name, page_key) DO NOTHING;
+
+-- ── Backfill: tasks columns added after initial deploy ────────────────────
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS visit_id    INT REFERENCES customer_visits(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_tasks_visit ON tasks(visit_id);
