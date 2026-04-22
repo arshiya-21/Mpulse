@@ -69,6 +69,20 @@ router.get('/', verify, async (req, res) => {
       return res.json(rows);
     }
 
+    // Special param: for_project=true → return all active employees (needed for
+    // project owner + assignee pickers regardless of the caller's role)
+    if (req.query.for_project === 'true') {
+      const { rows } = await db.query(`
+        SELECT e.id, e.name, e.department_id, d.name AS department, r.name AS role
+        FROM employees e
+        LEFT JOIN roles r ON r.id = e.role_id
+        LEFT JOIN departments d ON d.id = e.department_id
+        WHERE e.status = 'active'
+        ORDER BY e.name
+      `);
+      return res.json(rows);
+    }
+
     let q = EMP_SELECT + ' WHERE 1=1';
     const params = [];
 

@@ -40,7 +40,7 @@ export default function Projects(){
   useEffect(()=>{load();},[]);
   async function load(){
     try{
-      const [pR,dR,eR]=await Promise.all([projApi.getAll(),deptApi.getAll(),empApi.getAll()]);
+      const [pR,dR,eR]=await Promise.all([projApi.getAll(),deptApi.getAll(),empApi.getAll({for_project:true})]);
       const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
       setProjects(srt(pR.data,"name"));setDepts(srt(dR.data,"name"));setEmployees(srt(eR.data,"name"));
       if(user.role==="User"){
