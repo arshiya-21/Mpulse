@@ -191,6 +191,7 @@ function Employees(){
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [delId,setDelId]=useState(null);
+  const [resetLinkEmp,setResetLinkEmp]=useState(null);
   const [inviteEmp,setInviteEmp]=useState(null);
   const [inviteUrl,setInviteUrl]=useState("");
   const [copied,setCopied]=useState(false);
@@ -259,11 +260,12 @@ function Employees(){
       show("Credentials sent to "+e.email);
     } catch(err){ show(err?.response?.data?.error||"Failed to resend"); }
   }
-  async function resetPassword(e){
-    if(!window.confirm(`Send a password reset link to ${e.name} (${e.email})?\nThe link will expire in 30 minutes.`)) return;
+  function resetPassword(e){ setResetLinkEmp(e); }
+  async function doSendResetLink(){
     try{
-      await empApi.sendResetLink(e.id);
-      show("Reset link sent to "+e.email);
+      await empApi.sendResetLink(resetLinkEmp.id);
+      show("Reset link sent to "+resetLinkEmp.email);
+      setResetLinkEmp(null);
     } catch(err){ show(err?.response?.data?.error||"Failed to send reset link"); }
   }
   function copyLink(link){navigator.clipboard.writeText(link).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2000);}
@@ -421,6 +423,20 @@ function Employees(){
           </div>
         </Modal>
       )}
+      <Modal open={!!resetLinkEmp} onClose={()=>setResetLinkEmp(null)} title="Send Password Reset Link" width={380}>
+        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:10}}>
+          <p style={{fontSize:13,color:"#4b5563",margin:0}}>A password reset link will be sent to:</p>
+          <div style={{background:"#f8fafc",borderRadius:8,padding:"10px 14px",border:"1px solid #e4e7ec"}}>
+            <div style={{fontWeight:600,fontSize:13,color:"#111827"}}>{resetLinkEmp?.name}</div>
+            <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{resetLinkEmp?.email}</div>
+          </div>
+          <p style={{fontSize:12,color:"#9ca3af",margin:0}}>The link will expire in <strong>30 minutes</strong>. The user must click it to set a new password.</p>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
+          <button onClick={()=>setResetLinkEmp(null)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={doSendResetLink} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Send Reset Link</button>
+        </div>
+      </Modal>
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Remove Employee" width={360}>
         <div style={{padding:"18px 20px"}}><p style={{fontSize:14,color:"#4b5563",lineHeight:1.6}}>Are you sure you want to remove this employee?</p></div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
