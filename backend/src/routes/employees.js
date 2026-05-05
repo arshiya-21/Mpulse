@@ -313,7 +313,8 @@ router.post('/:id/resend-credentials', verify, requireRole('Admin', 'Manager'), 
     const { rows } = await db.query('SELECT id, name, email FROM employees WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'Employee not found' });
     const employee = rows[0];
-    const tempPassword = generateTempPassword();
+    const tempPassword = req.body?.password?.trim() || generateTempPassword();
+    if (tempPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     await db.query('UPDATE employees SET password_hash=$1, invite_status=$2, updated_at=NOW() WHERE id=$3', [passwordHash, 'pending', id]);
     const loginUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
