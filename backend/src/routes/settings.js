@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
           (company_name, daily_target_mins, work_days, timezone, tat_alert_days,
            email_notif, auto_close, session_timeout, admin_email, visit_reminder_enabled)
         VALUES
-          ('My Company', 510, 'Mon–Fri', 'Asia/Kolkata', 2, true, false, 30, NULL, true)
+          ('My Company', 510, 'Mon–Fri', 'Asia/Kolkata', 2, true, false, 0, NULL, true)
         ON CONFLICT DO NOTHING
       `);
       const { rows: newRows } = await db.query('SELECT * FROM system_settings WHERE id = 1');

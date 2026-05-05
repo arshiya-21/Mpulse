@@ -67,11 +67,15 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Generate regular login token
+    // Generate regular login token (expiry based on session_timeout setting)
+    const { rows: stRows } = await db.query('SELECT session_timeout FROM system_settings WHERE id = 1 LIMIT 1');
+    const sessionMins = stRows[0]?.session_timeout ?? 0;
+    const expiresIn = sessionMins === 0 ? '365d' : `${sessionMins}m`;
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role_name, department_id: user.department_id },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn }
     );
 
     console.log('✅ User logged in:', user.email);
@@ -157,11 +161,15 @@ router.post('/reset-first-time-password', async (req, res) => {
     const roleName = roleRows[0]?.name;
     const deptId = roleRows[0]?.department_id;
 
-    // Generate regular login token
+    // Generate regular login token (expiry based on session_timeout setting)
+    const { rows: stRows2 } = await db.query('SELECT session_timeout FROM system_settings WHERE id = 1 LIMIT 1');
+    const sessionMins2 = stRows2[0]?.session_timeout ?? 0;
+    const expiresIn2 = sessionMins2 === 0 ? '365d' : `${sessionMins2}m`;
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: roleName, department_id: deptId },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: expiresIn2 }
     );
 
     console.log('✅ First-time password reset successful:', user.email);
