@@ -7,4 +7,4 @@ export const update        = (id, d)   => api.put(`/employees/${id}`, d);
 export const remove        = (id)      => api.delete(`/employees/${id}`);
 export const genInvite          = (id) => api.post(`/employees/${id}/invite`);
 export const resendCredentials  = (id) => api.post(`/employees/${id}/resend-credentials`);
-export const resetPassword      = (id, password) => api.post(`/employees/${id}/resend-credentials`, { password });
+export const sendResetLink      = (id) => api.post(`/employees/${id}/send-reset-link`);
