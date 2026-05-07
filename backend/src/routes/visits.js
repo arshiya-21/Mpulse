@@ -40,7 +40,8 @@ router.get('/', verify, async (req, res) => {
       SELECT v.*,
              c.name  AS customer_name,
              e.name  AS assigned_to_name,
-             cr.name AS created_by_name
+             cr.name AS created_by_name,
+             (SELECT COUNT(*) FROM tasks t WHERE t.visit_id = v.id)::int AS tasks_count
       FROM customer_visits v
       JOIN customers  c  ON c.id  = v.customer_id
       LEFT JOIN employees e  ON e.id  = v.assigned_to

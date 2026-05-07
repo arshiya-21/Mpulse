@@ -42,6 +42,7 @@ export default function CustomerVisits(){
   const [closeModal,setCloseModal]   = useState(false);
   const [closeForm,setCloseForm]     = useState({status:"Completed",work_done:"",issues_resolved:"",additional_reqs:""});
 
+  const [viewVisit,setViewVisit] = useState(null);
   const [delId,setDelId]   = useState(null);
   const [search,setSearch] = useState("");
   const [statusF,setStatusF]= useState("");
@@ -141,9 +142,11 @@ export default function CustomerVisits(){
   }
 
   async function relogVisit(v){
+    if(v.tasks_count > 0){ show("Worklog already created for this visit"); return; }
     try{
       const res = await visitsApi.relog(v.id);
       show(res.data?.message || "Worklog created");
+      await loadAll();
     }catch(e){ show(e?.response?.data?.error||"Relog failed"); }
   }
 
@@ -302,6 +305,9 @@ export default function CustomerVisits(){
                               <button onClick={()=>relogVisit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📋</button>
                             </Tooltip>
                           )}
+                          <Tooltip text="View Details">
+                            <button onClick={()=>setViewVisit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>👁️</button>
+                          </Tooltip>
                           <Tooltip text="Edit Visit">
                             <button onClick={()=>openEdit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>
                           </Tooltip>
@@ -503,6 +509,76 @@ export default function CustomerVisits(){
           <button onClick={saveClose} style={{padding:"9px 18px",borderRadius:6,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Save Outcome</button>
         </div>
       </Modal>
+
+      {/* ── View Modal ── */}
+      {viewVisit&&(
+        <Modal open={!!viewVisit} onClose={()=>setViewVisit(null)} title="Visit Details" width={560}>
+          <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:14,overflowY:"auto",maxHeight:"70vh"}}>
+            {/* Header */}
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"#f8f9fb",borderRadius:8,border:"1px solid #e4e7ec"}}>
+              <div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#1e3a5f,#1d4ed8)",color:"#bfdbfe",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{viewVisit.customer_name?.[0]||"?"}</div>
+              <div>
+                <div style={{fontWeight:700,fontSize:15,color:"#111827"}}>{viewVisit.customer_name||"—"}</div>
+                <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{viewVisit.contact_person||"—"}</div>
+              </div>
+              <span style={{marginLeft:"auto",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:(STATUS_STYLE[viewVisit.status]||{}).bg||"#f0f2f5",color:(STATUS_STYLE[viewVisit.status]||{}).c||"#374151"}}>{viewVisit.status}</span>
+            </div>
+
+            {/* Details grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {[
+                {label:"Channel",     value:`${chIcon[viewVisit.channel]||"📋"} ${viewVisit.channel||"—"}`},
+                {label:"Planned Date",value:fmtDate(viewVisit.planned_date)||"—"},
+                {label:"Duration",    value:viewVisit.duration||"—"},
+                {label:"Assigned To", value:viewVisit.assigned_to_name||"—"},
+              ].map(f=>(
+                <div key={f.label} style={{background:"#f8f9fb",borderRadius:7,padding:"10px 12px",border:"1px solid #e4e7ec"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",marginBottom:4}}>{f.label}</div>
+                  <div style={{fontSize:13,color:"#111827",fontWeight:500}}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Agenda */}
+            <div style={{background:"#f8f9fb",borderRadius:7,padding:"10px 12px",border:"1px solid #e4e7ec"}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",marginBottom:4}}>Agenda</div>
+              <div style={{fontSize:13,color:"#374151",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{viewVisit.agenda||"—"}</div>
+            </div>
+
+            {/* Outcome fields — only if closed */}
+            {viewVisit.work_done&&(
+              <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Work Done</div>
+                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.work_done}</div>
+              </div>
+            )}
+            {viewVisit.issues_resolved&&(
+              <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Issues Resolved</div>
+                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.issues_resolved}</div>
+              </div>
+            )}
+            {viewVisit.additional_reqs&&(
+              <div style={{background:"#fff7ed",borderRadius:7,padding:"10px 12px",border:"1px solid #fed7aa"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#c2410c",textTransform:"uppercase",marginBottom:4}}>Additional Requirements</div>
+                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.additional_reqs}</div>
+              </div>
+            )}
+
+            {/* Proof file */}
+            {viewVisit.proof_file&&(
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8f9fb",borderRadius:7,border:"1px solid #e4e7ec"}}>
+                <span style={{fontSize:13}}>📎</span>
+                <a href={fileUrl(viewVisit.proof_file)} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#4f46e5",fontWeight:500,textDecoration:"none"}}>{fileName(viewVisit.proof_file)}</a>
+              </div>
+            )}
+          </div>
+          <div style={{display:"flex",justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5",gap:8}}>
+            <button onClick={()=>{setViewVisit(null);openEdit(viewVisit);}} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>✏️ Edit</button>
+            <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
+          </div>
+        </Modal>
+      )}
 
       {/* ── Delete Modal ── */}
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Delete Visit" width={380}>
