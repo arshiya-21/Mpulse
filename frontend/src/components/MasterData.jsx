@@ -266,6 +266,7 @@ function Employees(){
       await empApi.sendResetLink(resetLinkEmp.id);
       show("Reset link sent to "+resetLinkEmp.email);
       setResetLinkEmp(null);
+      await load();
     } catch(err){ show(err?.response?.data?.error||"Failed to send reset link"); }
   }
   function copyLink(link){navigator.clipboard.writeText(link).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2000);}
