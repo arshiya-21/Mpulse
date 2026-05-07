@@ -545,23 +545,28 @@ export default function CustomerVisits(){
               <div style={{fontSize:13,color:"#374151",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{viewVisit.agenda||"—"}</div>
             </div>
 
-            {/* Outcome fields — only if closed */}
-            {viewVisit.work_done&&(
-              <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Work Done</div>
-                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.work_done}</div>
-              </div>
-            )}
-            {viewVisit.issues_resolved&&(
-              <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Issues Resolved</div>
-                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.issues_resolved}</div>
-              </div>
-            )}
-            {viewVisit.additional_reqs&&(
-              <div style={{background:"#fff7ed",borderRadius:7,padding:"10px 12px",border:"1px solid #fed7aa"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#c2410c",textTransform:"uppercase",marginBottom:4}}>Additional Requirements</div>
-                <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.additional_reqs}</div>
+            {/* Closure Details — shown when visit was closed */}
+            {(viewVisit.work_done||viewVisit.issues_resolved||viewVisit.additional_reqs)&&(
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.05em",borderBottom:"1px solid #e4e7ec",paddingBottom:6}}>Closure Details</div>
+                {viewVisit.work_done&&(
+                  <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Work Done</div>
+                    <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.work_done}</div>
+                  </div>
+                )}
+                {viewVisit.issues_resolved&&(
+                  <div style={{background:"#f0fdf4",borderRadius:7,padding:"10px 12px",border:"1px solid #bbf7d0"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#059669",textTransform:"uppercase",marginBottom:4}}>Issues Resolved</div>
+                    <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.issues_resolved}</div>
+                  </div>
+                )}
+                {viewVisit.additional_reqs&&(
+                  <div style={{background:"#fff7ed",borderRadius:7,padding:"10px 12px",border:"1px solid #fed7aa"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#c2410c",textTransform:"uppercase",marginBottom:4}}>Additional Requirements</div>
+                    <div style={{fontSize:13,color:"#374151",whiteSpace:"pre-wrap"}}>{viewVisit.additional_reqs}</div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -573,8 +578,7 @@ export default function CustomerVisits(){
               </div>
             )}
           </div>
-          <div style={{display:"flex",justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5",gap:8}}>
-            <button onClick={()=>{setViewVisit(null);openEdit(viewVisit);}} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>✏️ Edit</button>
+          <div style={{display:"flex",justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
             <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
           </div>
         </Modal>
