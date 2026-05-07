@@ -204,6 +204,13 @@ function Employees(){
   const ROLE_C={Admin:"#991b1b",Manager:"#1d4ed8",User:"#475569"};
 
   useEffect(()=>{load();},[]);
+  // Poll every 30s while any employee has a pending reset — auto-updates status to Accepted
+  useEffect(()=>{
+    const hasPending=emps.some(e=>e.invite_status==='reset_requested');
+    if(!hasPending) return;
+    const id=setInterval(()=>load(),30000);
+    return ()=>clearInterval(id);
+  },[emps]);
   async function load(){
     try{
       const [eR,dR,rR,mR]=await Promise.all([

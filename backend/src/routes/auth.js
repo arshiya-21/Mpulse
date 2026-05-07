@@ -47,6 +47,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // Block login if admin has requested a password reset — user must use the reset link
+    if (user.invite_status === 'reset_requested') {
+      return res.status(403).json({ error: 'Your password has been reset by the administrator. Please check your email for the reset link.' });
+    }
+
     // Check if first-time login (pending invite status)
     if (user.invite_status === 'pending') {
       // Generate a special token for password reset
