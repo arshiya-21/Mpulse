@@ -313,7 +313,7 @@ router.post('/:id/send-reset-link', verify, requireRole('Admin', 'Manager'), asy
     const { rows } = await db.query('SELECT id, name, email FROM employees WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'Employee not found' });
     const emp = rows[0];
-    const token = jwt.sign({ userId: emp.id, email: emp.email, action: 'set_password' }, JWT_SECRET, { expiresIn: '30m' });
+    const token = jwt.sign({ userId: emp.id, email: emp.email, action: 'first_time_reset' }, JWT_SECRET, { expiresIn: '30m' });
     await db.query(`UPDATE employees SET invite_token=$1, invite_expires=NOW()+INTERVAL '30 minutes', invite_status='reset_requested', updated_at=NOW() WHERE id=$2`, [token, id]);
     const inviteUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/set-password?token=${token}`;
     sendInviteEmail({ toName: emp.name, toEmail: emp.email, inviteUrl, expiresIn: '30 minutes' })
