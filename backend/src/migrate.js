@@ -26,7 +26,7 @@ module.exports = async function migrate() {
         status                  VARCHAR(20)  NOT NULL DEFAULT 'active'
                                   CHECK (status IN ('active','inactive')),
         invite_status           VARCHAR(20)  NOT NULL DEFAULT 'accepted'
-                                  CHECK (invite_status IN ('pending','accepted')),
+                                  CHECK (invite_status IN ('pending','accepted','reset_requested')),
         department_id           INT REFERENCES departments(id) ON DELETE SET NULL,
         secondary_department_id INT REFERENCES departments(id) ON DELETE SET NULL,
         role_id                 INT REFERENCES roles(id) ON DELETE SET NULL,
@@ -411,6 +411,13 @@ module.exports = async function migrate() {
         CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled','Closed'));
     `);
     console.log('✅ projects.status CHECK constraint updated');
+
+    await db.query(`
+      ALTER TABLE employees DROP CONSTRAINT IF EXISTS employees_invite_status_check;
+      ALTER TABLE employees ADD CONSTRAINT employees_invite_status_check
+        CHECK (invite_status IN ('pending','accepted','reset_requested'));
+    `);
+    console.log('✅ employees.invite_status CHECK constraint updated');
 
     console.log('✅ Migrations complete');
   } catch (err) {
