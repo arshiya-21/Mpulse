@@ -13,19 +13,14 @@ async function runWorklogDigest({ force = false } = {}) {
       return { skipped: true, reason: 'Digest is disabled in Notification Settings' };
     }
 
-    // Skip on non-working days
-    if (!force) {
-      const DAY_IDX  = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
-      const workDays = cfg[0]?.work_days || 'Mon–Fri';
-      const parts    = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
-      const startIdx = DAY_IDX[parts[0]] ?? 1;
-      const endIdx   = DAY_IDX[parts[1]] ?? 5;
-      const todayIdx = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getDay();
-      if (todayIdx < startIdx || todayIdx > endIdx) {
-        console.log(`⏭️  Today is not a working day (${workDays}) — skipping digest`);
-        return { skipped: true, reason: `Not a working day (${workDays})` };
-      }
-    }
+    // Determine if today is a working day (used to suppress no-log alerts on weekends)
+    const DAY_IDX    = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+    const workDays   = cfg[0]?.work_days || 'Mon–Fri';
+    const parts      = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
+    const startIdx   = DAY_IDX[parts[0]] ?? 1;
+    const endIdx     = DAY_IDX[parts[1]] ?? 5;
+    const todayIdx   = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getDay();
+    const isWorkingDay = todayIdx >= startIdx && todayIdx <= endIdx;
 
     // All distinct managers who have at least one managed employee —
     // covers both the many-to-many employee_managers table AND the
@@ -95,7 +90,11 @@ async function runWorklogDigest({ force = false } = {}) {
       `, [manager.id]);
 
       if (tasks.length === 0) {
-        // No one logged today — send an alert so the manager knows
+        if (!isWorkingDay) {
+          console.log(`⏭️  No logs & non-working day — skipping alert for ${manager.email}`);
+          continue;
+        }
+        // Working day with no logs — alert the manager
         try {
           await sendNoLogAlertEmail({
             toName:      manager.name,
