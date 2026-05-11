@@ -6,11 +6,25 @@ const { sendWorklogDigestEmail, sendNoLogAlertEmail } = require('./mailer');
 async function runWorklogDigest({ force = false } = {}) {
   try {
     const { rows: cfg } = await db.query(
-      'SELECT email_notif, worklog_digest_enabled FROM system_settings WHERE id = 1'
+      'SELECT email_notif, worklog_digest_enabled, work_days FROM system_settings WHERE id = 1'
     );
     if (!force && (!cfg[0]?.email_notif || !cfg[0]?.worklog_digest_enabled)) {
       console.log('⏭️  Worklog digest disabled — skipping');
       return { skipped: true, reason: 'Digest is disabled in Notification Settings' };
+    }
+
+    // Skip on non-working days
+    if (!force) {
+      const DAY_IDX  = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+      const workDays = cfg[0]?.work_days || 'Mon–Fri';
+      const parts    = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
+      const startIdx = DAY_IDX[parts[0]] ?? 1;
+      const endIdx   = DAY_IDX[parts[1]] ?? 5;
+      const todayIdx = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getDay();
+      if (todayIdx < startIdx || todayIdx > endIdx) {
+        console.log(`⏭️  Today is not a working day (${workDays}) — skipping digest`);
+        return { skipped: true, reason: `Not a working day (${workDays})` };
+      }
     }
 
     // All distinct managers who have at least one managed employee —
