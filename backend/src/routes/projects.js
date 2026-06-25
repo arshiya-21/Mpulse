@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../config/db');
+const router  = require('express').Router();
+const db      = require('../config/db');
+const ExcelJS = require('exceljs');
 const { verify, requireRole } = require('../middleware/auth');
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -318,6 +319,71 @@ router.delete('/:id', verify, requireRole('Admin', 'Manager', 'User'), async (re
     await db.query(`DELETE FROM projects WHERE id = $1`, [pid]);
     res.json({ message: 'Project deleted' });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── GET: Export project sessions as XLSX ─────────────────
+router.get('/:id/export', verify, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows: proj } = await db.query('SELECT name FROM projects WHERE id = $1', [id]);
+    if (!proj[0]) return res.status(404).json({ error: 'Project not found' });
+
+    const { rows: tasks } = await db.query(`
+      SELECT t.task_date, e.name AS employee, COALESCE(d.name,'—') AS department,
+             t.category, t.work_type, t.spent_mins, t.status,
+             COALESCE(t.description,'') AS description
+      FROM tasks t
+      JOIN employees e ON e.id = t.employee_id
+      LEFT JOIN departments d ON d.id = e.department_id
+      WHERE t.project_id = $1
+      ORDER BY t.task_date DESC, e.name
+    `, [id]);
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(proj[0].name.slice(0, 31));
+    ws.columns = [
+      { header: 'Date',        key: 'date',        width: 14 },
+      { header: 'Employee',    key: 'employee',     width: 22 },
+      { header: 'Department',  key: 'department',   width: 20 },
+      { header: 'Category',    key: 'category',     width: 20 },
+      { header: 'Work Type',   key: 'work_type',    width: 16 },
+      { header: 'Minutes',     key: 'minutes',      width: 10 },
+      { header: 'Hours',       key: 'hours',        width: 10 },
+      { header: 'Status',      key: 'status',       width: 14 },
+      { header: 'Description', key: 'description',  width: 40 },
+    ];
+    ws.getRow(1).eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+    });
+    ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+    tasks.forEach((t, i) => {
+      ws.addRow({
+        date:        t.task_date ? new Date(t.task_date).toLocaleDateString('en-IN') : '',
+        employee:    t.employee,
+        department:  t.department,
+        category:    t.category || '',
+        work_type:   t.work_type || '',
+        minutes:     t.spent_mins,
+        hours:       +(t.spent_mins / 60).toFixed(1),
+        status:      t.status || '',
+        description: t.description,
+      });
+      ws.getRow(i + 2).eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFDBEAFE' : 'FFFFFFFF' } };
+      });
+    });
+
+    const filename = `${proj[0].name.replace(/[^a-z0-9]/gi, '_')}_sessions_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('❌ GET /projects/:id/export error:', err);
+    res.status(500).json({ error: 'Failed to export' });
+  }
 });
 
 module.exports = router;

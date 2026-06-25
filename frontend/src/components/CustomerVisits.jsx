@@ -295,8 +295,8 @@ export default function CustomerVisits(){
                                 style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
                             </Tooltip>
                           )}
-                          {(v.status==="Planned"||v.status==="In Progress"||v.status==="Pending")&&(
-                            <Tooltip text="Close / Update Outcome">
+                          {(v.status==="Planned"||v.status==="In Progress"||v.status==="Pending"||v.status==="Completed")&&(
+                            <Tooltip text={v.status==="Completed"?"Edit Closure Details":"Close / Update Outcome"}>
                               <button onClick={()=>openClose(v)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #a7f3d0",background:"#ecfdf5",color:"#059669",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
                             </Tooltip>
                           )}

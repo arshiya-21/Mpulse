@@ -5,8 +5,9 @@ import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
 import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula, Pager, PAGE_SIZE } from "./shared.jsx";
-import { DEFAULT_CATS } from "./MasterData.jsx";
+import { DEFAULT_CATS, getAccessConfig } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { exportXLSX } from "../api/reports.js";
 
 export default function DailyTasks(){
   const {user}=useAuth();
@@ -133,6 +134,26 @@ export default function DailyTasks(){
   function clearAll(){setCatF("");setTatF("");setEmpF("");setDeptF("");setPage(1);}
   const empOptions=deptF?employees.filter(e=>e.department===deptF):employees;
 
+  // Export
+  const firstOfMonth = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [expModal,setExpModal]   = useState(false);
+  const [expFrom,setExpFrom]     = useState(firstOfMonth);
+  const [expTo,setExpTo]         = useState(defTo);
+  const [exporting,setExporting] = useState(false);
+  async function doExport(){
+    setExporting(true);
+    try{
+      const empObj  = employees.find(e=>e.name===empF);
+      const deptObj = departments.find(d=>d.name===deptF);
+      await exportXLSX({ from:expFrom, to:expTo,
+        ...(empObj  ? { emp_id:  empObj.id  } : {}),
+        ...(deptObj ? { dept_id: deptObj.id } : {}),
+      });
+      setExpModal(false);
+    }catch(e){ show("Export failed"); }
+    finally{ setExporting(false); }
+  }
+
   return(
     <div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"14px 16px",marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -180,6 +201,7 @@ export default function DailyTasks(){
           </div>
           <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"flex-end",alignSelf:"flex-end"}}>
             {hasFilters&&<button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer",fontWeight:600}}>✕ Clear</button>}
+            {getAccessConfig()[user?.role]?.worklog_export?.view&&<button onClick={()=>{setExpFrom(firstOfMonth);setExpTo(defTo);setExpModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>⬇ Export</button>}
             <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Log Task</button>
           </div>
         </div>
@@ -301,6 +323,26 @@ export default function DailyTasks(){
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setDelId(null)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
           <button onClick={del} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#dc2626",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Delete</button>
+        </div>
+      </Modal>
+      {/* ── Export Modal ── */}
+      <Modal open={expModal} onClose={()=>setExpModal(false)} title="Export Worklog" width={380}>
+        <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:14}}>
+          <p style={{fontSize:13,color:"#4b5563",margin:0}}>Select the date range to export. All filters (employee, department) will be applied.</p>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={labelS}>From</label>
+            <input type="date" value={expFrom} onChange={e=>setExpFrom(e.target.value)} style={inputS}/>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={labelS}>To</label>
+            <input type="date" value={expTo} onChange={e=>setExpTo(e.target.value)} style={inputS}/>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
+          <button onClick={()=>setExpModal(false)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+          <button onClick={doExport} disabled={exporting} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:600,cursor:exporting?"not-allowed":"pointer",opacity:exporting?0.7:1}}>
+            {exporting?"Exporting…":"⬇ Download Excel"}
+          </button>
         </div>
       </Modal>
       <Toast msg={msg}/>

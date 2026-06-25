@@ -220,6 +220,8 @@ router.put('/:id', verify, async (req, res) => {
       customer_id, contact_person, channel, agenda, planned_date,
       duration, assigned_to, proof_file, status, work_done, issues_resolved, additional_reqs
     } = req.body;
+    // Normalize empty strings to null for FK fields so COALESCE doesn't try to set "" as an ID
+    const safeAssignedTo = assigned_to === '' ? null : assigned_to;
     const { rows } = await db.query(`
       UPDATE customer_visits SET
         customer_id     = COALESCE($1,  customer_id),
@@ -236,7 +238,7 @@ router.put('/:id', verify, async (req, res) => {
         additional_reqs = COALESCE($12, additional_reqs)
       WHERE id = $13 RETURNING *
     `, [customer_id, contact_person, channel, agenda, planned_date, duration,
-        assigned_to, proof_file, status, work_done, issues_resolved, additional_reqs, visitId]);
+        safeAssignedTo, proof_file, status, work_done, issues_resolved, additional_reqs, visitId]);
     if (!rows.length) return res.status(404).json({ error: 'Visit not found' });
 
     // Sync linked work log
@@ -295,11 +297,11 @@ router.put('/:id/close', verify, async (req, res) => {
   try {
     const visitId = req.params.id;
 
-    // User: only close own visits
+    // User: only close visits they are assigned to or created
     if (req.user.role === 'User') {
-      const { rows: check } = await db.query('SELECT assigned_to FROM customer_visits WHERE id = $1', [visitId]);
-      if (!check[0] || String(check[0].assigned_to) !== String(req.user.userId)) {
-        return res.status(403).json({ error: 'You can only close visits assigned to you' });
+      const { rows: check } = await db.query('SELECT assigned_to, created_by FROM customer_visits WHERE id = $1', [visitId]);
+      if (!check[0] || (String(check[0].assigned_to) !== String(req.user.userId) && String(check[0].created_by) !== String(req.user.userId))) {
+        return res.status(403).json({ error: 'You can only close visits assigned to or created by you' });
       }
     }
 

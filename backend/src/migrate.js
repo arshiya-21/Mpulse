@@ -271,11 +271,16 @@ module.exports = async function migrate() {
         updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
-    // Add missing columns to existing email_settings tables (safe ALTER)
+    // Add missing columns and ensure from_email/app_password are nullable
     await db.query(`
       ALTER TABLE email_settings
         ADD COLUMN IF NOT EXISTS is_configured BOOLEAN     NOT NULL DEFAULT FALSE,
         ADD COLUMN IF NOT EXISTS updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    `);
+    await db.query(`
+      ALTER TABLE email_settings
+        ALTER COLUMN from_email   DROP NOT NULL,
+        ALTER COLUMN app_password DROP NOT NULL;
     `);
     await db.query(`
       INSERT INTO email_settings (id, from_email, app_password, is_configured)
@@ -402,13 +407,16 @@ module.exports = async function migrate() {
     }
 
     // ── Fix projects.status CHECK constraint to include all valid statuses ───
-    // The original CREATE TABLE may have been created with an older/different
-    // set of statuses. Drop and recreate the constraint so all current statuses
-    // (including Cancelled and Closed) are accepted.
+    // Drop first so legacy values ('Open') can be migrated without violating old constraint
+    await db.query(`ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check`);
+    await db.query(`UPDATE projects SET status = 'Not Started' WHERE status = 'Open'`);
     await db.query(`
-      ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+      UPDATE projects SET status = 'In Progress'
+        WHERE status NOT IN ('Not Started','In Progress','On Hold','Completed','Cancelled','Closed')
+    `);
+    await db.query(`
       ALTER TABLE projects ADD CONSTRAINT projects_status_check
-        CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled','Closed'));
+        CHECK (status IN ('Not Started','In Progress','On Hold','Completed','Cancelled','Closed'))
     `);
     console.log('✅ projects.status CHECK constraint updated');
 

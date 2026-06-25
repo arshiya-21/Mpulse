@@ -732,6 +732,10 @@ const MD_TABS=[
   {key:"emailconfig", label:"Email Config",      icon:"📧"},
   {key:"accessconfig",label:"Access Config",     icon:"🛡️"},
 ];
+const EXPORT_FEATURES=[
+  {key:"worklog_export", label:"Worklog Export",  icon:"📊"},
+  {key:"project_export", label:"Project Export",  icon:"📁"},
+];
 const ROLES_LIST=["Admin","Manager","User"];
 const ROLE_META={
   Admin:  {color:"#4f46e5",bg:"#ede9fe",desc:"Full system access"},
@@ -762,6 +766,8 @@ const DEFAULT_ACCESS={
     md_customers:   {view:true, create:true, update:true, delete:true},
     md_emailconfig: {view:true, create:false,update:true, delete:false},
     md_accessconfig:{view:true, create:false,update:true, delete:false},
+    worklog_export: {view:true, create:false,update:false,delete:false},
+    project_export: {view:true, create:false,update:false,delete:false},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
   Manager:{
@@ -780,6 +786,8 @@ const DEFAULT_ACCESS={
     md_customers:   {view:true, create:true, update:true, delete:false},
     md_emailconfig: {view:false,create:false,update:false,delete:false},
     md_accessconfig:{view:false,create:false,update:false,delete:false},
+    worklog_export: {view:true, create:false,update:false,delete:false},
+    project_export: {view:true, create:false,update:false,delete:false},
     _team_only:     {view:true, create:false,update:false,delete:false},
   },
   User:{
@@ -798,6 +806,8 @@ const DEFAULT_ACCESS={
     md_customers:   {view:false,create:false,update:false,delete:false},
     md_emailconfig: {view:false,create:false,update:false,delete:false},
     md_accessconfig:{view:false,create:false,update:false,delete:false},
+    worklog_export: {view:false,create:false,update:false,delete:false},
+    project_export: {view:false,create:false,update:false,delete:false},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
 };
@@ -890,6 +900,7 @@ function AccessConfig(){
       const ALL_KEYS=[
         ...NAV_PAGES.map(p=>p.key),
         ...MD_TABS.map(t=>"md_"+t.key),
+        ...EXPORT_FEATURES.map(f=>f.key),
         "_team_only",
       ];
 
@@ -974,6 +985,43 @@ function AccessConfig(){
     return PALETTE[idx];
   }  
                    
+  function renderToggleSection(heading,items){
+    return(
+      <>
+        <div style={{padding:"9px 20px",background:"#f8f9fb",borderTop:"1px solid #e4e7ec",borderBottom:"1px solid #e4e7ec",display:"flex",alignItems:"center"}}>
+          <div style={{flex:1}}>
+            <span style={{fontSize:10,fontWeight:800,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em"}}>{heading}</span>
+          </div>
+          <div style={{width:88,display:"flex",justifyContent:"center"}}>
+            <span style={{fontSize:10,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em"}}>Allow</span>
+          </div>
+        </div>
+        {items.map((item,i)=>{
+          const on=!!(cfg[selectedRole]?.[item.key]?.view);
+          return(
+            <div key={item.key}
+              style={{display:"flex",alignItems:"center",padding:"13px 20px",borderBottom:i===items.length-1?"none":"1px solid #f3f4f6",transition:"background 0.12s"}}
+              onMouseEnter={e=>e.currentTarget.style.background="#fafbfc"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+            >
+              <div style={{flex:1,display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:16,lineHeight:1}}>{item.icon}</span>
+                <span style={{fontSize:13,fontWeight:600,color:"#111827"}}>{item.label}</span>
+              </div>
+              <div style={{width:88,display:"flex",justifyContent:"center"}}>
+                <div onClick={()=>toggle(item.key,"view")}
+                  style={{width:40,height:22,borderRadius:11,background:on?"#4f46e5":"#d1d5db",position:"relative",cursor:"pointer",transition:"background 0.2s",flexShrink:0}}
+                >
+                  <div style={{position:"absolute",top:3,left:on?21:3,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.2s"}}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </>
+    );
+  }
+
   function renderSection(heading,items,prefix=""){
     return(
       <>
@@ -1048,6 +1096,7 @@ function AccessConfig(){
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:12,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
           {renderSection("Navigation Pages",NAV_PAGES)}
           {renderSection("Master Data Tabs",MD_TABS,"md_")}
+          {renderToggleSection("Export Features",EXPORT_FEATURES)}
 
           {/* ── DATA SCOPE ── */}
           <div style={{borderTop:"2px solid #e4e7ec",background:"#fafbfc"}}>

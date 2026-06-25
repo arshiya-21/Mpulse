@@ -2,7 +2,7 @@ import api from './index.js';
 
 export const getCount = (params) => api.get('/reports/count', { params });
 
-function triggerDownload(blob, filename) {
+export function triggerDownload(blob, filename) {
   const url  = window.URL.createObjectURL(new Blob([blob]));
   const link = document.createElement('a');
   link.href  = url;
