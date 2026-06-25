@@ -80,7 +80,7 @@ function UserDashboard({user}){
   const kpis=[
     {label:"Tasks Logged",value:tasks.length,icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",value:avgUtil+"%",icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
-    {label:"Total Hours",value:Math.round(totalMins/60)+"h",icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Total Hours",value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`,icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
     {label:"On Time",value:onTime,icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Delayed",value:delayed,icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
   ];
@@ -423,7 +423,7 @@ function AdminManagerDashboard(){
     {label:"Open Projects",     value:openProjects,                    icon:"📁",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Tasks Logged",      value:filtered.length,                 icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",   value:avgUtil+"%",                     icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
-    {label:"Total Hours",       value:Math.round(totalMins/60)+"h",    icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Total Hours",       value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`, icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
     {label:"Project Delays",    value:totalDelays,                     icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
     {label:"On Time Tasks",     value:onTimeTasks,                     icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Closed Projects",   value:closedProjects,                  icon:"🔒",accent:"#065f46",bg:"#f0fdf4"},
