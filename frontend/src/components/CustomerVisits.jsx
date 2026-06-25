@@ -11,7 +11,7 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api')
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
 function fileName(p) { return p ? decodeURIComponent(p.split('/').pop().replace(/^\d+_/, '')) : ''; }
 
-const BLANK = { customer_id:"", contact_person:"", channel:"Email", agenda:"", planned_date:"", duration:"1 Day", assigned_to:"", proof_file:"", status:"Planned" };
+const BLANK = { customer_id:"", contact_person:"", channel:"Email", agenda:"", planned_date:"", duration:"1 Day", assigned_to:"", proof_file:"", status:"Planned", work_done:"", issues_resolved:"", additional_reqs:"" };
 
 export default function CustomerVisits(){
   const { user } = useAuth();
@@ -38,9 +38,6 @@ export default function CustomerVisits(){
   const [ccInput,setCcInput]         = useState("");
   const [sending,setSending]         = useState(false);
 
-  // Close / outcome modal
-  const [closeModal,setCloseModal]   = useState(false);
-  const [closeForm,setCloseForm]     = useState({status:"Completed",work_done:"",issues_resolved:"",additional_reqs:""});
 
   const [viewVisit,setViewVisit] = useState(null);
   const [delId,setDelId]   = useState(null);
@@ -122,16 +119,6 @@ export default function CustomerVisits(){
     }finally{ setSending(false); }
   }
 
-  async function saveClose(){
-    if(!closeForm.work_done){ show("Work done is required"); return; }
-    try{
-      await visitsApi.close(editing.id, closeForm);
-      setVisits(prev=>prev.map(v=>v.id===editing.id?{...v,...closeForm}:v));
-      setCloseModal(false);
-      show("Outcome updated");
-    }catch{ show("Update failed"); }
-  }
-
   async function del(){
     try{
       await visitsApi.remove(delId);
@@ -180,14 +167,11 @@ export default function CustomerVisits(){
       assigned_to:    String(v.assigned_to || ""),
       proof_file:     v.proof_file     || "",
       status:         v.status         || "Planned",
+      work_done:      v.work_done      || "",
+      issues_resolved:v.issues_resolved|| "",
+      additional_reqs:v.additional_reqs|| "",
     });
     setModal(true);
-  }
-
-  function openClose(v){
-    setEditing(v);
-    setCloseForm({ status:"Completed", work_done:v.work_done||"", issues_resolved:v.issues_resolved||"", additional_reqs:v.additional_reqs||"" });
-    setCloseModal(true);
   }
 
   // CC tag helpers
@@ -295,11 +279,6 @@ export default function CustomerVisits(){
                                 style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
                             </Tooltip>
                           )}
-                          {(v.status==="Planned"||v.status==="In Progress"||v.status==="Pending"||v.status==="Completed")&&(
-                            <Tooltip text={v.status==="Completed"?"Edit Closure Details":"Close / Update Outcome"}>
-                              <button onClick={()=>openClose(v)} style={{padding:"4px 8px",borderRadius:5,border:"1px solid #a7f3d0",background:"#ecfdf5",color:"#059669",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
-                            </Tooltip>
-                          )}
                           {canRelog&&v.assigned_to&&(
                             <Tooltip text="Recreate Worklog Entries">
                               <button onClick={()=>relogVisit(v)} style={{padding:4,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📋</button>
@@ -362,6 +341,35 @@ export default function CustomerVisits(){
           <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Agenda *</label>
             <textarea value={form.agenda} onChange={e=>setForm({...form,agenda:e.target.value})} placeholder="Reason for visit…" style={taS}/>
           </div>
+
+          {/* Status — only when editing */}
+          {editing&&(
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={labelS}>Status</label>
+              <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inputS}>
+                {VISIT_STATUSES.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Closure Details — only when editing */}
+          {editing&&(
+            <div style={{display:"flex",flexDirection:"column",gap:10,padding:"14px 16px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#059669",textTransform:"uppercase",letterSpacing:"0.05em"}}>Closure Details</div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <label style={labelS}>Work Done</label>
+                <textarea value={form.work_done} onChange={e=>setForm({...form,work_done:e.target.value})} placeholder="What was done…" style={taS}/>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <label style={labelS}>Issues Resolved</label>
+                <textarea value={form.issues_resolved} onChange={e=>setForm({...form,issues_resolved:e.target.value})} placeholder="Issues fixed…" style={taS}/>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <label style={labelS}>Additional Requirements</label>
+                <textarea value={form.additional_reqs} onChange={e=>setForm({...form,additional_reqs:e.target.value})} placeholder="Follow-ups…" style={taS}/>
+              </div>
+            </div>
+          )}
 
           {/* Proof File */}
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -490,24 +498,6 @@ export default function CustomerVisits(){
             </div>
           </>
         )}
-      </Modal>
-
-      {/* ── Close / Outcome Modal ── */}
-      <Modal open={closeModal} onClose={()=>setCloseModal(false)} title="Update Visit Outcome" width={520}>
-        <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Status</label>
-            <select value={closeForm.status} onChange={e=>setCloseForm({...closeForm,status:e.target.value})} style={inputS}>
-              {VISIT_STATUSES.map(s=><option key={s}>{s}</option>)}
-            </select>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Work Done *</label><textarea value={closeForm.work_done} onChange={e=>setCloseForm({...closeForm,work_done:e.target.value})} placeholder="What was done…" style={taS}/></div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Issues Resolved</label><textarea value={closeForm.issues_resolved} onChange={e=>setCloseForm({...closeForm,issues_resolved:e.target.value})} placeholder="Issues fixed…" style={taS}/></div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Additional Requirements</label><textarea value={closeForm.additional_reqs} onChange={e=>setCloseForm({...closeForm,additional_reqs:e.target.value})} placeholder="Follow-ups…" style={taS}/></div>
-        </div>
-        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"14px 24px",borderTop:"1px solid #f0f2f5"}}>
-          <button onClick={()=>setCloseModal(false)} style={{padding:"9px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={saveClose} style={{padding:"9px 18px",borderRadius:6,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Save Outcome</button>
-        </div>
       </Modal>
 
       {/* ── View Modal ── */}
