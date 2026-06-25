@@ -201,7 +201,7 @@ export default function DailyTasks(){
           </div>
           <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"flex-end",alignSelf:"flex-end"}}>
             {hasFilters&&<button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer",fontWeight:600}}>✕ Clear</button>}
-            {getAccessConfig()[user?.role]?.worklog_export?.view&&<button onClick={()=>{setExpFrom(firstOfMonth);setExpTo(defTo);setExpModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>⬇ Export</button>}
+            <button onClick={()=>{setExpFrom(firstOfMonth);setExpTo(defTo);setExpModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>⬇ Export</button>
             <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Log Task</button>
           </div>
         </div>

@@ -447,12 +447,12 @@ export default function Projects(){
               </div>
 
               <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
-                {getAccessConfig()[user?.role]?.project_export?.view&&<button onClick={async()=>{
+                <button onClick={async()=>{
                   try{
                     const res=await projApi.exportXlsx(pv.id);
                     triggerDownload(res.data,`${pv.name.replace(/[^a-z0-9]/gi,'_')}_sessions_${new Date().toISOString().slice(0,10)}.xlsx`);
                   }catch{ show("Export failed"); }
-                }} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer"}}>⬇ Export Sessions</button>}
+                }} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer"}}>⬇ Export Sessions</button>
                 <button onClick={()=>setOvModal(false)} style={{padding:"8px 18px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
               </div>
             </div>
