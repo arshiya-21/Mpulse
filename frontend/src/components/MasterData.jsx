@@ -1147,7 +1147,8 @@ function EmailConfig(){
   const [loading,setLoading]       = useState(true);
   const [saving,setSaving]         = useState(false);
   const [savingNotif,setSavingNotif] = useState(false);
-  const [sendingDigest,setSendingDigest] = useState(false);
+  const [sendingDigest,setSendingDigest]       = useState(false);
+  const [testingMeeting,setTestingMeeting]     = useState(false);
   const [testing,setTesting] = useState(false);
   const [showPass,setShowPass] = useState(false);
   const {msg,show} = useToast();
@@ -1179,6 +1180,16 @@ function EmailConfig(){
     try{ await emailSettingsApi.update(payload); show("Sender email saved ✓"); await load(); }
     catch(e){ show(e?.response?.data?.error||"Save failed"); }
     finally{ setSaving(false); }
+  }
+
+  async function testMeetingNow(){
+    if(testingMeeting) return;
+    setTestingMeeting(true);
+    try{
+      const r = await settingsApi.testMeetingReminder();
+      show(r.data.message);
+    }catch(e){ show("❌ "+(e?.response?.data?.error||"Test failed")); }
+    finally{ setTestingMeeting(false); }
   }
 
   async function sendDigestNow(){
@@ -1326,6 +1337,18 @@ function EmailConfig(){
                     style={{width:40,height:22,borderRadius:11,background:notifCfg.worklog_digest_enabled?"#4f46e5":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",border:"1px solid #e4e7ec"}}>
                     <div style={{position:"absolute",top:2,left:notifCfg.worklog_digest_enabled?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                   </div>
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>Meeting Reminders</div>
+                  <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Sends reminder email to project assignees before each scheduled meeting</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0,marginLeft:16}}>
+                  <button onClick={testMeetingNow} disabled={testingMeeting}
+                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:testingMeeting?"#eef2ff":"#4f46e5",color:testingMeeting?"#6366f1":"#fff",cursor:testingMeeting?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                    {testingMeeting?"Sending…":"▶ Test Now"}
+                  </button>
                 </div>
               </div>
             </div>

@@ -3,8 +3,9 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const migrate = require('./migrate');
-const { startVisitReminderCron }  = require('./utils/visitReminder');
-const { startWorklogDigestCron }  = require('./utils/worklogDigest');
+const { startVisitReminderCron }   = require('./utils/visitReminder');
+const { startWorklogDigestCron }   = require('./utils/worklogDigest');
+const { startMeetingReminderCron } = require('./utils/meetingReminder');
 
 const app = express();
 
@@ -12,6 +13,7 @@ const app = express();
 migrate().then(() => {
   startVisitReminderCron();
   startWorklogDigestCron();
+  startMeetingReminderCron();
 });
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -34,6 +36,7 @@ app.use('/api/email-settings', require('./routes/emailSettings'));
 app.use('/api/permissions',   require('./routes/permissions'));
 app.use('/api/library',       require('./routes/library'));
 app.use('/api/uploads',      require('./routes/uploads'));
+app.use('/api/meetings',     require('./routes/meetings'));
 
 // Health check
 app.get('/api/health', (_req, res) =>

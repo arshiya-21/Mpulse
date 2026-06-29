@@ -324,3 +324,16 @@ ON CONFLICT (role_name, page_key) DO NOTHING;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS visit_id    INT REFERENCES customer_visits(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_tasks_visit ON tasks(visit_id);
+
+-- ── Project Meetings ──────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS project_meetings (
+  id               SERIAL PRIMARY KEY,
+  project_id       INT  NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  schedule_type    VARCHAR(10) NOT NULL DEFAULT 'Daily',
+  days             TEXT NOT NULL DEFAULT '',
+  meeting_time     TIME NOT NULL,
+  reminder_mins    INT  NOT NULL DEFAULT 30,
+  meeting_link     TEXT NOT NULL,
+  last_reminded_at TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -427,6 +427,22 @@ module.exports = async function migrate() {
     `);
     console.log('✅ employees.invite_status CHECK constraint updated');
 
+    // ── project_meetings ─────────────────────────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS project_meetings (
+        id               SERIAL PRIMARY KEY,
+        project_id       INT  NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        schedule_type    VARCHAR(10) NOT NULL DEFAULT 'Daily',
+        days             TEXT NOT NULL DEFAULT '',
+        meeting_time     TIME NOT NULL,
+        reminder_mins    INT  NOT NULL DEFAULT 30,
+        meeting_link     TEXT NOT NULL,
+        last_reminded_at TIMESTAMPTZ,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('✅ project_meetings table ready');
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);

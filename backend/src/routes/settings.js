@@ -2,7 +2,8 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
 const { verify } = require('../middleware/auth');
-const { runWorklogDigest } = require('../utils/worklogDigest');
+const { runWorklogDigest }        = require('../utils/worklogDigest');
+const { sendMeetingReminderEmail } = require('../utils/mailer');
 
 // ── GET: Fetch system settings ────────────────────────────
 router.get('/', async (req, res) => {
@@ -125,6 +126,27 @@ router.post('/trigger-digest', verify, async (req, res) => {
     const { sent, total } = result;
     if (sent === 0) return res.json({ message: 'No work logs found for today — no emails sent' });
     res.json({ message: `Digest sent to ${sent} of ${total} manager(s)` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/settings/test-meeting-reminder — send a test meeting reminder to admin email
+router.post('/test-meeting-reminder', verify, async (req, res) => {
+  if (req.user.role !== 'Admin') return res.status(403).json({ error: 'Admin only' });
+  try {
+    const { rows: sRows } = await db.query('SELECT admin_email FROM system_settings WHERE id = 1 LIMIT 1');
+    const adminEmail = sRows[0]?.admin_email;
+    if (!adminEmail) return res.status(400).json({ error: 'Admin email not configured in Notification Settings' });
+    await sendMeetingReminderEmail({
+      toEmail:     adminEmail,
+      toName:      'Admin',
+      projectName: 'Test Project',
+      meetingTime: '10:00',
+      meetingLink: 'https://meet.google.com/test-link',
+      reminderMins: 30,
+    });
+    res.json({ message: `Test meeting reminder sent to ${adminEmail}` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

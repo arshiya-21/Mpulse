@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
-import * as projApi from "../api/projects.js";
-import * as deptApi from "../api/departments.js";
-import * as empApi  from "../api/employees.js";
+import * as projApi    from "../api/projects.js";
+import * as deptApi    from "../api/departments.js";
+import * as empApi     from "../api/employees.js";
+import * as meetApi    from "../api/meetings.js";
 import { useToast, Toast, Spinner, LoadingBox, Modal, StatusDrop, selS, inputS, labelS, STATUS_CFG, ALL_STATUSES, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getAccessConfig } from "./MasterData.jsx";
 import { triggerDownload } from "../api/reports.js";
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MEET_BLANK = { schedule_type:'Daily', days:[], meeting_time:'', reminder_mins:30, meeting_link:'' };
 
 
 export default function Projects(){
@@ -35,6 +39,10 @@ export default function Projects(){
   const [ovModal,setOvModal]=useState(false);
 
   const [saving,setSaving]=useState(false);
+  const [meetModal,setMeetModal]=useState(false);
+  const [meetForm,setMeetForm]=useState(MEET_BLANK);
+  const [meetProjId,setMeetProjId]=useState(null);
+  const [meetSaving,setMeetSaving]=useState(false);
   const [closePending,setClosePending]=useState(null); // {id,status} | null
   const [closeDate,setCloseDate]=useState("");
   const [myTaskProjectIds,setMyTaskProjectIds]=useState(new Set());
@@ -72,7 +80,12 @@ export default function Projects(){
         const pid=r.data?.id;
         if(pid){ try{ await projApi.setAssignees(pid, form.assignee_ids||[]); }catch{} }
         show("Project created");
-        load(); // need full reload to get computed fields for new project
+        load();
+        setModal(false);
+        setMeetProjId(pid);
+        setMeetForm(MEET_BLANK);
+        setMeetModal(true);
+        return;
       }
       setModal(false);
     }catch(e){show(e?.response?.data?.error||"Error");}
@@ -106,6 +119,21 @@ export default function Projects(){
       if(closePending.fromOverview&&overview) setOverview(ov=>({...ov,project:{...ov.project,status:closePending.status}}));
     }catch(e){show(e?.response?.data?.error||"Update failed");}
     setClosePending(null);
+  }
+  async function saveMeeting(){
+    if(!meetForm.meeting_time) return show("Please select a meeting time");
+    if(!meetForm.meeting_link.trim()) return show("Please enter a meeting link");
+    if(meetForm.schedule_type==='Weekly'&&meetForm.days.length===0) return show("Select at least one day");
+    setMeetSaving(true);
+    try{
+      await meetApi.create({ project_id:meetProjId, ...meetForm, days:meetForm.days.join(',') });
+      show("Meeting scheduled");
+      setMeetModal(false);
+    }catch(e){ show(e?.response?.data?.error||"Failed to schedule meeting"); }
+    finally{ setMeetSaving(false); }
+  }
+  function toggleDay(day){
+    setMeetForm(f=>({ ...f, days: f.days.includes(day) ? f.days.filter(d=>d!==day) : [...f.days,day] }));
   }
   async function openOverview(p){
     setOvModal(true);
@@ -544,6 +572,56 @@ export default function Projects(){
           <button onClick={confirmClose} disabled={!closeDate} style={{padding:"8px 14px",borderRadius:6,border:"none",background:closeDate?"#4f46e5":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:closeDate?"pointer":"not-allowed"}}>Confirm {closePending?.status}</button>
         </div>
       </Modal>
+      {/* ── Schedule Meeting Modal ── */}
+      <Modal open={meetModal} onClose={()=>setMeetModal(false)} title="Schedule Meeting" width={480}>
+        <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={labelS}>Meeting Schedule</label>
+            <select value={meetForm.schedule_type} onChange={e=>setMeetForm({...meetForm,schedule_type:e.target.value,days:[]})} style={inputS}>
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
+            </select>
+          </div>
+          {meetForm.schedule_type==='Weekly'&&(
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <label style={labelS}>Days *</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {DAYS.map(d=>{
+                  const on=meetForm.days.includes(d);
+                  return(
+                    <button key={d} onClick={()=>toggleDay(d)}
+                      style={{padding:"5px 12px",borderRadius:20,border:"1px solid "+(on?"#4f46e5":"#d1d5db"),background:on?"#4f46e5":"#fff",color:on?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={labelS}>Time *</label>
+              <input type="time" value={meetForm.meeting_time} onChange={e=>setMeetForm({...meetForm,meeting_time:e.target.value})} style={inputS}/>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <label style={labelS}>Reminder Interval (mins before) *</label>
+              <input type="number" min={1} value={meetForm.reminder_mins} onChange={e=>setMeetForm({...meetForm,reminder_mins:+e.target.value})} style={inputS}/>
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            <label style={labelS}>Meeting Link *</label>
+            <input type="url" value={meetForm.meeting_link} onChange={e=>setMeetForm({...meetForm,meeting_link:e.target.value})} placeholder="https://meet.google.com/…" style={inputS}/>
+          </div>
+          <p style={{fontSize:11,color:"#6b7280",margin:0}}>Reminder emails will be sent to this project's assignees.</p>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
+          <button onClick={()=>setMeetModal(false)} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Skip</button>
+          <button onClick={saveMeeting} disabled={meetSaving} style={{padding:"8px 18px",borderRadius:6,border:"none",background:meetSaving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:meetSaving?"not-allowed":"pointer"}}>
+            {meetSaving?"Scheduling…":"Schedule"}
+          </button>
+        </div>
+      </Modal>
+
       <Toast msg={msg}/>
     </div>
   );

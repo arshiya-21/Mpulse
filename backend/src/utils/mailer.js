@@ -505,4 +505,38 @@ async function sendNoLogAlertEmail({ toName, toEmail, date, teamMembers = [] }) 
   console.log(`📧 No-log alert sent to ${toEmail}`);
 }
 
-module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail };
+async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingTime, meetingLink, reminderMins }) {
+  const { fromEmail, appPassword } = await getEmailConfig();
+  const resendClient = new Resend(appPassword);
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:24px 32px;">
+        <h2 style="color:#fff;margin:0;font-size:20px;">📅 Meeting Reminder</h2>
+        <p style="color:#c4b5fd;margin:6px 0 0;font-size:13px;">Your meeting starts in ${reminderMins} minute${reminderMins===1?'':'s'}</p>
+      </div>
+      <div style="padding:24px 32px;">
+        <p style="font-size:14px;color:#374151;">Hi ${toName},</p>
+        <p style="font-size:14px;color:#374151;">This is a reminder that a meeting for <strong>${projectName}</strong> is scheduled at <strong>${meetingTime}</strong>.</p>
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px 20px;margin:20px 0;">
+          <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;font-weight:700;">Meeting Link</div>
+          <a href="${meetingLink}" style="font-size:14px;color:#4f46e5;font-weight:600;word-break:break-all;">${meetingLink}</a>
+        </div>
+        <a href="${meetingLink}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">Join Meeting →</a>
+      </div>
+      <div style="padding:14px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
+        <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
+      </div>
+    </div>
+  `;
+
+  await resendClient.emails.send({
+    from:    `"MPulse" <${fromEmail}>`,
+    to:      toEmail,
+    subject: `📅 Meeting Reminder — ${projectName} at ${meetingTime}`,
+    html,
+  });
+  console.log(`📧 Meeting reminder sent to ${toEmail} for project "${projectName}"`);
+}
+
+module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail, sendMeetingReminderEmail };
