@@ -15,6 +15,7 @@ router.post('/', verify, async (req, res) => {
       INSERT INTO project_meetings (project_id, schedule_type, days, meeting_time, reminder_mins, meeting_link)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
     `, [project_id, schedule_type||'Daily', days||'', meeting_time, reminder_mins||30, meeting_link]);
+
     res.status(201).json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

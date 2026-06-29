@@ -9,7 +9,8 @@ import { getAccessConfig } from "./MasterData.jsx";
 import { triggerDownload } from "../api/reports.js";
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const MEET_BLANK = { schedule_type:'Daily', days:[], meeting_time:'', reminder_mins:30, meeting_link:'' };
+function nowTime(){ const n=new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
+const MEET_BLANK = () => ({ schedule_type:'Daily', days:[], meeting_time:nowTime(), reminder_mins:30, meeting_link:'' });
 
 
 export default function Projects(){
@@ -40,7 +41,7 @@ export default function Projects(){
 
   const [saving,setSaving]=useState(false);
   const [meetModal,setMeetModal]=useState(false);
-  const [meetForm,setMeetForm]=useState(MEET_BLANK);
+  const [meetForm,setMeetForm]=useState(MEET_BLANK());
   const [meetProjId,setMeetProjId]=useState(null);
   const [meetSaving,setMeetSaving]=useState(false);
   const [closePending,setClosePending]=useState(null); // {id,status} | null
@@ -83,7 +84,7 @@ export default function Projects(){
         load();
         setModal(false);
         setMeetProjId(pid);
-        setMeetForm(MEET_BLANK);
+        setMeetForm(MEET_BLANK());
         setMeetModal(true);
         return;
       }
@@ -137,7 +138,7 @@ export default function Projects(){
   }
   async function openMeetingModal(p){
     setMeetProjId(p.id);
-    setMeetForm(MEET_BLANK);
+    setMeetForm(MEET_BLANK());
     try{
       const r = await meetApi.get(p.id);
       if(r.data){
@@ -622,7 +623,7 @@ export default function Projects(){
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               <label style={labelS}>Reminder Interval (mins before) *</label>
-              <input type="number" min={1} value={meetForm.reminder_mins} onChange={e=>setMeetForm({...meetForm,reminder_mins:+e.target.value})} style={inputS}/>
+              <input type="number" min={1} value={meetForm.reminder_mins} onChange={e=>setMeetForm({...meetForm,reminder_mins:e.target.value===''?'':+e.target.value})} style={inputS}/>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>

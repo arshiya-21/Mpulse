@@ -3,4 +3,4 @@ import api from './index.js';
 export const get            = ()     => api.get('/settings');
 export const update         = (data) => api.put('/settings', data);
 export const triggerDigest          = () => api.post('/settings/trigger-digest');
-export const testMeetingReminder    = () => api.post('/settings/test-meeting-reminder');
+export const testMeetingReminder    = (email) => api.post('/settings/test-meeting-reminder', { email });

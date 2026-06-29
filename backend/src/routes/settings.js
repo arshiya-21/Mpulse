@@ -131,22 +131,21 @@ router.post('/trigger-digest', verify, async (req, res) => {
   }
 });
 
-// POST /api/settings/test-meeting-reminder — send a test meeting reminder to admin email
+// POST /api/settings/test-meeting-reminder — send a test meeting reminder to a specified email
 router.post('/test-meeting-reminder', verify, async (req, res) => {
   if (req.user.role !== 'Admin') return res.status(403).json({ error: 'Admin only' });
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email address is required' });
   try {
-    const { rows: sRows } = await db.query('SELECT admin_email FROM system_settings WHERE id = 1 LIMIT 1');
-    const adminEmail = sRows[0]?.admin_email;
-    if (!adminEmail) return res.status(400).json({ error: 'Admin email not configured in Notification Settings' });
     await sendMeetingReminderEmail({
-      toEmail:     adminEmail,
-      toName:      'Admin',
-      projectName: 'Test Project',
-      meetingTime: '10:00',
-      meetingLink: 'https://meet.google.com/test-link',
+      toEmail:      email,
+      toName:       'Test User',
+      projectName:  'Sample Project',
+      meetingTime:  '10:00',
+      meetingLink:  'https://meet.google.com/test-link',
       reminderMins: 30,
     });
-    res.json({ message: `Test meeting reminder sent to ${adminEmail}` });
+    res.json({ message: `Test meeting reminder sent to ${email}` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

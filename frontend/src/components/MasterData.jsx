@@ -1149,6 +1149,8 @@ function EmailConfig(){
   const [savingNotif,setSavingNotif] = useState(false);
   const [sendingDigest,setSendingDigest]       = useState(false);
   const [testingMeeting,setTestingMeeting]     = useState(false);
+  const [showTestInput,setShowTestInput]       = useState(false);
+  const [testEmail,setTestEmail]               = useState("");
   const [testing,setTesting] = useState(false);
   const [showPass,setShowPass] = useState(false);
   const {msg,show} = useToast();
@@ -1184,10 +1186,14 @@ function EmailConfig(){
 
   async function testMeetingNow(){
     if(testingMeeting) return;
+    if(!testEmail.trim()){ show("Enter a test email address"); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail.trim())){ show("Invalid email format"); return; }
     setTestingMeeting(true);
     try{
-      const r = await settingsApi.testMeetingReminder();
+      const r = await settingsApi.testMeetingReminder(testEmail.trim());
       show(r.data.message);
+      setShowTestInput(false);
+      setTestEmail("");
     }catch(e){ show("❌ "+(e?.response?.data?.error||"Test failed")); }
     finally{ setTestingMeeting(false); }
   }
@@ -1339,17 +1345,31 @@ function EmailConfig(){
                   </div>
                 </div>
               </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0"}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>Meeting Reminders</div>
-                  <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Sends reminder email to project assignees before each scheduled meeting</div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0,marginLeft:16}}>
-                  <button onClick={testMeetingNow} disabled={testingMeeting}
-                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:testingMeeting?"#eef2ff":"#4f46e5",color:testingMeeting?"#6366f1":"#fff",cursor:testingMeeting?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
-                    {testingMeeting?"Sending…":"▶ Test Now"}
+              <div style={{display:"flex",flexDirection:"column",padding:"12px 0",gap:8}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:"#111827"}}>Meeting Reminders</div>
+                    <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Sends reminder email to project assignees before each scheduled meeting</div>
+                  </div>
+                  <button onClick={()=>setShowTestInput(v=>!v)}
+                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:"#4f46e5",color:"#fff",cursor:"pointer",whiteSpace:"nowrap",marginLeft:16}}>
+                    ▶ Test Now
                   </button>
                 </div>
+                {showTestInput&&(
+                  <div style={{display:"flex",gap:6,alignItems:"center",background:"#f5f3ff",border:"1px solid #ddd6fe",borderRadius:7,padding:"8px 10px"}}>
+                    <input type="email" value={testEmail} onChange={e=>setTestEmail(e.target.value)}
+                      placeholder="Enter test email address"
+                      onKeyDown={e=>e.key==='Enter'&&testMeetingNow()}
+                      style={{...inputS,flex:1,fontSize:12,padding:"5px 10px"}}/>
+                    <button onClick={testMeetingNow} disabled={testingMeeting}
+                      style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"none",background:testingMeeting?"#818cf8":"#4f46e5",color:"#fff",cursor:testingMeeting?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                      {testingMeeting?"Sending…":"Send"}
+                    </button>
+                    <button onClick={()=>{setShowTestInput(false);setTestEmail("");}}
+                      style={{padding:"5px 8px",fontSize:11,borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",cursor:"pointer"}}>✕</button>
+                  </div>
+                )}
               </div>
             </div>
 

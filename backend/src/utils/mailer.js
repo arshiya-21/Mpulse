@@ -505,19 +505,30 @@ async function sendNoLogAlertEmail({ toName, toEmail, date, teamMembers = [] }) 
   console.log(`📧 No-log alert sent to ${toEmail}`);
 }
 
-async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingTime, meetingLink, reminderMins }) {
+async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingTime, meetingLink, reminderMins, isInvite=false }) {
   const { fromEmail, appPassword } = await getEmailConfig();
   const resendClient = new Resend(appPassword);
+
+  const heading  = isInvite ? '📅 Meeting Scheduled' : '📅 Meeting Reminder';
+  const subhead  = isInvite
+    ? `A meeting has been scheduled for your project`
+    : `Your meeting starts in ${reminderMins} minute${reminderMins===1?'':'s'}`;
+  const bodyText = isInvite
+    ? `A meeting for <strong>${projectName}</strong> has been scheduled at <strong>${meetingTime}</strong>. You can join using the link below.`
+    : `This is a reminder that a meeting for <strong>${projectName}</strong> is scheduled at <strong>${meetingTime}</strong>.`;
+  const subject  = isInvite
+    ? `📅 Meeting Scheduled — ${projectName} at ${meetingTime}`
+    : `📅 Meeting Reminder — ${projectName} at ${meetingTime}`;
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
       <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:24px 32px;">
-        <h2 style="color:#fff;margin:0;font-size:20px;">📅 Meeting Reminder</h2>
-        <p style="color:#c4b5fd;margin:6px 0 0;font-size:13px;">Your meeting starts in ${reminderMins} minute${reminderMins===1?'':'s'}</p>
+        <h2 style="color:#fff;margin:0;font-size:20px;">${heading}</h2>
+        <p style="color:#c4b5fd;margin:6px 0 0;font-size:13px;">${subhead}</p>
       </div>
       <div style="padding:24px 32px;">
         <p style="font-size:14px;color:#374151;">Hi ${toName},</p>
-        <p style="font-size:14px;color:#374151;">This is a reminder that a meeting for <strong>${projectName}</strong> is scheduled at <strong>${meetingTime}</strong>.</p>
+        <p style="font-size:14px;color:#374151;">${bodyText}</p>
         <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px 20px;margin:20px 0;">
           <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;font-weight:700;">Meeting Link</div>
           <a href="${meetingLink}" style="font-size:14px;color:#4f46e5;font-weight:600;word-break:break-all;">${meetingLink}</a>
@@ -530,13 +541,8 @@ async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingT
     </div>
   `;
 
-  await resendClient.emails.send({
-    from:    `"MPulse" <${fromEmail}>`,
-    to:      toEmail,
-    subject: `📅 Meeting Reminder — ${projectName} at ${meetingTime}`,
-    html,
-  });
-  console.log(`📧 Meeting reminder sent to ${toEmail} for project "${projectName}"`);
+  await resendClient.emails.send({ from: `"MPulse" <${fromEmail}>`, to: toEmail, subject, html });
+  console.log(`📧 Meeting ${isInvite?'invite':'reminder'} sent to ${toEmail} for project "${projectName}"`);
 }
 
 module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail, sendMeetingReminderEmail };
