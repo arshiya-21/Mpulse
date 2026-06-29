@@ -135,6 +135,24 @@ export default function Projects(){
   function toggleDay(day){
     setMeetForm(f=>({ ...f, days: f.days.includes(day) ? f.days.filter(d=>d!==day) : [...f.days,day] }));
   }
+  async function openMeetingModal(p){
+    setMeetProjId(p.id);
+    setMeetForm(MEET_BLANK);
+    try{
+      const r = await meetApi.get(p.id);
+      if(r.data){
+        const m = r.data;
+        setMeetForm({
+          schedule_type: m.schedule_type,
+          days:          m.days ? m.days.split(',').filter(Boolean) : [],
+          meeting_time:  m.meeting_time?.slice(0,5) || '',
+          reminder_mins: m.reminder_mins,
+          meeting_link:  m.meeting_link,
+        });
+      }
+    }catch{}
+    setMeetModal(true);
+  }
   async function openOverview(p){
     setOvModal(true);
     setOvLoading(true);
@@ -343,12 +361,11 @@ export default function Projects(){
                       </td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>{perm.update?<StatusDrop value={p.status} onChange={v=>updateStatus(p.id,v)}/>:<span style={{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600,background:STATUS_CFG[p.status]?.bg||"#f8f9fb",color:STATUS_CFG[p.status]?.color||"#4b5563"}}>{p.status}</span>}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
-                        {(perm.update||perm.delete)&&(
-                          <div style={{display:"flex",gap:2}}>
-                            {perm.update&&<button onClick={()=>openEdit(p)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
-                            {perm.delete&&<button onClick={()=>del(p.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}
-                          </div>
-                        )}
+                        <div style={{display:"flex",gap:2}}>
+                          <button onClick={()=>openMeetingModal(p)} title="Schedule Meeting" style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>📅</button>
+                          {perm.update&&<button onClick={()=>openEdit(p)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
+                          {perm.delete&&<button onClick={()=>del(p.id)} style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>🗑</button>}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -573,7 +590,7 @@ export default function Projects(){
         </div>
       </Modal>
       {/* ── Schedule Meeting Modal ── */}
-      <Modal open={meetModal} onClose={()=>setMeetModal(false)} title="Schedule Meeting" width={480}>
+      <Modal open={meetModal} onClose={()=>setMeetModal(false)} title={meetForm.meeting_link?"Edit Meeting Schedule":"Schedule Meeting"} width={480}>
         <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:14}}>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             <label style={labelS}>Meeting Schedule</label>
