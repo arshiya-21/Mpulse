@@ -2,10 +2,24 @@ const router = require('express').Router();
 const db     = require('../config/db');
 const { verify } = require('../middleware/auth');
 
+const DEFAULT_TYPES = [
+  {name:'Laptop',icon:'💻'},{name:'Desktop',icon:'🖥️'},{name:'Monitor',icon:'🖥️'},
+  {name:'Mobile Phone',icon:'📱'},{name:'Tablet',icon:'📱'},{name:'Printer',icon:'🖨️'},
+  {name:'UPS',icon:'🔋'},{name:'Keyboard',icon:'⌨️'},{name:'Other',icon:'📦'},
+];
+
 // ── Asset Types ──────────────────────────────────────────────────────────────
 router.get('/types', verify, async (_req, res) => {
-  const { rows } = await db.query('SELECT * FROM asset_types ORDER BY name');
-  res.json(rows);
+  try {
+    let { rows } = await db.query('SELECT * FROM asset_types ORDER BY name');
+    if (!rows.length) {
+      await Promise.all(DEFAULT_TYPES.map(t =>
+        db.query('INSERT INTO asset_types (name,icon) VALUES ($1,$2) ON CONFLICT DO NOTHING', [t.name, t.icon])
+      ));
+      ({ rows } = await db.query('SELECT * FROM asset_types ORDER BY name'));
+    }
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 router.post('/types', verify, async (req, res) => {
   const { name, icon } = req.body;

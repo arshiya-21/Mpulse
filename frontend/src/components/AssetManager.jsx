@@ -192,7 +192,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees}){
                   <option value="">Unassigned</option>
                   {employees.map(e=><option key={e} value={e}>{e}</option>)}
                 </select>
-              </div>59
+              </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -652,7 +652,7 @@ export default function AssetManager(){
         if(typeRows.length){
           setAssetTypes(typeRows);
         } else {
-          for(const t of DEFAULT_ASSET_TYPES){ await assetsApi.createType(t); }
+          await Promise.all(DEFAULT_ASSET_TYPES.map(t => assetsApi.createType(t)));
           setAssetTypes(DEFAULT_ASSET_TYPES);
         }
       }catch(err){

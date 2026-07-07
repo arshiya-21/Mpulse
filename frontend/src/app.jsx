@@ -47,8 +47,8 @@ const NAV=[
   {key:"masterdata",label:"Master Data",     path:"/masterdata"},
   {key:"reports",   label:"Reports",         path:"/reports"},
   {key:"admin",     label:"Administration",  path:"/admin"},
+  {key:"assets",    label:"Asset Manager",    path:"/assets"},
   {key:"library",   label:"Library",          path:"/library"},
-  {key:"assets",    label:"Asset Manager", path:"/assets"},
 ];
 const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/assets":"Asset Manager"};
 
