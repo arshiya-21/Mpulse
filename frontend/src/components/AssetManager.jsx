@@ -1,18 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import * as assetsApi from "../api/assets";
 import * as employeesApi from "../api/employees";
-// ─── SEED DATA ─────────────────────────────────────────────────────────────
-const SEED_ASSETS = [
-  { id:"AST-0001", name:"Dell Latitude 5520", code:"DL552X001", type:"Laptop", assignee:"Ravi Kumar", dept:"Engineering", status:"In Use", purchased:"2023-04-10", warranty:"2026-04-09", value:72000, condition:"Good" },
-  { id:"AST-0002", name:"HP ProBook 450 G9", code:"HP450G901", type:"Laptop", assignee:"Anitha", dept:"Sales", status:"In Use", purchased:"2023-06-15", warranty:"2026-06-14", value:65000, condition:"Good" },
-  { id:"AST-0003", name:"Lenovo ThinkPad E15", code:"LN-E15-2024", type:"Laptop", assignee:"Meena", dept:"Marketing", status:"In Use", purchased:"2024-01-20", warranty:"2027-01-19", value:68000, condition:"New" },
-  { id:"AST-0004", name:"Dell OptiPlex 7090", code:"D07090-001", type:"Desktop", assignee:"Suresh", dept:"Finance", status:"In Use", purchased:"2022-08-05", warranty:"2025-08-04", value:55000, condition:"Good" },
-  { id:"AST-0005", name:"Samsung 27\" Monitor LS27A...", code:"SAM27A-003", type:"Monitor", assignee:"Ravi Kumar", dept:"Engineering", status:"In Use", purchased:"2023-04-10", warranty:"2026-04-09", value:22000, condition:"Good" },
-  { id:"AST-0006", name:"iPhone 14 128GB", code:"APL14-0006", type:"Mobile Phone", assignee:"Karthik", dept:"Sales", status:"In Use", purchased:"2023-09-20", warranty:"2025-09-19", value:79000, condition:"Good" },
-  { id:"AST-0007", name:"HP LaserJet Pro M404dn", code:"HPLJ404-007", type:"Printer", assignee:"Admin", dept:"Administration", status:"Available", purchased:"2022-03-15", warranty:"2025-03-14", value:28000, condition:"Fair" },
-  { id:"AST-0008", name:"Dell Latitude 3420", code:"DL342X-008", type:"Laptop", assignee:null, dept:null, status:"Available", purchased:"2021-11-10", warranty:"2024-11-09", value:58000, condition:"Fair" },
-  { id:"AST-0009", name:"APC Back-UPS 1500", code:"APC1500-009", type:"UPS", assignee:"Admin", dept:"Operations", status:"In Use", purchased:"2023-01-12", warranty:"2026-01-11", value:12000, condition:"Good" },
-];
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const inputS={width:"100%",padding:"9px 12px",fontSize:13,border:"1px solid #e4e7ec",borderRadius:7,background:"#fff",color:"#111827",outline:"none",boxSizing:"border-box"};

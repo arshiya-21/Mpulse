@@ -714,14 +714,15 @@ function CustomerMaster(){
 
 // ─── ACCESS CONFIG CONSTANTS ──────────────────────────────────────────────────
 const NAV_PAGES=[
-  {key:"dashboard",  label:"Dashboard",      icon:"📊"},
-  {key:"worklog",    label:"Worklog",         icon:"📝"},
-  {key:"visits",     label:"Customer Visits", icon:"👥"},
-  {key:"projects",   label:"Projects",        icon:"📁"},
-  {key:"masterdata", label:"Master Data",     icon:"🗄️"},
-  {key:"reports",    label:"Reports",         icon:"📈"},
-  {key:"admin",      label:"Administration",  icon:"⚙️"},
-  {key:"library",    label:"Library",         icon:"🎬"},
+  {key:"dashboard",  label:"Dashboard",        icon:"📊"},
+  {key:"worklog",    label:"Worklog",           icon:"📝"},
+  {key:"visits",     label:"Customer Visits",   icon:"👥"},
+  {key:"projects",   label:"Projects",          icon:"📁"},
+  {key:"masterdata", label:"Master Data",       icon:"🗄️"},
+  {key:"reports",    label:"Reports",           icon:"📈"},
+  {key:"admin",      label:"Administration",    icon:"⚙️"},
+  {key:"library",    label:"Library",           icon:"🎬"},
+  {key:"assets",     label:"Asset Manager",      icon:"🖥️"},
 ];
 const MD_TABS=[
   {key:"employees",   label:"Employee Master",  icon:"👥"},
@@ -768,6 +769,7 @@ const DEFAULT_ACCESS={
     md_accessconfig:{view:true, create:false,update:true, delete:false},
     worklog_export: {view:true, create:false,update:false,delete:false},
     project_export: {view:true, create:false,update:false,delete:false},
+    assets:         {view:true, create:true, update:true, delete:true},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
   Manager:{
@@ -788,6 +790,7 @@ const DEFAULT_ACCESS={
     md_accessconfig:{view:false,create:false,update:false,delete:false},
     worklog_export: {view:true, create:false,update:false,delete:false},
     project_export: {view:true, create:false,update:false,delete:false},
+    assets:         {view:true, create:false,update:false,delete:false},
     _team_only:     {view:true, create:false,update:false,delete:false},
   },
   User:{
@@ -808,6 +811,7 @@ const DEFAULT_ACCESS={
     md_accessconfig:{view:false,create:false,update:false,delete:false},
     worklog_export: {view:false,create:false,update:false,delete:false},
     project_export: {view:false,create:false,update:false,delete:false},
+    assets:         {view:false,create:false,update:false,delete:false},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
 };
