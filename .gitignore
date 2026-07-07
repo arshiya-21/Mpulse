@@ -23,3 +23,11 @@ Thumbs.db
 
 # Local only — deployment reference
 details.md
+DEPLOYMENT.txt
+
+# Sensitive — backup codes
+Backup-codes-mpulsempm.txt
+Backup-codes-*.txt
+
+# Database seed (contains default credentials)
+database/seed.js

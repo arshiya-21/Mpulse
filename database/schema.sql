@@ -337,3 +337,52 @@ CREATE TABLE IF NOT EXISTS project_meetings (
   last_reminded_at TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ── Asset Management ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS asset_types (
+  name VARCHAR(100) PRIMARY KEY,
+  icon VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS assets (
+  id          VARCHAR(20) PRIMARY KEY,
+  name        VARCHAR(255) NOT NULL,
+  code        VARCHAR(100),
+  type        VARCHAR(100) NOT NULL,
+  brand       VARCHAR(100),
+  model       VARCHAR(100),
+  condition   VARCHAR(20)    DEFAULT 'Good',
+  purchased   DATE,
+  warranty    DATE,
+  cost        NUMERIC(12,2)  DEFAULT 0,
+  vendor      VARCHAR(255),
+  status      VARCHAR(30)    DEFAULT 'Available',
+  assignee    VARCHAR(255),
+  department  VARCHAR(100),
+  location    VARCHAR(255),
+  notes       TEXT,
+  created_at  TIMESTAMP      DEFAULT NOW(),
+  updated_at  TIMESTAMP      DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS asset_transfers (
+  id             SERIAL PRIMARY KEY,
+  asset_id       VARCHAR(20) NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  from_employee  VARCHAR(255),
+  to_employee    VARCHAR(255) NOT NULL,
+  transfer_date  DATE        NOT NULL,
+  reason         TEXT,
+  transferred_by VARCHAR(255) DEFAULT 'Admin',
+  created_at     TIMESTAMP   DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS asset_service_logs (
+  id           SERIAL PRIMARY KEY,
+  asset_id     VARCHAR(20) NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+  service_date DATE        NOT NULL,
+  issue        TEXT        NOT NULL,
+  action_taken TEXT,
+  serviced_by  VARCHAR(255),
+  cost         NUMERIC(12,2) DEFAULT 0,
+  created_at   TIMESTAMP     DEFAULT NOW()
+);
