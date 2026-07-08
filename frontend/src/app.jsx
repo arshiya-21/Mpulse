@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth }           from "./context/AuthContext.jsx";
 import SetPassword           from "./SetPassword.jsx";
@@ -17,7 +17,7 @@ function AnnouncementPopup({announcements,onDismiss}){
   const a=announcements[idx];
   const meta=ANN_TYPE[a.type]||ANN_TYPE.update;
   const total=announcements.length;
-  const typeIcon=a.type==="feature"?"✨":"🔄";
+  const typeIcon=a.type==="feature"?"âœ¨":"ðŸ”„";
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(10,10,20,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,backdropFilter:"blur(2px)"}}>
       <div style={{background:"#fff",borderRadius:16,width:460,maxWidth:"92vw",boxShadow:"0 32px 80px rgba(0,0,0,0.35)",overflow:"hidden",animation:"annpop .2s ease"}}>
@@ -27,7 +27,7 @@ function AnnouncementPopup({announcements,onDismiss}){
           <div style={{position:"absolute",top:-24,right:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
           <div style={{position:"absolute",bottom:-28,right:50,width:72,height:72,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
           <div style={{display:"flex",alignItems:"center",gap:10,position:"relative"}}>
-            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>📢</div>
+            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>ðŸ“¢</div>
             <span style={{fontSize:15,fontWeight:700,color:"#fff",letterSpacing:"-0.01em"}}>What's New in MPulse</span>
             <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,0.95)",color:meta.color}}>{typeIcon} {meta.label}</span>
@@ -39,7 +39,7 @@ function AnnouncementPopup({announcements,onDismiss}){
         <div style={{padding:"20px 24px",position:"relative"}}>
           <div style={{position:"absolute",left:0,top:14,bottom:14,width:4,borderRadius:"0 3px 3px 0",background:meta.color}}/>
           <div style={{fontSize:17,fontWeight:700,color:"#111827",marginBottom:8,lineHeight:1.35}}>{a.title}</div>
-          <div style={{fontSize:13,color:"#4b5563",lineHeight:1.75,marginBottom:12}}>{a.message}</div>
+          <div style={{fontSize:13,color:"#4b5563",lineHeight:1.75,marginBottom:12,whiteSpace:"pre-wrap"}}>{a.message}</div>
           <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#9ca3af"}}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             {new Date(a.created_at).toLocaleDateString("en-IN",{dateStyle:"long"})}
@@ -56,7 +56,7 @@ function AnnouncementPopup({announcements,onDismiss}){
         {/* Footer */}
         <div style={{padding:"12px 24px 18px",display:"flex",gap:8,justifyContent:"flex-end",borderTop:"1px solid #f0f2f5"}}>
           {idx<total-1?(
-            <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next →</button>
+            <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next â†’</button>
           ):(
             <button onClick={onDismiss} style={{padding:"9px 28px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${meta.color},#7c3aed)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 4px 14px ${meta.color}55`}}>Got it!</button>
           )}
@@ -69,7 +69,7 @@ function AnnouncementPopup({announcements,onDismiss}){
 function AccessDenied(){
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"60vh",gap:12}}>
-      <div style={{fontSize:40}}>🔒</div>
+      <div style={{fontSize:40}}>ðŸ”’</div>
       <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>Access Restricted</div>
       <div style={{fontSize:13,color:"#9ca3af"}}>You don't have permission to view this page.</div>
     </div>
@@ -88,7 +88,7 @@ import AssetManager   from "./components/AssetManager.jsx";
 import { getAccessConfig, ACCESS_KEY } from "./components/MasterData.jsx";
 import * as permApi from "./api/permissions.js";
 
-// ─── NAV ICONS ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ NAV ICONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const icons={
   dashboard: a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   worklog:   a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>,
@@ -113,7 +113,7 @@ const NAV=[
 ];
 const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Manager"};
 
-// ─── SHELL ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SHELL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Shell({user,onLogout}){
   const [collapsed,setCollapsed]=useState(false);
   const [cfgVer,setCfgVer]=useState(0);
@@ -140,7 +140,7 @@ function Shell({user,onLogout}){
     return()=>window.removeEventListener("mpulse-access-change",handler);
   },[]);
 
-  // Sync permissions from DB → localStorage whenever the tab gains focus
+  // Sync permissions from DB â†’ localStorage whenever the tab gains focus
   // so nav updates automatically for ALL users when admin changes their role's access
   useEffect(()=>{
     const CACHE_KEY = "mpulse_perms_cache";
@@ -157,7 +157,7 @@ function Shell({user,onLogout}){
           localStorage.setItem(ACCESS_KEY, JSON.stringify(parsed));
           window.dispatchEvent(new Event("mpulse-access-change"));
         }
-      }catch{ /* silent — don't break the app if the request fails */ }
+      }catch{ /* silent â€” don't break the app if the request fails */ }
     }
     syncPerms(); // run immediately on mount (login)
     window.addEventListener("focus", syncPerms);
@@ -183,14 +183,14 @@ function Shell({user,onLogout}){
         <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {!collapsed?(
             <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0,width:"100%"}}>
-              <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>✅</div>
+              <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>âœ…</div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
-                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work · Pulse · Intelligence</div>
+                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work Â· Pulse Â· Intelligence</div>
               </div>
             </div>
           ):(
-            <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
+            <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>âœ…</div>
           )}
         </div>
         <div style={{padding:collapsed?"6px 0":"4px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:collapsed?"center":"flex-end",flexShrink:0}}>
@@ -275,7 +275,7 @@ function Shell({user,onLogout}){
   );
 }
 
-// ─── LOGIN ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ LOGIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Login({onLogin}){
   const [email,setEmail]=useState("");
   const [pw,setPw]=useState("");
@@ -320,7 +320,7 @@ function Login({onLogin}){
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"system-ui,sans-serif"}}>
       <div>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>✅</div>
+          <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>âœ…</div>
           <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",letterSpacing:"-0.02em"}}>MPulse</div>
           <div style={{fontSize:13,color:"#818cf8",marginTop:4}}>Project Management & Analysis</div>
         </div>
@@ -340,7 +340,7 @@ function Login({onLogin}){
           {sessionMsg&&<div style={{background:"rgba(234,179,8,0.15)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fde68a",marginBottom:12}}>{sessionMsg}</div>}
           {err&&<div style={{background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fca5a5",marginBottom:12}}>{err}</div>}
           <button onClick={go} disabled={loading} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:11,borderRadius:9,border:"none",background:"#4f46e5",color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 14px rgba(79,70,229,0.4)",opacity:loading?0.8:1}}>
-            {loading?"Signing in…":"Sign in →"}
+            {loading?"Signing inâ€¦":"Sign in â†’"}
           </button>
           <div style={{marginTop:16,textAlign:"center",fontSize:12,color:"#4b5563"}}>Forgot your password? Contact your administrator.</div>
         </div>
@@ -349,7 +349,7 @@ function Login({onLogin}){
   );
 }
 
-// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ ROOT APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function App(){
   const {user,setUser,logout}=useAuth();
   const location=useLocation();

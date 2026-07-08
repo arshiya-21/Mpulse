@@ -259,7 +259,7 @@ export default function Administration(){
                         <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,background:meta.bg,color:meta.color}}>{meta.label}</span>
                         <span style={{fontSize:13,fontWeight:600,color:"#111827"}}>{a.title}</span>
                       </div>
-                      <div style={{fontSize:13,color:"#4b5563",marginBottom:6,lineHeight:1.5}}>{a.message}</div>
+                      <div style={{fontSize:13,color:"#4b5563",marginBottom:6,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{a.message}</div>
                       <div style={{fontSize:11,color:"#9ca3af",display:"flex",alignItems:"center",gap:4}}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         {new Date(a.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · by {a.created_by}
