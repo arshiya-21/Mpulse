@@ -47,10 +47,10 @@ const NAV=[
   {key:"masterdata",label:"Master Data",     path:"/masterdata"},
   {key:"reports",   label:"Reports",         path:"/reports"},
   {key:"admin",     label:"Administration",  path:"/admin"},
-  {key:"assets",    label:"Asset Manager",    path:"/assets"},
+  {key:"assets",    label:"Asset Manager",    path:"/asset-manager"},
   {key:"library",   label:"Library",          path:"/library"},
 ];
-const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/assets":"Asset Manager"};
+const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Manager"};
 
 // ─── SHELL ─────────────────────────────────────────────────────────────────────
 function Shell({user,onLogout}){
@@ -191,7 +191,7 @@ function Shell({user,onLogout}){
             <Route path="/reports"    element={accessCfg[user.role]?.reports?.view   ?<Reports/>       :<AccessDenied/>}/>
             <Route path="/admin"      element={accessCfg[user.role]?.admin?.view     ?<Administration/>:<AccessDenied/>}/>
             <Route path="/library"    element={accessCfg[user.role]?.library?.view   ?<Library/>       :<AccessDenied/>}/>
-            <Route path="/assets"     element={accessCfg[user.role]?.assets?.view    ?<AssetManager/>  :<AccessDenied/>}/>
+            <Route path="/asset-manager"     element={accessCfg[user.role]?.assets?.view    ?<AssetManager/>  :<AccessDenied/>}/>
             <Route path="*"           element={<Navigate to={defaultPath} replace/>}/>
           </Routes>
         </div>

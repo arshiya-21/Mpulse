@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import * as assetsApi from "../api/assets";
 import * as employeesApi from "../api/employees";
+import * as deptApi from "../api/departments";
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const inputS={width:"100%",padding:"9px 12px",fontSize:13,border:"1px solid #e4e7ec",borderRadius:7,background:"#fff",color:"#111827",outline:"none",boxSizing:"border-box"};
@@ -19,7 +20,6 @@ const DEFAULT_ASSET_TYPES=[
   {name:"Other",icon:"📦"},
 ];
 const CONDITIONS=["New","Good","Fair","Poor"];
-const DEPARTMENTS=["Engineering","Sales","Marketing","Finance","Administration","Operations","HR","IT Support"];
 
 const ICON_PALETTE=[
   "💻","📱","🔲","🖨️","🗂️","🌐","🔋","💾","📷","⌨️",
@@ -77,7 +77,7 @@ function mapFormToApi(form){
 }
 
 // ─── ADD / EDIT ASSET MODAL ───────────────────────────────────────────────────
-function AssetModal({open,onClose,onSave,nextId,editing,types,employees}){
+function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departments}){
     const blank={
     name:"",asset_id:nextId,type:"Laptop",brand:"",model:"",serial:"",condition:"New",
     purchase_date:"",cost:"",vendor:"",warranty_expiry:"",status:"Available",assigned_to:"",
@@ -199,7 +199,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees}){
                 <label style={labelS}>Department</label>
                 <select value={form.department} onChange={e=>set("department",e.target.value)} style={inputS}>
                   <option value="">-- Select --</option>
-                  {DEPARTMENTS.map(d=><option key={d} value={d}>{d}</option>)}
+                  {(departments||[]).map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -642,13 +642,15 @@ export default function AssetManager(){
   const [assetPage,setAssetPage]=useState(1);
   const ASSET_PAGE_SIZE=6;
   const [employeeList,setEmployeeList]=useState([]);
+  const [departmentList,setDepartmentList]=useState([]);
 
   useEffect(()=>{
     (async()=>{
       try{
-        const [{data:assetRows},{data:typeRows},{data:empRows}] = await Promise.all([assetsApi.getAll(), assetsApi.getTypes(), employeesApi.getAll()]);
+        const [{data:assetRows},{data:typeRows},{data:empRows},{data:deptRows}] = await Promise.all([assetsApi.getAll(), assetsApi.getTypes(), employeesApi.getAll(), deptApi.getAll()]);
         setAssets(assetRows.map(mapAssetFromApi));
         setEmployeeList(empRows.map(e=>e.name).filter(Boolean));
+        setDepartmentList(deptRows.map(d=>d.name).filter(Boolean));
         if(typeRows.length){
           setAssetTypes(typeRows);
         } else {
@@ -931,7 +933,7 @@ export default function AssetManager(){
       )}
       </div>
 
-      <AssetModal open={modalOpen} onClose={()=>{setModalOpen(false);setEditing(null);}} onSave={saveAsset} nextId={nextId} editing={editing} types={TYPES} employees={employees}/>
+      <AssetModal open={modalOpen} onClose={()=>{setModalOpen(false);setEditing(null);}} onSave={saveAsset} nextId={nextId} editing={editing} types={TYPES} employees={employees} departments={departmentList}/>
       <TypeMasterModal open={typeModalOpen} onClose={()=>setTypeModalOpen(false)} types={assetTypes} setTypes={setAssetTypes}/>
       <TransferModal open={!!transferAssetId} asset={transferAsset} employees={employees} typeIcon={transferAsset?TYPE_ICON[transferAsset.type]||"📦":"📦"} onClose={()=>setTransferAssetId(null)} onSubmit={doTransfer}/>
       <ServiceModal open={!!serviceAssetId} asset={serviceAsset} onClose={()=>setServiceAssetId(null)} onSubmit={doService}/>
