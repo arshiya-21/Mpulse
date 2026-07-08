@@ -37,7 +37,8 @@ app.use('/api/permissions',   require('./routes/permissions'));
 app.use('/api/library',       require('./routes/library'));
 app.use('/api/uploads',      require('./routes/uploads'));
 app.use('/api/meetings',     require('./routes/meetings'));
-app.use('/api/assets',       require('./routes/assets'));
+app.use('/api/assets',        require('./routes/assets'));
+app.use('/api/announcements', require('./routes/announcements'));
 
 // Health check
 app.get('/api/health', (_req, res) =>

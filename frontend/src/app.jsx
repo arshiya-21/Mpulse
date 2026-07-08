@@ -3,7 +3,68 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { useAuth }           from "./context/AuthContext.jsx";
 import SetPassword           from "./SetPassword.jsx";
 import * as authApi          from "./api/auth.js";
+import * as annApi           from "./api/announcements.js";
 import FirstTimePasswordReset from './FirstTimePasswordReset.jsx';
+
+const ANN_TYPE={
+  feature:{label:"New Feature",color:"#4f46e5",bg:"#ede9fe"},
+  update: {label:"Update",     color:"#0891b2",bg:"#e0f2fe"},
+};
+
+function AnnouncementPopup({announcements,onDismiss}){
+  const [idx,setIdx]=useState(0);
+  if(!announcements.length) return null;
+  const a=announcements[idx];
+  const meta=ANN_TYPE[a.type]||ANN_TYPE.update;
+  const total=announcements.length;
+  const typeIcon=a.type==="feature"?"✨":"🔄";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(10,10,20,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,backdropFilter:"blur(2px)"}}>
+      <div style={{background:"#fff",borderRadius:16,width:460,maxWidth:"92vw",boxShadow:"0 32px 80px rgba(0,0,0,0.35)",overflow:"hidden",animation:"annpop .2s ease"}}>
+        <style>{`@keyframes annpop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+        {/* Header */}
+        <div style={{background:"linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%)",padding:"18px 22px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:-24,right:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
+          <div style={{position:"absolute",bottom:-28,right:50,width:72,height:72,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:10,position:"relative"}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>📢</div>
+            <span style={{fontSize:15,fontWeight:700,color:"#fff",letterSpacing:"-0.01em"}}>What's New in MPulse</span>
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+              <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,0.95)",color:meta.color}}>{typeIcon} {meta.label}</span>
+              {total>1&&<span style={{fontSize:11,color:"rgba(255,255,255,0.65)",fontWeight:600,background:"rgba(0,0,0,0.25)",padding:"2px 9px",borderRadius:10}}>{idx+1}/{total}</span>}
+            </div>
+          </div>
+        </div>
+        {/* Body */}
+        <div style={{padding:"20px 24px",position:"relative"}}>
+          <div style={{position:"absolute",left:0,top:14,bottom:14,width:4,borderRadius:"0 3px 3px 0",background:meta.color}}/>
+          <div style={{fontSize:17,fontWeight:700,color:"#111827",marginBottom:8,lineHeight:1.35}}>{a.title}</div>
+          <div style={{fontSize:13,color:"#4b5563",lineHeight:1.75,marginBottom:12}}>{a.message}</div>
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#9ca3af"}}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {new Date(a.created_at).toLocaleDateString("en-IN",{dateStyle:"long"})}
+          </div>
+        </div>
+        {/* Progress dots */}
+        {total>1&&(
+          <div style={{display:"flex",justifyContent:"center",gap:5,padding:"4px 0 2px"}}>
+            {Array.from({length:total}).map((_,i)=>(
+              <div key={i} onClick={()=>setIdx(i)} style={{width:i===idx?20:6,height:6,borderRadius:3,background:i===idx?meta.color:"#e4e7ec",transition:"all .25s",cursor:"pointer"}}/>
+            ))}
+          </div>
+        )}
+        {/* Footer */}
+        <div style={{padding:"12px 24px 18px",display:"flex",gap:8,justifyContent:"flex-end",borderTop:"1px solid #f0f2f5"}}>
+          {idx<total-1?(
+            <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next →</button>
+          ):(
+            <button onClick={onDismiss} style={{padding:"9px 28px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${meta.color},#7c3aed)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 4px 14px ${meta.color}55`}}>Got it!</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AccessDenied(){
   return(
@@ -56,8 +117,21 @@ const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Maste
 function Shell({user,onLogout}){
   const [collapsed,setCollapsed]=useState(false);
   const [cfgVer,setCfgVer]=useState(0);
+  const [unreadAnn,setUnreadAnn]=useState([]);
   const navigate=useNavigate();
   const location=useLocation();
+
+  useEffect(()=>{
+    const fetch = () => annApi.getUnread().then(r=>setUnreadAnn(r.data||[])).catch(()=>{});
+    fetch();
+    const interval = setInterval(fetch, 10000);
+    return () => clearInterval(interval);
+  },[]);
+
+  async function dismissAnnouncements(){
+    await Promise.all(unreadAnn.map(a=>annApi.markRead(a.id).catch(()=>{})));
+    setUnreadAnn([]);
+  }
 
   // Listen for local access-change events (fired by AccessConfig save)
   useEffect(()=>{
@@ -196,6 +270,7 @@ function Shell({user,onLogout}){
           </Routes>
         </div>
       </div>
+      {unreadAnn.length>0&&<AnnouncementPopup announcements={unreadAnn} onDismiss={dismissAnnouncements}/>}
     </div>
   );
 }

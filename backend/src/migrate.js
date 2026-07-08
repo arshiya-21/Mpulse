@@ -498,6 +498,27 @@ module.exports = async function migrate() {
     `);
     console.log('✅ asset tables ready');
 
+    // ── Announcements ─────────────────────────────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id         SERIAL PRIMARY KEY,
+        title      VARCHAR(255) NOT NULL,
+        message    TEXT         NOT NULL,
+        type       VARCHAR(30)  DEFAULT 'update',
+        created_by VARCHAR(255),
+        created_at TIMESTAMP    DEFAULT NOW()
+      );
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS announcement_reads (
+        user_id         INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+        announcement_id INTEGER NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+        read_at         TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (user_id, announcement_id)
+      );
+    `);
+    console.log('✅ announcement tables ready');
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);
