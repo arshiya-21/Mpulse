@@ -183,14 +183,14 @@ function Shell({user,onLogout}){
         <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {!collapsed?(
             <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0,width:"100%"}}>
-              <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>âœ…</div>
+              <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>✅</div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
                 <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work Â· Pulse Â· Intelligence</div>
               </div>
             </div>
           ):(
-            <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>âœ…</div>
+            <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
           )}
         </div>
         <div style={{padding:collapsed?"6px 0":"4px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:collapsed?"center":"flex-end",flexShrink:0}}>
@@ -320,7 +320,7 @@ function Login({onLogin}){
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"system-ui,sans-serif"}}>
       <div>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>âœ…</div>
+          <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>✅</div>
           <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",letterSpacing:"-0.02em"}}>MPulse</div>
           <div style={{fontSize:13,color:"#818cf8",marginTop:4}}>Project Management & Analysis</div>
         </div>
