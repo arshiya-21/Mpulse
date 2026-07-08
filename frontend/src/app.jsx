@@ -17,7 +17,7 @@ function AnnouncementPopup({announcements,onDismiss}){
   const a=announcements[idx];
   const meta=ANN_TYPE[a.type]||ANN_TYPE.update;
   const total=announcements.length;
-  const typeIcon=a.type==="feature"?"âœ¨":"ðŸ”„";
+  const typeIcon=a.type==="feature"?"✨":"🔄";
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(10,10,20,0.65)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,backdropFilter:"blur(2px)"}}>
       <div style={{background:"#fff",borderRadius:16,width:460,maxWidth:"92vw",boxShadow:"0 32px 80px rgba(0,0,0,0.35)",overflow:"hidden",animation:"annpop .2s ease"}}>
@@ -27,7 +27,7 @@ function AnnouncementPopup({announcements,onDismiss}){
           <div style={{position:"absolute",top:-24,right:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
           <div style={{position:"absolute",bottom:-28,right:50,width:72,height:72,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
           <div style={{display:"flex",alignItems:"center",gap:10,position:"relative"}}>
-            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>ðŸ“¢</div>
+            <div style={{width:36,height:36,borderRadius:10,background:"rgba(255,255,255,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>📢</div>
             <span style={{fontSize:15,fontWeight:700,color:"#fff",letterSpacing:"-0.01em"}}>What's New in MPulse</span>
             <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,background:"rgba(255,255,255,0.95)",color:meta.color}}>{typeIcon} {meta.label}</span>
