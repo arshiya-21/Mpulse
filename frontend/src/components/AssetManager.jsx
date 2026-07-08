@@ -640,7 +640,7 @@ export default function AssetManager(){
   const [transferAssetId,setTransferAssetId]=useState(null);
   const [serviceAssetId,setServiceAssetId]=useState(null);
   const [assetPage,setAssetPage]=useState(1);
-  const ASSET_PAGE_SIZE=6;
+  const ASSET_PAGE_SIZE=10;
   const [employeeList,setEmployeeList]=useState([]);
   const [departmentList,setDepartmentList]=useState([]);
 
