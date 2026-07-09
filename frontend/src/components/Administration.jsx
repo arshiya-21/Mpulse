@@ -27,6 +27,8 @@ export default function Administration(){
   });
   const [logPage,setLogPage]=useState(1);
   const LOG_PAGE_SIZE=5;
+  const [expandedIds,setExpandedIds]=useState(new Set());
+  function toggleExpand(id){setExpandedIds(prev=>{const s=new Set(prev);s.has(id)?s.delete(id):s.add(id);return s;});}
   function quickRange(days){
     const to=new Date(),from=new Date();
     from.setDate(from.getDate()-days);
@@ -253,17 +255,36 @@ export default function Administration(){
                   </div>
                 ):paged.map(a=>{
                   const meta=TYPE_META[a.type]||TYPE_META.update;
+                  const expanded=expandedIds.has(a.id);
                   return(
-                    <div key={a.id} style={{padding:"12px 14px",borderRadius:8,border:`1px solid ${meta.bg}`,background:"#fafbfc",borderLeft:`3px solid ${meta.color}`}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}}>
-                        <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,background:meta.bg,color:meta.color}}>{meta.label}</span>
-                        <span style={{fontSize:13,fontWeight:600,color:"#111827"}}>{a.title}</span>
+                    <div key={a.id} style={{borderRadius:8,border:`1px solid ${meta.bg}`,background:"#fafbfc",borderLeft:`3px solid ${meta.color}`,overflow:"hidden"}}>
+                      {/* Header row */}
+                      <div style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px"}}>
+                        <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,background:meta.bg,color:meta.color,flexShrink:0}}>{meta.label}</span>
+                        <span style={{fontSize:13,fontWeight:600,color:"#111827",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</span>
+                        <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                          <span style={{fontSize:11,color:"#9ca3af"}}>{new Date(a.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}</span>
+                          <button onClick={()=>toggleExpand(a.id)} title={expanded?"Hide":"View details"}
+                            style={{background:expanded?meta.bg:"#f3f4f6",border:`1px solid ${expanded?meta.color:"#e4e7ec"}`,borderRadius:6,padding:"3px 7px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,color:expanded?meta.color:"#6b7280"}}>
+                            {expanded?(
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            ):(
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            )}
+                            <span style={{fontSize:11,fontWeight:600}}>{expanded?"Hide":"View"}</span>
+                          </button>
+                        </div>
                       </div>
-                      <div style={{fontSize:13,color:"#4b5563",marginBottom:6,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{a.message}</div>
-                      <div style={{fontSize:11,color:"#9ca3af",display:"flex",alignItems:"center",gap:4}}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        {new Date(a.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · by {a.created_by}
-                      </div>
+                      {/* Expandable body */}
+                      {expanded&&(
+                        <div style={{padding:"0 14px 12px",borderTop:`1px dashed ${meta.bg}`}}>
+                          <div style={{fontSize:13,color:"#4b5563",lineHeight:1.6,whiteSpace:"pre-wrap",paddingTop:10}}>{a.message}</div>
+                          <div style={{fontSize:11,color:"#9ca3af",marginTop:8,display:"flex",alignItems:"center",gap:4}}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            by {a.created_by}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
