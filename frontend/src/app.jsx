@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth }           from "./context/AuthContext.jsx";
 import SetPassword           from "./SetPassword.jsx";
@@ -56,7 +56,7 @@ function AnnouncementPopup({announcements,onDismiss}){
         {/* Footer */}
         <div style={{padding:"12px 24px 18px",display:"flex",gap:8,justifyContent:"flex-end",borderTop:"1px solid #f0f2f5"}}>
           {idx<total-1?(
-            <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next â†’</button>
+            <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next →</button>
           ):(
             <button onClick={onDismiss} style={{padding:"9px 28px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${meta.color},#7c3aed)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 4px 14px ${meta.color}55`}}>Got it!</button>
           )}
@@ -69,7 +69,7 @@ function AnnouncementPopup({announcements,onDismiss}){
 function AccessDenied(){
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"60vh",gap:12}}>
-      <div style={{fontSize:40}}>ðŸ”’</div>
+      <div style={{fontSize:40}}>🔒</div>
       <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>Access Restricted</div>
       <div style={{fontSize:13,color:"#9ca3af"}}>You don't have permission to view this page.</div>
     </div>
@@ -88,7 +88,7 @@ import AssetManager   from "./components/AssetManager.jsx";
 import { getAccessConfig, ACCESS_KEY } from "./components/MasterData.jsx";
 import * as permApi from "./api/permissions.js";
 
-// â”€â”€â”€ NAV ICONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── NAV ICONS ────────────────────────────────────────────────────────────────
 const icons={
   dashboard: a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   worklog:   a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>,
@@ -113,7 +113,7 @@ const NAV=[
 ];
 const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Manager"};
 
-// â”€â”€â”€ SHELL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SHELL ─────────────────────────────────────────────────────────────────────
 function Shell({user,onLogout}){
   const [collapsed,setCollapsed]=useState(false);
   const [cfgVer,setCfgVer]=useState(0);
@@ -140,7 +140,7 @@ function Shell({user,onLogout}){
     return()=>window.removeEventListener("mpulse-access-change",handler);
   },[]);
 
-  // Sync permissions from DB â†’ localStorage whenever the tab gains focus
+  // Sync permissions from DB → localStorage whenever the tab gains focus
   // so nav updates automatically for ALL users when admin changes their role's access
   useEffect(()=>{
     const CACHE_KEY = "mpulse_perms_cache";
@@ -186,7 +186,7 @@ function Shell({user,onLogout}){
               <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>✅</div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
-                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work Â· Pulse Â· Intelligence</div>
+                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work · Pulse · Intelligence</div>
               </div>
             </div>
           ):(
@@ -275,7 +275,7 @@ function Shell({user,onLogout}){
   );
 }
 
-// â”€â”€â”€ LOGIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 function Login({onLogin}){
   const [email,setEmail]=useState("");
   const [pw,setPw]=useState("");
@@ -340,7 +340,7 @@ function Login({onLogin}){
           {sessionMsg&&<div style={{background:"rgba(234,179,8,0.15)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fde68a",marginBottom:12}}>{sessionMsg}</div>}
           {err&&<div style={{background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fca5a5",marginBottom:12}}>{err}</div>}
           <button onClick={go} disabled={loading} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:11,borderRadius:9,border:"none",background:"#4f46e5",color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 14px rgba(79,70,229,0.4)",opacity:loading?0.8:1}}>
-            {loading?"Signing inâ€¦":"Sign in â†’"}
+            {loading?"Signing in…":"Sign in →"}
           </button>
           <div style={{marginTop:16,textAlign:"center",fontSize:12,color:"#4b5563"}}>Forgot your password? Contact your administrator.</div>
         </div>
@@ -349,7 +349,7 @@ function Login({onLogin}){
   );
 }
 
-// â”€â”€â”€ ROOT APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App(){
   const {user,setUser,logout}=useAuth();
   const location=useLocation();
