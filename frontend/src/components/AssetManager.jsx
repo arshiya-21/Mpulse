@@ -788,7 +788,7 @@ export default function AssetManager(){
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:12}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"#9ca3af",letterSpacing:"0.06em"}}>MPULSE · ASSETS</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#111827",marginTop:2}}>Asset Manager</div>
+          <div style={{fontSize:24,fontWeight:800,color:"#111827",marginTop:2}}>Asset Management</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           {kpis.map(k=>(
