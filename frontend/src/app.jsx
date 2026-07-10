@@ -85,6 +85,7 @@ import Reports        from "./components/Reports.jsx";
 import Administration from "./components/Administration.jsx";
 import Library        from "./components/Library.jsx";
 import AssetManager   from "./components/AssetManager.jsx";
+import Inventory      from "./components/Inventory.jsx";
 import { getAccessConfig, ACCESS_KEY } from "./components/MasterData.jsx";
 import * as permApi from "./api/permissions.js";
 
@@ -99,6 +100,7 @@ const icons={
   admin:     a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>,
   library:   a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>,
   assets:    a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  inventory: a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
 };
 const NAV=[
   {key:"dashboard", label:"Dashboard",      path:"/dashboard"},
@@ -108,10 +110,11 @@ const NAV=[
   {key:"masterdata",label:"Master Data",     path:"/masterdata"},
   {key:"reports",   label:"Reports",         path:"/reports"},
   {key:"admin",     label:"Administration",  path:"/admin"},
-  {key:"assets",    label:"Asset Manager",    path:"/asset-manager"},
+  {key:"assets",    label:"Asset Management",    path:"/asset-manager"},
+  {key:"inventory", label:"Inventory",         path:"/inventory"},
   {key:"library",   label:"Library",          path:"/library"},
 ];
-const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Manager"};
+const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Management","/inventory":"Inventory"};
 
 // ─── SHELL ─────────────────────────────────────────────────────────────────────
 function Shell({user,onLogout}){
@@ -266,6 +269,7 @@ function Shell({user,onLogout}){
             <Route path="/admin"      element={accessCfg[user.role]?.admin?.view     ?<Administration/>:<AccessDenied/>}/>
             <Route path="/library"    element={accessCfg[user.role]?.library?.view   ?<Library/>       :<AccessDenied/>}/>
             <Route path="/asset-manager"     element={accessCfg[user.role]?.assets?.view    ?<AssetManager/>  :<AccessDenied/>}/>
+            <Route path="/inventory"          element={accessCfg[user.role]?.inventory?.view  ?<Inventory/>     :<AccessDenied/>}/>
             <Route path="*"           element={<Navigate to={defaultPath} replace/>}/>
           </Routes>
         </div>

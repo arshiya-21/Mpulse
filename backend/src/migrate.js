@@ -519,6 +519,91 @@ module.exports = async function migrate() {
     `);
     console.log('✅ announcement tables ready');
 
+    // ── Inventory Management ─────────────────────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS inventory_items (
+        id         SERIAL PRIMARY KEY,
+        code       VARCHAR(20) UNIQUE NOT NULL,
+        name       VARCHAR(255) NOT NULL,
+        category   VARCHAR(100) NOT NULL,
+        unit       VARCHAR(50) NOT NULL,
+        stock      INTEGER NOT NULL DEFAULT 0,
+        min_stock  INTEGER NOT NULL DEFAULT 0,
+        cost       NUMERIC(12,2) NOT NULL DEFAULT 0,
+        sell_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+        supplier   VARCHAR(255),
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_suppliers (
+        id             SERIAL PRIMARY KEY,
+        name           VARCHAR(255) UNIQUE NOT NULL,
+        contact_person VARCHAR(255),
+        phone          VARCHAR(30),
+        email          VARCHAR(255),
+        city           VARCHAR(100),
+        items_supplied VARCHAR(255),
+        notes          TEXT,
+        created_at     TIMESTAMP DEFAULT NOW(),
+        updated_at     TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_inward (
+        id           SERIAL PRIMARY KEY,
+        grn_number   VARCHAR(20) UNIQUE NOT NULL,
+        date         DATE NOT NULL,
+        supplier_id  INTEGER REFERENCES inventory_suppliers(id),
+        invoice_no   VARCHAR(100),
+        received_by  VARCHAR(255),
+        status       VARCHAR(20) NOT NULL DEFAULT 'Pending',
+        notes        TEXT,
+        total_value  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        created_at   TIMESTAMP DEFAULT NOW(),
+        updated_at   TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_inward_items (
+        id         SERIAL PRIMARY KEY,
+        inward_id  INTEGER NOT NULL REFERENCES inventory_inward(id) ON DELETE CASCADE,
+        item_id    INTEGER REFERENCES inventory_items(id),
+        item_name  VARCHAR(255) NOT NULL,
+        unit_cost  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        qty        INTEGER NOT NULL DEFAULT 1,
+        line_total NUMERIC(12,2) GENERATED ALWAYS AS (unit_cost * qty) STORED
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_outward (
+        id             SERIAL PRIMARY KEY,
+        dn_number      VARCHAR(20) UNIQUE NOT NULL,
+        date           DATE NOT NULL,
+        customer_name  VARCHAR(255) NOT NULL,
+        order_ref      VARCHAR(100),
+        dispatched_by  VARCHAR(255),
+        status         VARCHAR(20) NOT NULL DEFAULT 'Pending',
+        notes          TEXT,
+        total_value    NUMERIC(12,2) NOT NULL DEFAULT 0,
+        created_at     TIMESTAMP DEFAULT NOW(),
+        updated_at     TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS inventory_outward_items (
+        id          SERIAL PRIMARY KEY,
+        outward_id  INTEGER NOT NULL REFERENCES inventory_outward(id) ON DELETE CASCADE,
+        item_id     INTEGER REFERENCES inventory_items(id),
+        item_name   VARCHAR(255) NOT NULL,
+        unit_price  NUMERIC(12,2) NOT NULL DEFAULT 0,
+        qty         INTEGER NOT NULL DEFAULT 1,
+        line_total  NUMERIC(12,2) GENERATED ALWAYS AS (unit_price * qty) STORED
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_inward_items_inward_id   ON inventory_inward_items(inward_id);
+      CREATE INDEX IF NOT EXISTS idx_outward_items_outward_id ON inventory_outward_items(outward_id);
+      CREATE INDEX IF NOT EXISTS idx_items_category           ON inventory_items(category);
+    `);
+    console.log('✅ inventory tables ready');
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);

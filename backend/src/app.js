@@ -39,6 +39,10 @@ app.use('/api/uploads',      require('./routes/uploads'));
 app.use('/api/meetings',     require('./routes/meetings'));
 app.use('/api/assets',        require('./routes/assets'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/inventory/items',      require('./routes/inventoryItems'));
+app.use('/api/inventory/suppliers',  require('./routes/inventorySuppliers'));
+app.use('/api/inventory/inward',     require('./routes/inventoryInward'));
+app.use('/api/inventory/outward',    require('./routes/inventoryOutward'));
 
 // Health check
 app.get('/api/health', (_req, res) =>

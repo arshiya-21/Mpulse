@@ -770,6 +770,7 @@ const DEFAULT_ACCESS={
     worklog_export: {view:true, create:false,update:false,delete:false},
     project_export: {view:true, create:false,update:false,delete:false},
     assets:         {view:true, create:true, update:true, delete:true},
+    inventory:      {view:true, create:true, update:true, delete:true},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
   Manager:{
@@ -791,6 +792,7 @@ const DEFAULT_ACCESS={
     worklog_export: {view:true, create:false,update:false,delete:false},
     project_export: {view:true, create:false,update:false,delete:false},
     assets:         {view:true, create:false,update:false,delete:false},
+    inventory:      {view:true, create:false,update:false,delete:false},
     _team_only:     {view:true, create:false,update:false,delete:false},
   },
   User:{
@@ -812,6 +814,7 @@ const DEFAULT_ACCESS={
     worklog_export: {view:false,create:false,update:false,delete:false},
     project_export: {view:false,create:false,update:false,delete:false},
     assets:         {view:false,create:false,update:false,delete:false},
+    inventory:      {view:false,create:false,update:false,delete:false},
     _team_only:     {view:false,create:false,update:false,delete:false},
   },
 };
