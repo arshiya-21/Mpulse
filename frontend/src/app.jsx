@@ -77,6 +77,7 @@ function AccessDenied(){
 }
 
 import Dashboard      from "./components/Dashboard.jsx";
+import MarketingHub   from "./components/MarketingHub.jsx";
 import DailyTasks     from "./components/DailyTasks.jsx";
 import CustomerVisits from "./components/CustomerVisits.jsx";
 import Projects       from "./components/Projects.jsx";
@@ -92,6 +93,7 @@ import * as permApi from "./api/permissions.js";
 // ─── NAV ICONS ────────────────────────────────────────────────────────────────
 const icons={
   dashboard: a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  marketing: a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
   worklog:   a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>,
   visits:    a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   projects:  a=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?"#fff":"#6b7280"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
@@ -104,6 +106,7 @@ const icons={
 };
 const NAV=[
   {key:"dashboard", label:"Dashboard",      path:"/dashboard"},
+  {key:"marketing", label:"Marketing Hub",  path:"/marketing"},
   {key:"worklog",   label:"Worklog",         path:"/worklog"},
   {key:"visits",    label:"Customer Visits", path:"/visits"},
   {key:"projects",  label:"Projects",        path:"/projects"},
@@ -114,8 +117,7 @@ const NAV=[
   {key:"inventory", label:"Inventory",         path:"/inventory"},
   {key:"library",   label:"Library",          path:"/library"},
 ];
-const TITLES={"/dashboard":"Dashboard","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Management","/inventory":"Inventory"};
-
+const TITLES={"/dashboard":"Dashboard","/marketing":"Marketing Hub","/worklog":"Worklog","/masterdata":"Master Data","/projects":"Projects","/visits":"Customer Visits","/reports":"Reports & Exports","/admin":"Administration","/library":"Library","/asset-manager":"Asset Management","/inventory":"Inventory"};
 // ─── SHELL ─────────────────────────────────────────────────────────────────────
 function Shell({user,onLogout}){
   const [collapsed,setCollapsed]=useState(false);
@@ -261,6 +263,7 @@ function Shell({user,onLogout}){
         <div style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
           <Routes>
             <Route path="/dashboard"  element={accessCfg[user.role]?.dashboard?.view ?<Dashboard/>     :<AccessDenied/>}/>
+            <Route path="/marketing"  element={accessCfg[user.role]?.marketing?.view ?<MarketingHub/>  :<AccessDenied/>}/>
             <Route path="/worklog"    element={accessCfg[user.role]?.worklog?.view   ?<DailyTasks/>    :<AccessDenied/>}/>
             <Route path="/visits"     element={accessCfg[user.role]?.visits?.view    ?<CustomerVisits/>:<AccessDenied/>}/>
             <Route path="/projects"   element={accessCfg[user.role]?.projects?.view  ?<Projects/>      :<AccessDenied/>}/>

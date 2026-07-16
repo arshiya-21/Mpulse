@@ -715,6 +715,7 @@ function CustomerMaster(){
 // ─── ACCESS CONFIG CONSTANTS ──────────────────────────────────────────────────
 const NAV_PAGES=[
   {key:"dashboard",  label:"Dashboard",        icon:"📊"},
+  {key:"marketing",  label:"Marketing Hub",     icon:"📶"},
   {key:"worklog",    label:"Worklog",           icon:"📝"},
   {key:"visits",     label:"Customer Visits",   icon:"👥"},
   {key:"projects",   label:"Projects",          icon:"📁"},
@@ -753,6 +754,7 @@ const BLANK={view:false,create:false,update:false,delete:false};
 const DEFAULT_ACCESS={
   Admin:{
     dashboard: {view:true, create:true, update:true, delete:true},
+    marketing: {view:true, create:true, update:true, delete:true},
     worklog:   {view:true, create:true, update:true, delete:true},
     visits:    {view:true, create:true, update:true, delete:true},
     projects:  {view:true, create:true, update:true, delete:true},
@@ -775,6 +777,7 @@ const DEFAULT_ACCESS={
   },
   Manager:{
     dashboard: {view:true, create:false,update:false,delete:false},
+    marketing: {view:true, create:false,update:false,delete:false},
     worklog:   {view:true, create:true, update:true, delete:true},
     visits:    {view:true, create:true, update:true, delete:false},
     projects:  {view:true, create:true, update:true, delete:false},
@@ -797,6 +800,7 @@ const DEFAULT_ACCESS={
   },
   User:{
     dashboard: {view:true, create:false,update:false,delete:false},
+    marketing: {view:true, create:false,update:false,delete:false},
     worklog:   {view:true, create:true, update:true, delete:true},
     visits:    {view:false,create:false,update:false,delete:false},
     projects:  {view:true, create:false,update:false,delete:false},
