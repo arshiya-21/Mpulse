@@ -1797,14 +1797,9 @@ export default function Inventory() {
   const tdStyle = { padding: "12px 16px", fontSize: 14, color: "#111827", borderBottom: "1px solid #f3f4f6" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f9fafb" }}>
-      <div style={{ flexShrink: 0, padding: "24px 24px 0", background: "#f9fafb", zIndex: 5 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, letterSpacing: 0.5 }}>MPULSE · INVENTORY</div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: "4px 0 0" }}>Inventory Management</h1>
-        </div>
-
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div style={{ flexShrink: 0, padding: "16px 0 0", zIndex: 5 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ ...cardStyle, minWidth: 100, textAlign: "center", padding: "10px 16px" }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#059669" }}>₹{(totalProcurement/1000).toFixed(0)}K</div>
@@ -1832,7 +1827,7 @@ export default function Inventory() {
               setEditingOutward(null);
               setShowOutwardModal(true);
             }}
-            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
+            style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 13, color: "#111827", cursor: "pointer" }}
           >
             + Outward
           </button>
@@ -1873,7 +1868,7 @@ export default function Inventory() {
       </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 0 24px" }}>
 
       {activeTab === "Dashboard" && (
         <>

@@ -95,10 +95,10 @@ const demoFollowUps=[
 
 const pipeline=[
   {label:"Leads",value:5,pct:100,color:"#4f46e5"},
-  {label:"Demos Conducted",value:4,pct:80,color:"#7c3aed"},
-  {label:"Follow-Up",value:1,pct:20,color:"#f59e0b"},
-  {label:"Orders",value:4,pct:80,color:"#059669"},
-  {label:"Active Go-Live",value:2,pct:40,color:"#10b981"},
+  {label:"Demos Conducted",value:4,pct:80,color:"#4f46e5"},
+  {label:"Follow-Up",value:1,pct:20,color:"#4f46e5"},
+  {label:"Orders",value:4,pct:80,color:"#4f46e5"},
+  {label:"Active Go-Live",value:2,pct:40,color:"#4f46e5"},
 ];
 
 const implementations=[
@@ -262,13 +262,13 @@ function KpiCard({label,value,sub,accent,icon,drillKey,activeDrill,onToggle}){
         <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,textTransform:"uppercase"}}>{label}</div>
         <span style={{fontSize:16,opacity:0.5}}>{icon}</span>
       </div>
-      <div style={{fontSize:24,fontWeight:800,color:accent,margin:"2px 0"}}>{value}</div>
+      <div style={{fontSize:24,fontWeight:800,color:"#111827",margin:"2px 0"}}>{value}</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
         <div style={{fontSize:11,color:"#9ca3af"}}>{sub}</div>
         {drillKey&&(
           <button onClick={()=>onToggle(drillKey)} title={open?"Hide details":"View details"}
-            style={{background:"none",border:"none",cursor:"pointer",padding:2,color:open?accent:"#c4c9d1",fontSize:13,lineHeight:1}}>
-            {open?"▲":"▼"}
+            style={{background:"none",border:"none",cursor:"pointer",padding:2,display:"flex",alignItems:"center",color:open?accent:"#c4c9d1",lineHeight:1}}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transform:open?"rotate(180deg)":"none",transition:"transform 0.15s"}}><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         )}
       </div>
@@ -2820,14 +2820,7 @@ useEffect(()=>{
   };
 
   return(
-    <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-        <div>
-          <div style={{fontSize:12,color:"#6b7280",fontWeight:600,letterSpacing:0.5}}>MPULSE · MARKETING</div>
-          <h1 style={{fontSize:24,fontWeight:800,color:"#111827",margin:"4px 0 0"}}>Marketing Hub</h1>
-        </div>
-      </div>
-
+    <div style={{fontFamily:"system-ui, -apple-system, sans-serif"}}>
       <div style={{display:"flex",gap:0,marginBottom:16,background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:3,boxShadow:"0 1px 3px rgba(0,0,0,.05)",flexWrap:"wrap"}}>
         {tabs.map(t=>{
           const active=tab===t;

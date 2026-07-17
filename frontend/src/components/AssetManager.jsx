@@ -784,12 +784,8 @@ export default function AssetManager(){
   }
 
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:12}}>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:"#9ca3af",letterSpacing:"0.06em"}}>MPULSE · ASSETS</div>
-          <div style={{fontSize:24,fontWeight:800,color:"#111827",marginTop:2}}>Asset Management</div>
-        </div>
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",fontFamily:"system-ui, -apple-system, sans-serif"}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"flex-end",marginBottom:18,flexWrap:"wrap",gap:12}}>
         <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           {kpis.map(k=>(
             <div key={k.label} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:9,padding:"8px 14px",textAlign:"center",minWidth:64}}>

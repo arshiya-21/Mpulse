@@ -218,8 +218,8 @@ function Shell({user,onLogout}){
                 onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background="rgba(255,255,255,0.06)";}}
                 onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}}>
                 {isActive&&!collapsed&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:18,background:"#a5b4fc",borderRadius:"0 3px 3px 0"}}/>}
-                <div style={{flexShrink:0,opacity:isActive?1:0.65}}>{icons[item.key]?.(isActive)}</div>
-                {!collapsed&&<span style={{fontSize:13,fontWeight:isActive?600:400,color:isActive?"#fff":"#9ca3af",whiteSpace:"nowrap"}}>{item.label}</span>}
+                <div style={{flexShrink:0}}>{icons[item.key]?.(true)}</div>
+                {!collapsed&&<span style={{fontSize:13,fontWeight:isActive?600:400,color:"#fff",whiteSpace:"nowrap"}}>{item.label}</span>}
               </div>
             );
           })}
