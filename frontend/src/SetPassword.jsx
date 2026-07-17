@@ -35,7 +35,7 @@ export default function SetPassword() {
   };
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
+    <div style={{minHeight:'100%',background:'linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div>
         <div style={{textAlign:'center',marginBottom:28}}>
           <div style={{width:52,height:52,borderRadius:14,background:'rgba(79,70,229,0.6)',border:'1px solid rgba(129,140,248,0.4)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:22,boxShadow:'0 8px 24px rgba(79,70,229,0.4)'}}>🔑</div>

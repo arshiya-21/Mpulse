@@ -183,7 +183,7 @@ function Shell({user,onLogout}){
   const sideW=collapsed?58:210;
 
   return(
-    <div style={{display:"flex",height:"100vh",overflow:"hidden",background:"#f4f6f9",fontFamily:"system-ui,sans-serif",fontSize:14,color:"#111827"}}>
+    <div style={{display:"flex",height:"100%",overflow:"hidden",background:"#f4f6f9",fontFamily:"system-ui,sans-serif",fontSize:14,color:"#111827"}}>
       <div style={{width:sideW,minWidth:sideW,background:"#0f1117",display:"flex",flexDirection:"column",flexShrink:0,transition:"width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)",overflow:"hidden"}}>
         <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {!collapsed?(
@@ -324,7 +324,7 @@ function Login({onLogin}){
 
   const iS={width:"100%",padding:"10px 13px",fontSize:14,border:"1px solid rgba(255,255,255,0.14)",borderRadius:6,background:"rgba(255,255,255,0.07)",color:"#f9fafb",outline:"none",fontFamily:"system-ui,sans-serif"};
   return(
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"system-ui,sans-serif"}}>
+    <div style={{minHeight:"100%",background:"linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"system-ui,sans-serif"}}>
       <div>
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>✅</div>

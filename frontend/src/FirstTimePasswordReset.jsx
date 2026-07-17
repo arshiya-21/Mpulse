@@ -24,7 +24,7 @@ export default function FirstTimePasswordReset({ resetToken, userName, onSuccess
   const iS = { width:'100%', padding:'10px 13px', fontSize:14, border:'1px solid rgba(255,255,255,0.14)', borderRadius:6, background:'rgba(255,255,255,0.07)', color:'#f9fafb', outline:'none', fontFamily:'system-ui,sans-serif', boxSizing:'border-box' };
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
+    <div style={{minHeight:'100%',background:'linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'system-ui,sans-serif'}}>
       <div>
         <div style={{textAlign:'center',marginBottom:28}}>
           <div style={{width:52,height:52,borderRadius:14,background:'rgba(79,70,229,0.6)',border:'1px solid rgba(129,140,248,0.4)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',fontSize:22}}>✅</div>
