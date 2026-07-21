@@ -6,6 +6,7 @@ import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
 import { useToast, Toast, Spinner, LoadingBox, Modal, Tooltip, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
+import VisitAnalysis from "./VisitAnalysis.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -23,6 +24,7 @@ export default function CustomerVisits(){
   const [adminEmail,setAdminEmail]= useState("");
   const [loading,setLoading]     = useState(true);
   const [saving,setSaving]       = useState(false);
+  const [view,setView]           = useState("visits"); // "visits" | "analysis"
 
   // Schedule / Edit modal
   const [modal,setModal]         = useState(false);
@@ -215,10 +217,28 @@ export default function CustomerVisits(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div style={{display:"flex",gap:2,background:"#fff",border:"1px solid #e4e7ec",borderRadius:8,padding:3}}>
+          <button onClick={()=>setView("visits")}
+            style={{padding:"7px 14px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",
+              background:view==="visits"?"#4f46e5":"transparent",color:view==="visits"?"#fff":"#6b7280"}}>
+            🗂️ Visits
+          </button>
+          <button onClick={()=>setView("analysis")}
+            style={{padding:"7px 14px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",
+              background:view==="analysis"?"#4f46e5":"transparent",color:view==="analysis"?"#fff":"#6b7280"}}>
+            📊 Analysis
+          </button>
+        </div>
         <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
       </div>
 
+      {view === "analysis" && (
+        <VisitAnalysis visits={visits} employees={employees} customers={customers} />
+      )}
+
+      {view === "visits" && (
+      <>
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
         {kpis.map((k,i)=>(
@@ -304,6 +324,8 @@ export default function CustomerVisits(){
           </div>
           <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
+      )}
+      </>
       )}
 
       {/* ── Schedule / Edit Modal (wider) ── */}
