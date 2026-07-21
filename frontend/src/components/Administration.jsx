@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import * as settingsApi from "../api/settings.js";
 import * as annApi from "../api/announcements.js";
-import { useToast, Toast, Spinner, inputS, labelS } from "./shared.jsx";
+import * as quoteApi from "../api/motivationalQuotes.js";
+import { useToast, Toast, Spinner, inputS, labelS, useModalHotkeys } from "./shared.jsx";
 
 const TYPE_META={
-  feature: {label:"New Feature", color:"#4f46e5", bg:"#ede9fe"},
+  feature: {label:"New Feature", color:"#2563eb", bg:"#dbeafe"},
   update:  {label:"Update",      color:"#0891b2", bg:"#e0f2fe"},
 };
+
+function fmtTime12(t){
+  if(!t) return "";
+  const [hStr,m]=t.split(":");
+  const h=parseInt(hStr,10);
+  const period=h>=12?"PM":"AM";
+  const h12=h%12===0?12:h%12;
+  return `${h12}:${m} ${period}`;
+}
 
 export default function Administration(){
   const [s,setS]=useState({company_name:"",daily_target_mins:510,work_days:"Mon–Fri",timezone:"Asia/Kolkata",tat_alert_days:2,email_notif:true,auto_close:false,session_timeout:0});
@@ -40,6 +50,74 @@ export default function Administration(){
     annApi.getAll().then(r=>setAnnouncements(r.data||[])).catch(()=>{});
   },[]);
 
+  // ── Daily Motivational Quote state ──
+  const [quoteCfg,setQuoteCfg]=useState(null);
+  const [quoteSettingsModal,setQuoteSettingsModal]=useState(false);
+  const [quoteSaving,setQuoteSaving]=useState(false);
+  const [quoteImporting,setQuoteImporting]=useState(false);
+  const [quoteTestModal,setQuoteTestModal]=useState(false);
+  const [quoteTestEmail,setQuoteTestEmail]=useState("");
+  const [quoteTestSending,setQuoteTestSending]=useState(false);
+  const [quoteLogModal,setQuoteLogModal]=useState(false);
+  const [quoteLog,setQuoteLog]=useState([]);
+  const [quoteLogLoading,setQuoteLogLoading]=useState(false);
+
+  function loadQuoteSettings(){
+    quoteApi.getSettings().then(r=>setQuoteCfg(r.data)).catch(()=>show("Failed to load quote settings"));
+  }
+  useEffect(()=>{ loadQuoteSettings(); },[]);
+
+  function openQuoteLog(){
+    setQuoteLogModal(true);
+    setQuoteLogLoading(true);
+    quoteApi.getLog().then(r=>setQuoteLog(r.data||[])).catch(()=>show("Failed to load quote log")).finally(()=>setQuoteLogLoading(false));
+  }
+
+  async function saveQuoteSettings(){
+    setQuoteSaving(true);
+    try{
+      const {data}=await quoteApi.updateSettings({enabled:quoteCfg.enabled,send_time:quoteCfg.send_time});
+      setQuoteCfg(prev=>({...prev,...data}));
+      show("Quote settings saved");
+      setQuoteSettingsModal(false);
+    }catch{show("Failed to save quote settings");}
+    finally{setQuoteSaving(false);}
+  }
+
+  function handleImportQuotes(e){
+    const file=e.target.files?.[0];
+    e.target.value="";
+    if(!file) return;
+    doImportQuotes(file);
+  }
+
+  async function doImportQuotes(file){
+    setQuoteImporting(true);
+    try{
+      const {data}=await quoteApi.importQuotes(file);
+      show(`Imported ${data.imported} quotes${data.duplicates_skipped?` (${data.duplicates_skipped} duplicate lines skipped)`:""}`);
+      loadQuoteSettings();
+    }catch(err){show(err?.response?.data?.error||"Failed to import quotes");}
+    finally{setQuoteImporting(false);}
+  }
+
+  async function handleQuoteTestSend(){
+    if(!quoteTestEmail.trim()){show("Enter a test email address");return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quoteTestEmail.trim())){show("Invalid email format");return;}
+    setQuoteTestSending(true);
+    try{
+      const {data}=await quoteApi.testSend(quoteTestEmail.trim());
+      show(data.message);
+      setQuoteTestModal(false);
+      setQuoteTestEmail("");
+    }catch(err){show(err?.response?.data?.error||"Failed to send test quote");}
+    finally{setQuoteTestSending(false);}
+  }
+
+  useModalHotkeys(()=>setQuoteSettingsModal(false),saveQuoteSettings,{enabled:quoteSettingsModal});
+  useModalHotkeys(()=>{setQuoteTestModal(false);setQuoteTestEmail("");},handleQuoteTestSend,{enabled:quoteTestModal});
+  useModalHotkeys(()=>setQuoteLogModal(false),null,{enabled:quoteLogModal});
+
   async function postAnnouncement(){
     if(!annForm.title.trim()||!annForm.message.trim()){show("Title and message required");return;}
     setAnnPosting(true);
@@ -61,6 +139,9 @@ export default function Administration(){
     }catch{show("Failed to delete");}
   }
 
+  useModalHotkeys(()=>setAnnModal(false),postAnnouncement,{enabled:annModal});
+  useModalHotkeys(()=>{setAnnLogModal(false);quickRange(7);setLogPage(1);},null,{enabled:annLogModal});
+
   useEffect(()=>{
     settingsApi.get().then(r=>setS(prev=>({...prev,...(r.data||{})}))).catch(()=>show("Failed to load settings")).finally(()=>setLoading(false));
   },[]);
@@ -77,7 +158,7 @@ export default function Administration(){
     return(
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:"1px solid #f0f2f5"}}>
         <div style={{fontSize:14,fontWeight:600,color:"#111827"}}>{label}</div>
-        <div onClick={()=>setS(prev=>({...prev,[k]:!prev[k]}))} style={{width:40,height:22,borderRadius:11,background:s[k]?"#4f46e5":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0,border:"1px solid #e4e7ec"}}>
+        <div onClick={()=>setS(prev=>({...prev,[k]:!prev[k]}))} style={{width:40,height:22,borderRadius:11,background:s[k]?"#2563eb":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0,border:"1px solid #e4e7ec"}}>
           <div style={{position:"absolute",top:2,left:s[k]?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
         </div>
       </div>
@@ -88,7 +169,7 @@ export default function Administration(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#a5b4fc":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Save Changes"}</button>
+        <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#93c5fd":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Save Changes"}</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -150,10 +231,116 @@ export default function Administration(){
           </div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setAnnLogModal(true)} style={{padding:"7px 14px",borderRadius:6,border:"1px solid #c7d2fe",background:"#ede9fe",color:"#4f46e5",fontSize:12,fontWeight:600,cursor:"pointer"}}>📋 View Log</button>
-          <button onClick={()=>{setAnnForm({title:"",message:"",type:"feature"});setAnnModal(true);}} style={{padding:"7px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ New Announcement</button>
+          <button onClick={()=>setAnnLogModal(true)} style={{padding:"7px 14px",borderRadius:6,border:"1px solid #bfdbfe",background:"#dbeafe",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer"}}>📋 View Log</button>
+          <button onClick={()=>{setAnnForm({title:"",message:"",type:"feature"});setAnnModal(true);}} style={{padding:"7px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ New Announcement</button>
         </div>
       </div>
+
+      {/* ── Daily Motivational Quote ── */}
+      <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)",marginTop:14,padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:20}}>✨</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:"#111827"}}>Daily Motivational Quote</div>
+            <div style={{fontSize:11,color:"#9ca3af"}}>
+              {quoteCfg?`${quoteCfg.used_this_cycle}/${quoteCfg.total_quotes} sent this cycle · ${quoteCfg.enabled?"Enabled":"Disabled"} · sends ${fmtTime12(quoteCfg.send_time)} on working days`:"Loading…"}
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={openQuoteLog} style={{padding:"7px 14px",borderRadius:6,border:"1px solid #bfdbfe",background:"#dbeafe",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer"}}>📋 View Log</button>
+          <button onClick={()=>setQuoteSettingsModal(true)} style={{padding:"7px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>⚙ Settings</button>
+          <button onClick={()=>setQuoteTestModal(true)} style={{padding:"7px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>🧪 Test</button>
+          {(!quoteCfg||quoteCfg.total_quotes===0)&&(
+            <label style={{padding:"7px 14px",borderRadius:6,border:"1px solid #bfdbfe",background:"#dbeafe",color:"#2563eb",fontSize:12,fontWeight:600,cursor:quoteImporting?"wait":"pointer"}}>
+              {quoteImporting?"Importing…":"📥 Import"}
+              <input type="file" accept=".xlsx" style={{display:"none"}} disabled={quoteImporting} onChange={handleImportQuotes}/>
+            </label>
+          )}
+        </div>
+      </div>
+
+      {/* ── Quote Settings Modal ── */}
+      {quoteSettingsModal&&quoteCfg&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setQuoteSettingsModal(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,width:420,maxWidth:"92vw",boxShadow:"0 24px 60px rgba(0,0,0,0.25)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid #f0f2f5"}}>
+              <span style={{fontSize:15,fontWeight:700,color:"#111827"}}>⚙ Quote Settings</span>
+              <button onClick={()=>setQuoteSettingsModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#9ca3af"}}>✕</button>
+            </div>
+            <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:16}}>
+              <div onClick={()=>setQuoteCfg(p=>({...p,enabled:!p.enabled}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+                <span style={{fontSize:13,fontWeight:600,color:"#111827"}}>Enabled</span>
+                <div style={{width:40,height:22,borderRadius:11,background:quoteCfg.enabled?"#2563eb":"#eef0f4",position:"relative",transition:"background .2s",flexShrink:0,border:"1px solid #e4e7ec"}}>
+                  <div style={{position:"absolute",top:2,left:quoteCfg.enabled?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+                </div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <label style={labelS}>Send Time</label>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <input type="time" value={quoteCfg.send_time} onChange={e=>setQuoteCfg(p=>({...p,send_time:e.target.value}))} style={{...inputS,flex:1}}/>
+                  <span style={{fontSize:13,fontWeight:700,color:"#2563eb",whiteSpace:"nowrap"}}>{fmtTime12(quoteCfg.send_time)}</span>
+                </div>
+              </div>
+              <div style={{fontSize:12,color:"#9ca3af"}}>Sends automatically once a day at {fmtTime12(quoteCfg.send_time)}, only on the Working Days set in Company Settings. Already sent today? It'll wait and send at this time tomorrow instead.</div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
+              <button onClick={()=>setQuoteSettingsModal(false)} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+              <button onClick={saveQuoteSettings} disabled={quoteSaving} style={{padding:"8px 18px",borderRadius:6,border:"none",background:quoteSaving?"#93c5fd":"#059669",color:"#fff",fontSize:13,fontWeight:600,cursor:quoteSaving?"not-allowed":"pointer"}}>{quoteSaving?"Saving…":"Save"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Test Quote Modal ── */}
+      {quoteTestModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>{setQuoteTestModal(false);setQuoteTestEmail("");}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,width:400,maxWidth:"92vw",boxShadow:"0 24px 60px rgba(0,0,0,0.25)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid #f0f2f5"}}>
+              <span style={{fontSize:15,fontWeight:700,color:"#111827"}}>🧪 Send Test Quote</span>
+              <button onClick={()=>{setQuoteTestModal(false);setQuoteTestEmail("");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#9ca3af"}}>✕</button>
+            </div>
+            <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:8}}>
+              <label style={labelS}>Test Email Address</label>
+              <input type="email" value={quoteTestEmail} onChange={e=>setQuoteTestEmail(e.target.value)} placeholder="name@example.com" style={inputS} autoFocus/>
+              <div style={{fontSize:12,color:"#9ca3af"}}>Sends a random quote to this address only — doesn't affect the daily cycle.</div>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
+              <button onClick={()=>{setQuoteTestModal(false);setQuoteTestEmail("");}} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+              <button onClick={handleQuoteTestSend} disabled={quoteTestSending} style={{padding:"8px 18px",borderRadius:6,border:"none",background:quoteTestSending?"#93c5fd":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:quoteTestSending?"not-allowed":"pointer"}}>
+                {quoteTestSending?"Sending…":"Send Test"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quote Log Modal ── */}
+      {quoteLogModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setQuoteLogModal(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:12,width:560,maxWidth:"92vw",maxHeight:"78vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 60px rgba(0,0,0,0.25)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid #f0f2f5",flexShrink:0}}>
+              <span style={{fontSize:15,fontWeight:700,color:"#111827"}}>📋 Quote Send Log</span>
+              <button onClick={()=>setQuoteLogModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#9ca3af"}}>✕</button>
+            </div>
+            <div style={{overflowY:"auto",flex:1,padding:14,display:"flex",flexDirection:"column",gap:8}}>
+              {quoteLogLoading?(
+                <div style={{textAlign:"center",padding:"30px 0",color:"#9ca3af",fontSize:13}}>Loading…</div>
+              ):quoteLog.length===0?(
+                <div style={{textAlign:"center",padding:"30px 0",color:"#9ca3af",fontSize:13}}>No quotes sent yet.</div>
+              ):quoteLog.map(l=>(
+                <div key={l.id} style={{borderRadius:8,border:"1px solid #f0f2f5",background:"#fafbfc",padding:"10px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                    <span style={{fontSize:12,fontWeight:700,color:"#111827"}}>{l.sent_date}</span>
+                    <span style={{fontSize:10,color:"#9ca3af"}}>cycle {l.cycle}</span>
+                  </div>
+                  <div style={{fontSize:13,color:"#4b5563",fontStyle:"italic"}}>"{l.quote_text}"</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── New Announcement Modal ── */}
       {annModal&&(
@@ -186,7 +373,7 @@ export default function Administration(){
             </div>
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
               <button onClick={()=>setAnnModal(false)} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-              <button onClick={postAnnouncement} disabled={annPosting} style={{padding:"8px 18px",borderRadius:6,border:"none",background:annPosting?"#a5b4fc":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:annPosting?"not-allowed":"pointer"}}>
+              <button onClick={postAnnouncement} disabled={annPosting} style={{padding:"8px 18px",borderRadius:6,border:"none",background:annPosting?"#93c5fd":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:annPosting?"not-allowed":"pointer"}}>
                 {annPosting?"Posting…":"Post to All Users"}
               </button>
             </div>
@@ -240,7 +427,7 @@ export default function Administration(){
                     const active=days===7?isWeek():isMonth();
                     return(
                       <button key={label} onClick={()=>quickRange(days)}
-                        style={{fontSize:12,padding:"4px 14px",borderRadius:20,border:`1.5px solid ${active?"#4f46e5":"#e4e7ec"}`,background:active?"#4f46e5":"#fff",color:active?"#fff":"#6b7280",fontWeight:600,cursor:"pointer",transition:"all .15s"}}>
+                        style={{fontSize:12,padding:"4px 14px",borderRadius:20,border:`1.5px solid ${active?"#2563eb":"#e4e7ec"}`,background:active?"#2563eb":"#fff",color:active?"#fff":"#6b7280",fontWeight:600,cursor:"pointer",transition:"all .15s"}}>
                         {label}
                       </button>
                     );
@@ -298,7 +485,7 @@ export default function Administration(){
                       style={{padding:"5px 12px",borderRadius:6,border:"1px solid #e4e7ec",background:pg===1?"#f9fafb":"#fff",color:pg===1?"#d1d5db":"#374151",fontSize:12,fontWeight:600,cursor:pg===1?"not-allowed":"pointer"}}>← Prev</button>
                     {Array.from({length:totalPages},(_,i)=>i+1).map(n=>(
                       <button key={n} onClick={()=>setLogPage(n)}
-                        style={{padding:"5px 10px",borderRadius:6,border:"1px solid",borderColor:n===pg?"#4f46e5":"#e4e7ec",background:n===pg?"#4f46e5":"#fff",color:n===pg?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer",minWidth:32}}>
+                        style={{padding:"5px 10px",borderRadius:6,border:"1px solid",borderColor:n===pg?"#2563eb":"#e4e7ec",background:n===pg?"#2563eb":"#fff",color:n===pg?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer",minWidth:32}}>
                         {n}
                       </button>
                     ))}

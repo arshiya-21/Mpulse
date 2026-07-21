@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Project-Application-mpulse\\\\b28ab0a8-a196-4bf7-93a9-2deed0bb79a0\\\\scratchpad\\\\fix-quote-mailer2.js\")",
+      "Bash(node -c src/utils/mailer.js)",
+      "Bash(node -e ' *)",
+      "Bash(node -c mailer.js)"
+    ]
+  }
+}

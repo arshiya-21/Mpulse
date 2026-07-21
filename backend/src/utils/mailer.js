@@ -1,6 +1,9 @@
 const { Resend } = require('resend');
 const db         = require('../config/db');
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const LOGO_URL = `${FRONTEND_URL}/logo.png`;
+
 // ── Fetch email config from email_settings table ──────────
 async function getEmailConfig() {
   const { rows } = await db.query(`SELECT * FROM email_settings WHERE id = 1 LIMIT 1`);
@@ -24,10 +27,8 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
       <div style="font-family:system-ui,sans-serif;max-width:540px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
         
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">✅</div>
-          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-          <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Work · Pulse · Intelligence</div>
+        <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
+          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
         </div>
 
         <!-- Body -->
@@ -61,9 +62,9 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
           <!-- CTA Button -->
           <div style="text-align:center;margin:28px 0;">
             <a href="${loginUrl}" 
-               style="display:inline-block;padding:13px 32px;background:#4f46e5;color:#fff;
+               style="display:inline-block;padding:13px 32px;background:#2563eb;color:#fff;
                       font-size:15px;font-weight:600;border-radius:8px;text-decoration:none;
-                      box-shadow:0 4px 14px rgba(79,70,229,0.35);">
+                      box-shadow:0 4px 14px rgba(37,99,235,0.35);">
               Sign In to MPulse →
             </a>
           </div>
@@ -122,10 +123,8 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
       <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
         
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">✅</div>
-          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-          <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Work · Pulse · Intelligence</div>
+        <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
+          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
         </div>
 
         <!-- Body -->
@@ -139,16 +138,16 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
           <!-- CTA Button -->
           <div style="text-align:center;margin:28px 0;">
             <a href="${inviteUrl}" 
-               style="display:inline-block;padding:13px 32px;background:#4f46e5;color:#fff;
+               style="display:inline-block;padding:13px 32px;background:#2563eb;color:#fff;
                       font-size:15px;font-weight:600;border-radius:8px;text-decoration:none;
-                      box-shadow:0 4px 14px rgba(79,70,229,0.35);">
+                      box-shadow:0 4px 14px rgba(37,99,235,0.35);">
               Set My Password →
             </a>
           </div>
 
           <!-- Link fallback -->
           <p style="font-size:12px;color:#9ca3af;margin:0 0 6px;">Or copy this link into your browser:</p>
-          <p style="font-size:12px;color:#4f46e5;word-break:break-all;margin:0 0 24px;">${inviteUrl}</p>
+          <p style="font-size:12px;color:#2563eb;word-break:break-all;margin:0 0 24px;">${inviteUrl}</p>
 
           <!-- Warnings -->
           <div style="background:#f8f9fb;border:1px solid #e4e7ec;border-radius:8px;padding:14px 16px;">
@@ -190,9 +189,9 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
 
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;">
-          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-          <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">New Customer Visit Scheduled</div>
+        <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
+          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:13px;color:#93c5fd;margin-top:4px;">New Customer Visit Scheduled</div>
         </div>
 
         <!-- Body -->
@@ -266,10 +265,9 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
       <div style="font-family:system-ui,sans-serif;max-width:540px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
 
         <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">${meta.icon}</div>
-          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-          <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Visit Reminder</div>
+        <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
+          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:13px;color:#93c5fd;margin-top:4px;">${meta.icon} Visit Reminder</div>
         </div>
 
         <!-- Body -->
@@ -327,12 +325,12 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
     <div style="margin-bottom:18px;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
       <table style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="padding:11px 16px;background:#eef2ff;">
-            <span style="font-size:14px;font-weight:700;color:#1e1b4b;">${emp.name}</span>
-            ${emp.department ? `<span style="font-size:11px;color:#6366f1;background:#e0e7ff;padding:2px 8px;border-radius:20px;margin-left:8px;">${emp.department}</span>` : ''}
+          <td style="padding:11px 16px;background:#eff6ff;">
+            <span style="font-size:14px;font-weight:700;color:#1e3a8a;">${emp.name}</span>
+            ${emp.department ? `<span style="font-size:11px;color:#3b82f6;background:#dbeafe;padding:2px 8px;border-radius:20px;margin-left:8px;">${emp.department}</span>` : ''}
           </td>
-          <td style="padding:11px 16px;background:#eef2ff;text-align:right;white-space:nowrap;">
-            <span style="font-size:13px;font-weight:700;color:#4f46e5;background:#fff;padding:3px 12px;border-radius:20px;border:1px solid #c7d2fe;">${fmtMins(emp.totalMins)} worked</span>
+          <td style="padding:11px 16px;background:#eff6ff;text-align:right;white-space:nowrap;">
+            <span style="font-size:13px;font-weight:700;color:#2563eb;background:#fff;padding:3px 12px;border-radius:20px;border:1px solid #bfdbfe;">${fmtMins(emp.totalMins)} worked</span>
           </td>
         </tr>
       </table>
@@ -354,7 +352,7 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
               </td>
               <td style="padding:8px 12px;color:#4b5563;border-bottom:1px solid #f0f2f5;">${entry.category || '—'}</td>
               <td style="padding:8px 12px;color:#4b5563;border-bottom:1px solid #f0f2f5;">${entry.work_type || '—'}</td>
-              <td style="padding:8px 12px;text-align:center;color:#4f46e5;font-weight:700;border-bottom:1px solid #f0f2f5;font-family:monospace;">${entry.spent_mins}m</td>
+              <td style="padding:8px 12px;text-align:center;color:#2563eb;font-weight:700;border-bottom:1px solid #f0f2f5;font-family:monospace;">${entry.spent_mins}m</td>
             </tr>
           `).join('')}
         </tbody>
@@ -366,9 +364,9 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
     <div style="font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
 
       <!-- Header -->
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;">
-        <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-        <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Daily Work Log Digest</div>
+      <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
+        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+        <div style="font-size:13px;color:#93c5fd;margin-top:4px;">Daily Work Log Digest</div>
       </div>
 
       <!-- Body -->
@@ -382,9 +380,9 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
         <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
           <tr>
             <td style="padding:0 6px 0 0;">
-              <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:14px;text-align:center;">
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;text-align:center;">
                 <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Active Employees</div>
-                <div style="font-size:22px;font-weight:800;color:#4f46e5;">${employees.length}</div>
+                <div style="font-size:22px;font-weight:800;color:#2563eb;">${employees.length}</div>
               </div>
             </td>
             <td style="padding:0 3px;">
@@ -442,9 +440,9 @@ async function sendNoLogAlertEmail({ toName, toEmail, date, teamMembers = [] }) 
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
 
       <!-- Header -->
-      <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:28px 32px;">
-        <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
-        <div style="font-size:13px;color:#a5b4fc;margin-top:4px;">Daily Work Log Alert</div>
+      <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
+        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+        <div style="font-size:13px;color:#93c5fd;margin-top:4px;">Daily Work Log Alert</div>
       </div>
 
       <!-- Alert Banner -->
@@ -522,18 +520,19 @@ async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingT
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:24px 32px;">
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:24px 32px;">
+        <img src="${LOGO_URL}" alt="MPulse" style="height:40px;margin-bottom:10px;display:block;"/>
         <h2 style="color:#fff;margin:0;font-size:20px;">${heading}</h2>
-        <p style="color:#c4b5fd;margin:6px 0 0;font-size:13px;">${subhead}</p>
+        <p style="color:#93c5fd;margin:6px 0 0;font-size:13px;">${subhead}</p>
       </div>
       <div style="padding:24px 32px;">
         <p style="font-size:14px;color:#374151;">Hi ${toName},</p>
         <p style="font-size:14px;color:#374151;">${bodyText}</p>
-        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px 20px;margin:20px 0;">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin:20px 0;">
           <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;font-weight:700;">Meeting Link</div>
-          <a href="${meetingLink}" style="font-size:14px;color:#4f46e5;font-weight:600;word-break:break-all;">${meetingLink}</a>
+          <a href="${meetingLink}" style="font-size:14px;color:#2563eb;font-weight:600;word-break:break-all;">${meetingLink}</a>
         </div>
-        <a href="${meetingLink}" style="display:inline-block;padding:10px 24px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">Join Meeting →</a>
+        <a href="${meetingLink}" style="display:inline-block;padding:10px 24px;background:#2563eb;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">Join Meeting →</a>
       </div>
       <div style="padding:14px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
         <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
@@ -545,4 +544,37 @@ async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingT
   console.log(`📧 Meeting ${isInvite?'invite':'reminder'} sent to ${toEmail} for project "${projectName}"`);
 }
 
-module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail, sendMeetingReminderEmail };
+
+// Send DAILY MOTIVATIONAL QUOTE email — one email, everyone in CC (toEmail is the nominal
+// primary recipient, e.g. the sender itself, when this is the all-staff broadcast; for a
+// single test send, toEmail is just the one test address and ccEmails is empty).
+async function sendMotivationalQuoteEmail({ toEmail, ccEmails = [], quoteText }) {
+  const { fromEmail, appPassword } = await getEmailConfig();
+  const resendClient = new Resend(appPassword);
+
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:26px 32px;text-align:center;">
+        <img src="${LOGO_URL}" alt="MPulse" style="height:42px;"/>
+      </div>
+      <div style="padding:38px 32px;text-align:center;">
+        <div style="font-size:30px;margin-bottom:14px;">✨</div>
+        <p style="font-size:18px;font-weight:600;color:#111827;line-height:1.6;font-style:italic;margin:0 0 18px;">"${quoteText}"</p>
+        <p style="font-size:13px;color:#6b7280;margin:0;">Have a great day, Team!</p>
+      </div>
+      <div style="padding:16px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
+        <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
+      </div>
+    </div>
+  `;
+
+  await resendClient.emails.send({
+    from: `"MPulse" <${fromEmail}>`,
+    to: toEmail || fromEmail,
+    cc: ccEmails.length ? ccEmails : undefined,
+    subject: '✨ Your Daily Motivational Quote',
+    html,
+  });
+}
+
+module.exports = { sendInviteEmail, sendNewUserEmail, sendVisitDueEmail, sendVisitScheduledEmail, sendWorklogDigestEmail, sendNoLogAlertEmail, sendMeetingReminderEmail, sendMotivationalQuoteEmail };

@@ -201,7 +201,7 @@ export default function CustomerVisits(){
     cancelled:visits.filter(v=>v.status==="Cancelled").length,
   };
   const kpis=[
-    {label:"Total",       value:kpi.total,     icon:"🗂️",accent:"#4f46e5",bg:"#ede9fe"},
+    {label:"Total",       value:kpi.total,     icon:"🗂️",accent:"#2563eb",bg:"#dbeafe"},
     {label:"Planned",     value:kpi.planned,   icon:"📅",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"In Progress", value:kpi.inprog,    icon:"🚗",accent:"#c2410c",bg:"#fff7ed"},
     {label:"Completed",   value:kpi.done,      icon:"✅",accent:"#059669",bg:"#ecfdf5"},
@@ -216,7 +216,7 @@ export default function CustomerVisits(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
-        <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
+        <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
       </div>
 
       {/* KPIs */}
@@ -276,7 +276,7 @@ export default function CustomerVisits(){
                           {v.proof_file&&(
                             <Tooltip text={`View: ${fileName(v.proof_file)}`}>
                               <a href={fileUrl(v.proof_file)} target="_blank" rel="noreferrer"
-                                style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
+                                style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#2563eb",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
                             </Tooltip>
                           )}
                           {canRelog&&v.assigned_to&&(
@@ -398,7 +398,7 @@ export default function CustomerVisits(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"14px 24px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving||uploading} style={{padding:"9px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving||uploading} style={{padding:"9px 18px",borderRadius:6,border:"none",background:(saving||uploading)?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:(saving||uploading)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <button onClick={save} disabled={saving||uploading} style={{padding:"9px 18px",borderRadius:6,border:"none",background:(saving||uploading)?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:(saving||uploading)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
             {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Scheduling…"):(editing?"Save Changes":"Schedule Visit")}
           </button>
         </div>
@@ -445,9 +445,9 @@ export default function CustomerVisits(){
                     {ccTags.length>0&&(
                       <div style={{display:"flex",flexWrap:"wrap",gap:5,padding:"7px 10px",borderRadius:7,border:"1px solid #e4e7ec",background:"#f8f9fb"}}>
                         {ccTags.map(t=>(
-                          <span key={t} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:"#ede9fe",color:"#4f46e5",fontSize:12,fontWeight:600}}>
+                          <span key={t} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:"#dbeafe",color:"#2563eb",fontSize:12,fontWeight:600}}>
                             {t}
-                            <button onClick={()=>removeTag(t)} style={{background:"none",border:"none",cursor:"pointer",color:"#7c3aed",fontSize:13,padding:0,lineHeight:1}}>×</button>
+                            <button onClick={()=>removeTag(t)} style={{background:"none",border:"none",cursor:"pointer",color:"#1d4ed8",fontSize:13,padding:0,lineHeight:1}}>×</button>
                           </span>
                         ))}
                       </div>
@@ -492,7 +492,7 @@ export default function CustomerVisits(){
             <div style={{flexShrink:0,display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5",background:"#fff"}}>
               <button onClick={()=>setNotifyModal(false)} style={{padding:"9px 18px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",fontSize:13,fontWeight:600,cursor:"pointer"}}>Skip</button>
               <button onClick={sendNotification} disabled={sending||!adminEmail}
-                style={{padding:"9px 22px",borderRadius:6,border:"none",background:adminEmail?"#4f46e5":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:adminEmail&&!sending?"pointer":"not-allowed"}}>
+                style={{padding:"9px 22px",borderRadius:6,border:"none",background:adminEmail?"#2563eb":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:adminEmail&&!sending?"pointer":"not-allowed"}}>
                 {sending?"Sending…":"📤 Send Notification"}
               </button>
             </div>
@@ -564,12 +564,12 @@ export default function CustomerVisits(){
             {viewVisit.proof_file&&(
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8f9fb",borderRadius:7,border:"1px solid #e4e7ec"}}>
                 <span style={{fontSize:13}}>📎</span>
-                <a href={fileUrl(viewVisit.proof_file)} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#4f46e5",fontWeight:500,textDecoration:"none"}}>{fileName(viewVisit.proof_file)}</a>
+                <a href={fileUrl(viewVisit.proof_file)} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#2563eb",fontWeight:500,textDecoration:"none"}}>{fileName(viewVisit.proof_file)}</a>
               </div>
             )}
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
-            <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
+            <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
           </div>
         </Modal>
       )}

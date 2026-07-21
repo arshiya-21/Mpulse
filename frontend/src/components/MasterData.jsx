@@ -50,7 +50,7 @@ function Departments(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        {perm.create&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
+        {perm.create&&<button onClick={()=>{setEditing(null);setForm({name:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Department</button>}
       </div>
       {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -65,7 +65,7 @@ function Departments(){
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#9ca3af"}}>{String(i+1).padStart(2,"0")}</td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <div style={{width:32,height:32,borderRadius:8,background:"#ede9fe",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏢</div>
+                        <div style={{width:32,height:32,borderRadius:8,background:"#dbeafe",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏢</div>
                         <span style={{color:"#111827",fontWeight:600}}>{d.name}</span>
                       </div>
                     </td>
@@ -97,7 +97,7 @@ function Departments(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create")}</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create")}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -139,7 +139,7 @@ function Roles(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        {perm.create&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
+        {perm.create&&<button onClick={()=>{setForm({name:"",description:""});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Role</button>}
       </div>
       {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -171,7 +171,7 @@ function Roles(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Create Role"}</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":"Create Role"}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -293,7 +293,7 @@ function Employees(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        {empPerm.create&&<button onClick={openAdd} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Employee</button>}
+        {empPerm.create&&<button onClick={openAdd} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Employee</button>}
       </div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
         <input placeholder="Search by name or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{...inputS,maxWidth:280}}/>
@@ -310,7 +310,7 @@ function Employees(){
                   <tr key={e.id}>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <div style={{width:26,height:26,borderRadius:"50%",background:"#312e81",color:"#a5b4fc",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{e.name[0]}</div>
+                        <div style={{width:26,height:26,borderRadius:"50%",background:"#1e3a8a",color:"#93c5fd",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{e.name[0]}</div>
                         <span style={{color:"#111827",fontWeight:600}}>{e.name}</span>
                       </div>
                     </td>
@@ -334,7 +334,7 @@ function Employees(){
                       {e.invite_status==="pending"
                         ?<button onClick={()=>resendInvite(e)} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:6,border:"1px solid #fed7aa",background:"#fff7ed",color:"#c2410c",fontSize:11,fontWeight:600,cursor:"pointer"}}>✉️ Resend</button>
                         :e.invite_status==="reset_requested"
-                        ?<span style={{fontSize:11,color:"#7c3aed",fontWeight:500}}>🔄 Reset Sent</span>
+                        ?<span style={{fontSize:11,color:"#1d4ed8",fontWeight:500}}>🔄 Reset Sent</span>
                         :<span style={{fontSize:11,color:"#059669",fontWeight:500}}>✅ Accepted</span>}
                     </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -384,7 +384,7 @@ function Employees(){
                   const sel=(form.manager_ids||[]).includes(m.id);
                   return(
                     <div key={m.id} onClick={()=>toggleManager(m.id)}
-                      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",userSelect:"none",background:sel?"#4f46e5":"#f0f2f5",color:sel?"#fff":"#4b5563",border:"1px solid "+(sel?"#4f46e5":"#e4e7ec")}}>
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",userSelect:"none",background:sel?"#2563eb":"#f0f2f5",color:sel?"#fff":"#4b5563",border:"1px solid "+(sel?"#2563eb":"#e4e7ec")}}>
                       {sel&&<span style={{fontSize:10}}>✓</span>}
                       {m.name}
                       {m.department&&<span style={{fontSize:10,opacity:0.7}}>· {m.department}</span>}
@@ -406,7 +406,7 @@ function Employees(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create Employee")}</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Create Employee")}</button>
         </div>
       </Modal>
       {inviteEmp&&(
@@ -422,12 +422,12 @@ function Employees(){
             <div style={{fontSize:13,color:"#374151",marginBottom:8,fontWeight:500}}>Or share this link manually:</div>
             <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
               <div style={{flex:1,padding:"9px 12px",background:"#f8f9fb",border:"1px solid #e4e7ec",borderRadius:7,fontSize:12,color:"#374151",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{inviteUrl||"Generating…"}</div>
-              <button onClick={()=>copyLink(inviteUrl)} style={{padding:"9px 16px",borderRadius:7,border:"none",background:copied?"#059669":"#4f46e5",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>{copied?"✓ Copied!":"Copy"}</button>
+              <button onClick={()=>copyLink(inviteUrl)} style={{padding:"9px 16px",borderRadius:7,border:"none",background:copied?"#059669":"#2563eb",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>{copied?"✓ Copied!":"Copy"}</button>
             </div>
             <div style={{fontSize:12,color:"#6b7280"}}>⏰ Link expires in 48 hours · 🔒 One-time use</div>
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
-            <button onClick={()=>{setInviteEmp(null);setCopied(false);show("Invite sent to "+inviteEmp.email);}} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Done</button>
+            <button onClick={()=>{setInviteEmp(null);setCopied(false);show("Invite sent to "+inviteEmp.email);}} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Done</button>
           </div>
         </Modal>
       )}
@@ -442,7 +442,7 @@ function Employees(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setResetLinkEmp(null)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={doSendResetLink} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Send Reset Link</button>
+          <button onClick={doSendResetLink} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Send Reset Link</button>
         </div>
       </Modal>
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Remove Employee" width={360}>
@@ -492,7 +492,7 @@ function Licenses(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:18}}>
-        <button onClick={()=>{setEditing(null);setForm({name:"",description:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add License</button>
+        <button onClick={()=>{setEditing(null);setForm({name:"",description:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add License</button>
       </div>
       {loading?<LoadingBox/>:(
         <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -538,7 +538,7 @@ function Licenses(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add License")}</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add License")}</button>
         </div>
       </Modal>
       <Toast msg={msg}/>
@@ -599,7 +599,7 @@ function CustomerMaster(){
   });
   const activeCount=customers.filter(c=>c.status==="active").length;
   const kpis=[
-    {label:"Total",value:customers.length,icon:"🏢",accent:"#4f46e5",bg:"#ede9fe"},
+    {label:"Total",value:customers.length,icon:"🏢",accent:"#2563eb",bg:"#dbeafe"},
     {label:"Active",value:activeCount,icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Inactive",value:customers.length-activeCount,icon:"⛔",accent:"#dc2626",bg:"#fef2f2"},
     {label:"Licenses Used",value:[...new Set(customers.filter(c=>c.status==="active"&&c.license_id).map(c=>c.license_id))].length,icon:"🔑",accent:"#d97706",bg:"#fef9c3"},
@@ -608,7 +608,7 @@ function CustomerMaster(){
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
-        <button onClick={()=>{setEditing(null);setForm({name:"",license_id:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Customer</button>
+        <button onClick={()=>{setEditing(null);setForm({name:"",license_id:"",status:"active"});setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Add Customer</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:14}}>
         {kpis.map((k,i)=>(
@@ -656,7 +656,7 @@ function CustomerMaster(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontFamily:"monospace",fontSize:12,color:"#9ca3af"}}>{String((page-1)*PAGE_SIZE+i+1).padStart(2,"0")}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",alignItems:"center",gap:10}}>
-                          <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#312e81,#4f46e5)",color:"#e0e7ff",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.name[0]}</div>
+                          <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#1e3a8a,#2563eb)",color:"#dbeafe",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{c.name[0]}</div>
                           <span style={{fontWeight:600,color:"#111827",fontSize:14}}>{c.name}</span>
                         </div>
                       </td>
@@ -697,7 +697,7 @@ function CustomerMaster(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add Customer")}</button>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer"}}>{saving?"Saving…":(editing?"Save Changes":"Add Customer")}</button>
         </div>
       </Modal>
       <Modal open={!!delId} onClose={()=>setDelId(null)} title="Delete Customer" width={360}>
@@ -740,12 +740,12 @@ const EXPORT_FEATURES=[
 ];
 const ROLES_LIST=["Admin","Manager","User"];
 const ROLE_META={
-  Admin:  {color:"#4f46e5",bg:"#ede9fe",desc:"Full system access"},
+  Admin:  {color:"#2563eb",bg:"#dbeafe",desc:"Full system access"},
   Manager:{color:"#f59e0b",bg:"#fffbeb",desc:"Team & project management"},
   User:   {color:"#10b981",bg:"#ecfdf5",desc:"Personal task tracking"},
 };
 const PERMS=[
-  {k:"view",   title:"View",   color:"#4f46e5",bg:"#ede9fe"},
+  {k:"view",   title:"View",   color:"#2563eb",bg:"#dbeafe"},
   {k:"create", title:"Create", color:"#059669",bg:"#ecfdf5"},
   {k:"update", title:"Update", color:"#d97706",bg:"#fffbeb"},
   {k:"delete", title:"Delete", color:"#dc2626",bg:"#fef2f2"},
@@ -898,7 +898,7 @@ function AccessConfig(){
   const [saving,setSaving]=useState(false);
 
   // Palette for dynamically assigned roles
-  const PALETTE=["#4f46e5","#059669","#f59e0b","#dc2626","#8b5cf6","#0ea5e9","#ec4899","#14b8a6"];
+  const PALETTE=["#2563eb","#059669","#f59e0b","#dc2626","#3b82f6","#0ea5e9","#ec4899","#14b8a6"];
 
   async function load(){
     setLoading(true);
@@ -990,7 +990,7 @@ function AccessConfig(){
   }
 
   function getRoleColor(role){
-    const fixed={Admin:"#4f46e5",Manager:"#f59e0b",User:"#10b981"};
+    const fixed={Admin:"#2563eb",Manager:"#f59e0b",User:"#10b981"};
     if(fixed[role]) return fixed[role];
     const idx=roles.indexOf(role)%PALETTE.length;
     return PALETTE[idx];
@@ -1004,7 +1004,7 @@ function AccessConfig(){
             <span style={{fontSize:10,fontWeight:800,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em"}}>{heading}</span>
           </div>
           <div style={{width:88,display:"flex",justifyContent:"center"}}>
-            <span style={{fontSize:10,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em"}}>Allow</span>
+            <span style={{fontSize:10,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:"0.06em"}}>Allow</span>
           </div>
         </div>
         {items.map((item,i)=>{
@@ -1021,7 +1021,7 @@ function AccessConfig(){
               </div>
               <div style={{width:88,display:"flex",justifyContent:"center"}}>
                 <div onClick={()=>toggle(item.key,"view")}
-                  style={{width:40,height:22,borderRadius:11,background:on?"#4f46e5":"#d1d5db",position:"relative",cursor:"pointer",transition:"background 0.2s",flexShrink:0}}
+                  style={{width:40,height:22,borderRadius:11,background:on?"#2563eb":"#d1d5db",position:"relative",cursor:"pointer",transition:"background 0.2s",flexShrink:0}}
                 >
                   <div style={{position:"absolute",top:3,left:on?21:3,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.25)",transition:"left 0.2s"}}/>
                 </div>
@@ -1081,7 +1081,7 @@ function AccessConfig(){
             </button>
           )}
           <button onClick={save} disabled={saving||!dirty}
-            style={{padding:"8px 18px",borderRadius:8,border:"none",background:dirty&&!saving?"#4f46e5":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:dirty&&!saving?"pointer":"not-allowed",transition:"background 0.2s"}}>
+            style={{padding:"8px 18px",borderRadius:8,border:"none",background:dirty&&!saving?"#2563eb":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:dirty&&!saving?"pointer":"not-allowed",transition:"background 0.2s"}}>
             {saving?"Saving…":"💾 Save & Apply"}
           </button>
         </div>
@@ -1129,7 +1129,7 @@ function AccessConfig(){
                 return(
                   <div onClick={isAdminRole?undefined:toggleTeamOnly}
                     title={isAdminRole?"Admin always has full access — cannot restrict":"Toggle team-only scope"}
-                    style={{width:44,height:24,borderRadius:12,background:on?"#4f46e5":"#d1d5db",position:"relative",cursor:isAdminRole?"not-allowed":"pointer",transition:"background 0.2s",flexShrink:0,marginLeft:24,opacity:isAdminRole?0.45:1}}
+                    style={{width:44,height:24,borderRadius:12,background:on?"#2563eb":"#d1d5db",position:"relative",cursor:isAdminRole?"not-allowed":"pointer",transition:"background 0.2s",flexShrink:0,marginLeft:24,opacity:isAdminRole?0.45:1}}
                   >
                     <div style={{position:"absolute",top:3,left:on?23:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,0.25)",transition:"left 0.2s"}}/>
                   </div>
@@ -1249,7 +1249,7 @@ function EmailConfig(){
           {desc&&<div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{desc}</div>}
         </div>
         <div onClick={()=>setNotifCfg(p=>({...p,[k]:!p[k]}))}
-          style={{width:40,height:22,borderRadius:11,background:notifCfg[k]?"#4f46e5":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0,border:"1px solid #e4e7ec",marginLeft:16}}>
+          style={{width:40,height:22,borderRadius:11,background:notifCfg[k]?"#2563eb":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0,border:"1px solid #e4e7ec",marginLeft:16}}>
           <div style={{position:"absolute",top:2,left:notifCfg[k]?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
         </div>
       </div>
@@ -1281,7 +1281,7 @@ function EmailConfig(){
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <div style={{...inputS,flex:1,color:"#6b7280",letterSpacing:3,fontSize:16,padding:"9px 12px"}}>••••••••••••••••</div>
                     <button onClick={()=>setShowPass(true)}
-                      style={{padding:"8px 14px",borderRadius:7,border:"1px solid #e4e7ec",background:"#fff",color:"#4f46e5",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>
+                      style={{padding:"8px 14px",borderRadius:7,border:"1px solid #e4e7ec",background:"#fff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>
                       Edit
                     </button>
                   </div>
@@ -1316,7 +1316,7 @@ function EmailConfig(){
               </div>
               <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                 <button onClick={save} disabled={saving}
-                  style={{padding:"8px 18px",borderRadius:7,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.8:1}}>
+                  style={{padding:"8px 18px",borderRadius:7,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.8:1}}>
                   {saving?"Saving…":"💾 Save"}
                 </button>
               </div>
@@ -1347,11 +1347,11 @@ function EmailConfig(){
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0,marginLeft:16}}>
                   <button onClick={sendDigestNow} disabled={sendingDigest}
-                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:sendingDigest?"#eef2ff":"#4f46e5",color:sendingDigest?"#6366f1":"#fff",cursor:sendingDigest?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #bfdbfe",background:sendingDigest?"#eff6ff":"#2563eb",color:sendingDigest?"#3b82f6":"#fff",cursor:sendingDigest?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
                     {sendingDigest?"Sending…":"▶ Send Now"}
                   </button>
                   <div onClick={()=>setNotifCfg(p=>({...p,worklog_digest_enabled:!p.worklog_digest_enabled}))}
-                    style={{width:40,height:22,borderRadius:11,background:notifCfg.worklog_digest_enabled?"#4f46e5":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",border:"1px solid #e4e7ec"}}>
+                    style={{width:40,height:22,borderRadius:11,background:notifCfg.worklog_digest_enabled?"#2563eb":"#eef0f4",cursor:"pointer",position:"relative",transition:"background .2s",border:"1px solid #e4e7ec"}}>
                     <div style={{position:"absolute",top:2,left:notifCfg.worklog_digest_enabled?20:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                   </div>
                 </div>
@@ -1363,7 +1363,7 @@ function EmailConfig(){
                     <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Sends reminder email to project assignees before each scheduled meeting</div>
                   </div>
                   <button onClick={()=>setShowTestInput(v=>!v)}
-                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #c7d2fe",background:"#4f46e5",color:"#fff",cursor:"pointer",whiteSpace:"nowrap",marginLeft:16}}>
+                    style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"1px solid #bfdbfe",background:"#2563eb",color:"#fff",cursor:"pointer",whiteSpace:"nowrap",marginLeft:16}}>
                     ▶ Test Now
                   </button>
                 </div>
@@ -1374,7 +1374,7 @@ function EmailConfig(){
                       onKeyDown={e=>e.key==='Enter'&&testMeetingNow()}
                       style={{...inputS,flex:1,fontSize:12,padding:"5px 10px"}}/>
                     <button onClick={testMeetingNow} disabled={testingMeeting}
-                      style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"none",background:testingMeeting?"#818cf8":"#4f46e5",color:"#fff",cursor:testingMeeting?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                      style={{padding:"5px 12px",fontSize:11,fontWeight:600,borderRadius:6,border:"none",background:testingMeeting?"#60a5fa":"#2563eb",color:"#fff",cursor:testingMeeting?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
                       {testingMeeting?"Sending…":"Send"}
                     </button>
                     <button onClick={()=>{setShowTestInput(false);setTestEmail("");}}
@@ -1390,7 +1390,7 @@ function EmailConfig(){
 
             <div style={{display:"flex",justifyContent:"flex-end"}}>
               <button onClick={saveNotif} disabled={savingNotif}
-                style={{padding:"8px 20px",borderRadius:7,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:savingNotif?"not-allowed":"pointer",opacity:savingNotif?0.8:1}}>
+                style={{padding:"8px 20px",borderRadius:7,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:savingNotif?"not-allowed":"pointer",opacity:savingNotif?0.8:1}}>
                 {savingNotif?"Saving…":"💾 Save Notifications"}
               </button>
             </div>
@@ -1429,7 +1429,7 @@ export default function MasterData(){
         {TABS.map(t=>{
           const active=tab===t.key;
           return(
-            <button key={t.key} onClick={()=>setTab(t.key)} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:7,border:"none",background:active?"#4f46e5":"transparent",color:active?"#fff":"#6b7280",fontSize:13,fontWeight:active?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button key={t.key} onClick={()=>setTab(t.key)} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:7,border:"none",background:active?"#2563eb":"transparent",color:active?"#fff":"#6b7280",fontSize:13,fontWeight:active?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:13}}>{t.icon}</span>{t.label}
             </button>
           );
@@ -1524,7 +1524,7 @@ function CategoriesConfig(){
         <div style={{display:"flex",gap:8}}>
           <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()}
             placeholder="New category name…" style={{...inputS,flex:1}}/>
-          <button onClick={add} style={{padding:"0 18px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
+          <button onClick={add} style={{padding:"0 18px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Add</button>
         </div>
         {/* Category list — alphabetical */}
         <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -1544,7 +1544,7 @@ function CategoriesConfig(){
 
 // ─── FORMULAS REFERENCE ───────────────────────────────────────────────────────
 const FORMULA_DEFAULTS = [
-  { section:"Daily Utilization", accent:"#4f46e5", id:"util_pct",
+  { section:"Daily Utilization", accent:"#2563eb", id:"util_pct",
     label:"Task Utilization %",
     expr:"spent_mins / daily_target * 100",
     vars:[{name:"spent_mins",desc:"Minutes logged for the task"},{name:"daily_target",desc:"Daily target minutes (Administration)"}],
@@ -1552,7 +1552,7 @@ const FORMULA_DEFAULTS = [
     example:"Example: 480 minutes spent, daily target is 510 minutes → 480 ÷ 510 × 100 = 94%",
     source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
 
-  { section:"Daily Utilization", accent:"#4f46e5", id:"avg_util",
+  { section:"Daily Utilization", accent:"#2563eb", id:"avg_util",
     label:"Avg Utilization (KPI Scorecard)",
     formula:"Step 1 — For each (employee, date) pair: add up all their task utilizations for that day. This gives one daily-util number per employee per day (e.g. 60% + 30% = 90% for that day). Step 2 — Average all those daily-util values across the entire period and all employees. Formula: Avg of [Σ(task utils) for each employee-day].",
     example:"Example: Murali on Apr 20 → 13%+13%+5%+6%+3%+25% = 65%. If he has 1 day and Gayathri has 1 day at 73%, KPI = (65+73)÷2 = 69%.",
@@ -1608,11 +1608,11 @@ const FORMULA_DEFAULTS = [
     example:"Example: A visit planned for Apr 15 that is still Planned shows as overdue after Apr 15.",
     source:"visits", sourceLabel:"Customer Visits" },
 
-  { section:"Work Status", accent:"#8b5cf6", id:"on_time",
+  { section:"Work Status", accent:"#3b82f6", id:"on_time",
     label:"On Time",
     formula:"A work log entry is On Time if it was logged on or before the project's end date.",
     example:"", source:"worklog", sourceLabel:"Set in Worklog" },
-  { section:"Work Status", accent:"#8b5cf6", id:"delayed",
+  { section:"Work Status", accent:"#3b82f6", id:"delayed",
     label:"Delayed",
     formula:"A work log entry is Delayed if it was logged after the project's end date has passed.",
     example:"", source:"worklog", sourceLabel:"Set in Worklog" },
@@ -1623,19 +1623,19 @@ const FORMULA_DEFAULTS = [
     example:"Example: A 'Meeting' entry of 120m and a 'Development' entry of 120m both give 24% utilization if daily target is 510 minutes.",
     source:"worklog", sourceLabel:"Worklog entries" },
 
-  { section:"Utilization Charts", accent:"#7c3aed", id:"emp_util_bar",
+  { section:"Utilization Charts", accent:"#1d4ed8", id:"emp_util_bar",
     label:"Employee Utilization % (Bar Chart)",
     formula:"Step 1 — For each day the employee worked: add up all their task utilizations for that day → daily util. Each task's utilization = minutes spent ÷ Daily Target Minutes × 100 (from Administration settings). Step 2 — Average those daily utils across all days they worked in the period. Formula: Avg of [Σ task utils per day] over all worked days.",
     example:"Example: Murali worked 3 days. Day 1 = 65%, Day 2 = 50%, Day 3 = 40%. Employee bar = (65+50+40) ÷ 3 = 52%.",
     source:"settings", sourceKey:"daily_target_mins", sourceLabel:"Daily Target Mins" },
 
-  { section:"Utilization Charts", accent:"#7c3aed", id:"dept_util_bar",
+  { section:"Utilization Charts", accent:"#1d4ed8", id:"dept_util_bar",
     label:"Department Utilization % (Bar Chart)",
     formula:"Step 1 — Calculate each employee's period utilization (avg daily util) as described above. Step 2 — Average those values across all employees in the department. Formula: Avg of [each employee's period util] for employees in that dept.",
     example:"Example: CRM dept has 3 employees with period utils of 28%, 25%, 30%. Dept bar = (28+25+30) ÷ 3 = 28%.",
     source:"worklog", sourceLabel:"Worklog entries" },
 
-  { section:"Utilization Charts", accent:"#7c3aed", id:"trend_admin",
+  { section:"Utilization Charts", accent:"#1d4ed8", id:"trend_admin",
     label:"Daily Utilization Trend",
     formula:"For each date on the trend line: Step 1 — For each employee who worked that day, sum their task utilizations to get their daily util. Step 2 — Average the daily utils of all employees who worked that day. Formula: Avg of [Σ task utils for each employee] on that date. Daily Target Minutes (from Administration) sets the 100% baseline for each task.",
     example:"Example: Apr 20 — Murali daily util = 65%, Syed daily util = 97%, Gayathri daily util = 73%. Trend point = (65+97+73) ÷ 3 = 78%.",
@@ -1643,7 +1643,7 @@ const FORMULA_DEFAULTS = [
 ];
 
 const SOURCE_COLORS = {
-  settings:  {bg:"#eef2ff",color:"#4f46e5"},
+  settings:  {bg:"#eff6ff",color:"#2563eb"},
   project:   {bg:"#fffbeb",color:"#b45309"},
   worklog:   {bg:"#ecfdf5",color:"#059669"},
   visits:    {bg:"#fff7ed",color:"#c2410c"},
@@ -1729,7 +1729,7 @@ function FormulasRef(){
 
       {sections.map(sec=>{
         const secRows=rows.filter(r=>r.section===sec);
-        const accent=secRows[0]?.accent||"#4f46e5";
+        const accent=secRows[0]?.accent||"#2563eb";
         return(
           <div key={sec} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
             <div style={{padding:"8px 14px",background:accent+"10",borderBottom:"1px solid "+accent+"25",display:"flex",alignItems:"center",gap:8}}>
@@ -1757,7 +1757,7 @@ function FormulasRef(){
                           </div>
                           {editId===row.id
                             ?<input value={editVal.expr} onChange={e=>setEditVal(v=>({...v,expr:e.target.value}))}
-                                style={{width:"100%",padding:"6px 10px",borderRadius:6,border:"2px solid #4f46e5",fontSize:13,fontFamily:"monospace",background:"#fafffe",boxSizing:"border-box"}}/>
+                                style={{width:"100%",padding:"6px 10px",borderRadius:6,border:"2px solid #2563eb",fontSize:13,fontFamily:"monospace",background:"#fafffe",boxSizing:"border-box"}}/>
                             :<code style={{display:"block",padding:"6px 10px",borderRadius:6,background:"#f0fdf4",border:"1px solid #bbf7d0",fontSize:13,color:"#065f46",fontFamily:"monospace"}}>{row.expr}</code>
                           }
                           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -1769,7 +1769,7 @@ function FormulasRef(){
                       ):(
                         editId===row.id
                           ?<textarea value={editVal.formula} onChange={e=>setEditVal(v=>({...v,formula:e.target.value}))} rows={2}
-                              style={{width:"100%",padding:"4px 8px",borderRadius:5,border:"1px solid #c7d2fe",fontSize:12,fontFamily:"monospace",resize:"vertical"}}/>
+                              style={{width:"100%",padding:"4px 8px",borderRadius:5,border:"1px solid #bfdbfe",fontSize:12,fontFamily:"monospace",resize:"vertical"}}/>
                           :<span style={{fontFamily:"monospace",color:"#1e1b4b"}}>{row.formula}</span>
                       )}
                     </td>
@@ -1793,7 +1793,7 @@ function FormulasRef(){
                     <td style={{padding:"8px 12px",borderBottom:"1px solid #f0f2f5",whiteSpace:"nowrap",verticalAlign:"middle"}}>
                       {editId===row.id?(
                         <div style={{display:"flex",gap:4}}>
-                          <button onClick={()=>saveEdit(row.id)} disabled={saving} style={{padding:"3px 8px",borderRadius:5,border:"none",background:"#4f46e5",color:"#fff",fontSize:11,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.7:1}}>{saving?"…":"✓ Save"}</button>
+                          <button onClick={()=>saveEdit(row.id)} disabled={saving} style={{padding:"3px 8px",borderRadius:5,border:"none",background:"#2563eb",color:"#fff",fontSize:11,fontWeight:600,cursor:saving?"not-allowed":"pointer",opacity:saving?0.7:1}}>{saving?"…":"✓ Save"}</button>
                           <button onClick={cancelEdit} disabled={saving} style={{padding:"3px 8px",borderRadius:5,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",fontSize:11,cursor:"pointer"}}>✕</button>
                         </div>
                       ):(

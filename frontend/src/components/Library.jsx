@@ -108,12 +108,12 @@ export default function Library() {
         {/* Grid / List toggle */}
         <div style={{ display: 'flex', border: '1px solid #e4e7ec', borderRadius: 8, overflow: 'hidden' }}>
           <button onClick={() => setViewMode('grid')} title="Grid view"
-            style={{ padding: '6px 11px', border: 'none', background: viewMode === 'grid' ? '#4f46e5' : '#fff', color: viewMode === 'grid' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>⊞</button>
+            style={{ padding: '6px 11px', border: 'none', background: viewMode === 'grid' ? '#2563eb' : '#fff', color: viewMode === 'grid' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>⊞</button>
           <button onClick={() => setViewMode('list')} title="List view"
-            style={{ padding: '6px 11px', border: 'none', borderLeft: '1px solid #e4e7ec', background: viewMode === 'list' ? '#4f46e5' : '#fff', color: viewMode === 'list' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>☰</button>
+            style={{ padding: '6px 11px', border: 'none', borderLeft: '1px solid #e4e7ec', background: viewMode === 'list' ? '#2563eb' : '#fff', color: viewMode === 'list' ? '#fff' : '#6b7280', cursor: 'pointer', fontSize: 14 }}>☰</button>
         </div>
         {isAdmin && activeSection !== 'all' && (
-          <button onClick={() => openAddVideo(activeSection)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e4e7ec', background: '#fff', color: '#4f46e5', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>+ Add Video</button>
+          <button onClick={() => openAddVideo(activeSection)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e4e7ec', background: '#fff', color: '#2563eb', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>+ Add Video</button>
         )}
         {isAdmin && (
           <button onClick={openAddSection} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e4e7ec', background: '#fff', color: '#374151', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>+ Add Section</button>
@@ -160,12 +160,12 @@ export default function Library() {
           {grouped.map(sec => (
             <div key={sec.id}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 4, height: 18, background: '#4f46e5', borderRadius: 2 }} />
+                <div style={{ width: 4, height: 18, background: '#2563eb', borderRadius: 2 }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{sec.title}</span>
                 <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>{sec.items.length} video{sec.items.length !== 1 ? 's' : ''}</span>
                 {isAdmin && (
                   <button onClick={() => openAddVideo(sec.id)}
-                    style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: 6, border: '1px solid #e4e7ec', background: '#fff', color: '#4f46e5', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                    style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: 6, border: '1px solid #e4e7ec', background: '#fff', color: '#2563eb', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
                     + Add video
                   </button>
                 )}
@@ -217,7 +217,7 @@ export default function Library() {
           <div><label style={labelS}>Sort Order</label><input type="number" value={secForm.sort_order} onChange={e => setSecForm(f => ({ ...f, sort_order: +e.target.value }))} style={inputS}/></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setSecModal(false)} disabled={savingSec} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={saveSec} disabled={savingSec} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingSec?'#818cf8':'#4f46e5', color: '#fff', fontWeight: 600, cursor: savingSec?'not-allowed':'pointer' }}>{savingSec?'Saving…':'Save'}</button>
+            <button onClick={saveSec} disabled={savingSec} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingSec?'#60a5fa':'#2563eb', color: '#fff', fontWeight: 600, cursor: savingSec?'not-allowed':'pointer' }}>{savingSec?'Saving…':'Save'}</button>
           </div>
         </div>
       </Modal>
@@ -248,7 +248,7 @@ export default function Library() {
           <div><label style={labelS}>Sort Order</label><input type="number" value={vidForm.sort_order} onChange={e => setVidForm(f => ({ ...f, sort_order: +e.target.value }))} style={inputS}/></div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setVidModal(false)} disabled={savingVid} style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid #e4e7ec', background: '#fff', cursor: 'pointer' }}>Cancel</button>
-            <button onClick={saveVid} disabled={savingVid} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingVid?'#818cf8':'#4f46e5', color: '#fff', fontWeight: 600, cursor: savingVid?'not-allowed':'pointer' }}>{savingVid?'Saving…':'Save'}</button>
+            <button onClick={saveVid} disabled={savingVid} style={{ padding: '8px 18px', borderRadius: 7, border: 'none', background: savingVid?'#60a5fa':'#2563eb', color: '#fff', fontWeight: 600, cursor: savingVid?'not-allowed':'pointer' }}>{savingVid?'Saving…':'Save'}</button>
           </div>
         </div>
       </Modal>
@@ -263,7 +263,7 @@ function Tab({ label, count, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       padding: '6px 14px', borderRadius: 20, border: active ? 'none' : '1px solid #e4e7ec',
-      background: active ? '#4f46e5' : '#fff', color: active ? '#fff' : '#374151',
+      background: active ? '#2563eb' : '#fff', color: active ? '#fff' : '#374151',
       fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer',
       display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s',
     }}>

@@ -199,7 +199,7 @@ export default function Reports(){
               <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>CSV Export</div>
               <div style={{fontSize:12,color:"#6b7280",marginTop:2,marginBottom:14}}>
                 Comma-separated — opens in Excel, Google Sheets, etc.
-                {hasFilters&&<span style={{marginLeft:8,padding:"1px 7px",borderRadius:20,background:"#eef2ff",color:"#4f46e5",fontSize:11,fontWeight:600}}>Filtered</span>}
+                {hasFilters&&<span style={{marginLeft:8,padding:"1px 7px",borderRadius:20,background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:600}}>Filtered</span>}
               </div>
               <button onClick={downloadCSV} disabled={loadingCSV||noData}
                 style={{padding:"10px 22px",fontSize:13,fontWeight:700,borderRadius:8,border:"none",
@@ -218,11 +218,11 @@ export default function Reports(){
               <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>Excel Export (.xlsx)</div>
               <div style={{fontSize:12,color:"#6b7280",marginTop:2,marginBottom:14}}>
                 Formatted Excel workbook with frozen header, auto-width columns.
-                {hasFilters&&<span style={{marginLeft:8,padding:"1px 7px",borderRadius:20,background:"#eef2ff",color:"#4f46e5",fontSize:11,fontWeight:600}}>Filtered</span>}
+                {hasFilters&&<span style={{marginLeft:8,padding:"1px 7px",borderRadius:20,background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:600}}>Filtered</span>}
               </div>
               <button onClick={downloadXLSX} disabled={loadingXLSX||noData}
                 style={{padding:"10px 22px",fontSize:13,fontWeight:700,borderRadius:8,border:"none",
-                  background:loadingXLSX||noData?"#94a3b8":"#4f46e5",
+                  background:loadingXLSX||noData?"#94a3b8":"#2563eb",
                   color:"#fff",cursor:loadingXLSX||noData?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:8}}>
                 {loadingXLSX?"⏳ Preparing…":"⬇ Download Excel"}
               </button>
@@ -237,7 +237,7 @@ export default function Reports(){
         <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6}}>
           {COLUMNS.map((col,i)=>(
             <div key={col.key} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 10px",borderRadius:7,background:i%2===0?"#f8f9fb":"#fff",border:"1px solid #f0f2f5"}}>
-              <div style={{width:20,height:20,borderRadius:5,background:"#eef2ff",color:"#4f46e5",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</div>
+              <div style={{width:20,height:20,borderRadius:5,background:"#eff6ff",color:"#2563eb",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</div>
               <div>
                 <div style={{fontSize:12,fontWeight:700,color:"#111827"}}>{col.label}</div>
                 <div style={{fontSize:11,color:"#9ca3af",marginTop:1}}>{col.desc}</div>

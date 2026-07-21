@@ -4,7 +4,7 @@ import * as deptApi     from "../api/departments.js";
 import * as projApi     from "../api/projects.js";
 import * as tasksApi    from "../api/tasks.js";
 import * as settingsApi from "../api/settings.js";
-import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula, Pager, PAGE_SIZE } from "./shared.jsx";
+import { useToast, Toast, Pb, Spinner, LoadingBox, Modal, selS, inputS, labelS, WTYPES, ALL_STATUSES, SC2, SC2C, fmtDate, SearchSelect, evalFormula, Pager, PAGE_SIZE, useModalHotkeys } from "./shared.jsx";
 import { DEFAULT_CATS, getAccessConfig } from "./MasterData.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { exportXLSX } from "../api/reports.js";
@@ -39,6 +39,9 @@ export default function DailyTasks(){
   const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
   const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"Completed",description:""};
   const [form,setForm]=useState(blank);
+
+  // Read-only viewer — Escape-to-close only, no submit action.
+  useModalHotkeys(()=>setDescView(null),null,{enabled:!!descView});
 
   useEffect(()=>{
     Promise.all([empApi.getAll(),deptApi.getAll(),projApi.getAll(),settingsApi.get()])
@@ -202,7 +205,7 @@ export default function DailyTasks(){
           <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"flex-end",alignSelf:"flex-end"}}>
             {hasFilters&&<button onClick={clearAll} style={{padding:"6px 12px",fontSize:12,borderRadius:6,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer",fontWeight:600}}>✕ Clear</button>}
             <button onClick={()=>{setExpFrom(firstOfMonth);setExpTo(defTo);setExpModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"1px solid #059669",background:"#f0fdf4",color:"#059669",fontSize:12,fontWeight:600,cursor:"pointer"}}>⬇ Export</button>
-            <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Log Task</button>
+            <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>+ Log Task</button>
           </div>
         </div>
       </div>
@@ -313,7 +316,7 @@ export default function DailyTasks(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
             {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Logging…"):(editing?"Save Changes":"Log Task")}
           </button>
         </div>
@@ -351,14 +354,14 @@ export default function DailyTasks(){
           <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:520,maxHeight:"88vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 64px rgba(0,0,0,0.25)",overflow:"hidden"}}>
 
             {/* Purple header */}
-            <div style={{background:"linear-gradient(135deg,#4f46e5,#7c3aed)",padding:"16px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexShrink:0}}>
+            <div style={{background:"linear-gradient(135deg,#2563eb,#1d4ed8)",padding:"16px 20px",display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexShrink:0}}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:11,fontWeight:600,color:"#c4b5fd",textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Task Record</div>
                 <div style={{fontSize:16,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{descView.project_name||"—"}</div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{fmtDate(descView.task_date)}</span>
-                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.employee_name}</span>
-                  <span style={{fontSize:12,color:"#e0e7ff",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.department||"—"}</span>
+                  <span style={{fontSize:12,color:"#dbeafe",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{fmtDate(descView.task_date)}</span>
+                  <span style={{fontSize:12,color:"#dbeafe",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.employee_name}</span>
+                  <span style={{fontSize:12,color:"#dbeafe",background:"rgba(255,255,255,0.15)",padding:"2px 9px",borderRadius:20}}>{descView.department||"—"}</span>
                 </div>
               </div>
               <button onClick={()=>setDescView(null)} style={{border:"none",background:"rgba(255,255,255,0.2)",cursor:"pointer",color:"#fff",borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,marginLeft:12}}>✕</button>
@@ -372,7 +375,7 @@ export default function DailyTasks(){
                   {label:"Category",    value:descView.category||"—",     color:"#111827"},
                   {label:"Work Type",   value:descView.work_type||"—",    color:"#111827"},
                   {label:"Status",      value:descView.status||"—",       color:SC2C[descView.status]||"#111827"},
-                  {label:"Mins Spent",  value:(descView.spent_mins||0)+"m", color:"#4f46e5"},
+                  {label:"Mins Spent",  value:(descView.spent_mins||0)+"m", color:"#2563eb"},
                   {label:"Utilization", value:Math.round(evalFormula(utilExpr,{spent_mins:descView.spent_mins||0,daily_target:dailyTarget}))+"%", color:"#059669"},
                   {label:"TAT",         value:descView.tat_days>0?"+"+descView.tat_days+"d late":"On Time", color:descView.tat_days>0?"#dc2626":"#059669"},
                 ].map(s=>(
@@ -395,7 +398,7 @@ export default function DailyTasks(){
 
             {/* Footer */}
             <div style={{padding:"10px 18px",borderTop:"1px solid #f0f2f5",display:"flex",justifyContent:"flex-end",flexShrink:0}}>
-              <button onClick={()=>setDescView(null)} style={{padding:"7px 20px",borderRadius:7,border:"none",background:"#4f46e5",fontSize:13,fontWeight:600,color:"#fff",cursor:"pointer"}}>Close</button>
+              <button onClick={()=>setDescView(null)} style={{padding:"7px 20px",borderRadius:7,border:"none",background:"#2563eb",fontSize:13,fontWeight:600,color:"#fff",cursor:"pointer"}}>Close</button>
             </div>
           </div>
         </div>

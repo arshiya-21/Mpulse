@@ -235,7 +235,7 @@ export default function Projects(){
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:14}}>
         {perm.create&&(
-          <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ New Project</button>
+          <button onClick={()=>{setEditing(null);setForm(blank);setModal(true);}} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ New Project</button>
         )}
       </div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 16px",marginBottom:14,boxShadow:"0 1px 3px rgba(0,0,0,.06)"}}>
@@ -319,8 +319,8 @@ export default function Projects(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <span style={{fontSize:15}}>{p.status==="Closed"?"🔒":"📁"}</span>
-                          <span onClick={()=>openOverview(p)} style={{color:p.status==="Closed"?"#6b7280":"#4f46e5",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}>{p.name}</span>
-                          {p.is_recurring&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#ede9fe",color:"#5b21b6"}}>↻ Recurring</span>}
+                          <span onClick={()=>openOverview(p)} style={{color:p.status==="Closed"?"#6b7280":"#2563eb",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}>{p.name}</span>
+                          {p.is_recurring&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#dbeafe",color:"#5b21b6"}}>↻ Recurring</span>}
                           {overdue&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#fef2f2",color:"#dc2626"}}>Overdue</span>}
                           {p.status==="Closed"&&<span style={{padding:"2px 6px",borderRadius:20,fontSize:10,fontWeight:600,background:"#f0fdf4",color:"#065f46"}}>Closed</span>}
                         </div>
@@ -387,7 +387,7 @@ export default function Projects(){
           const totalHours=(totalMins/60).toFixed(1);
           const isOverdue=tat>0&&!["Closed","Completed"].includes(pv.status);
           // palette for distribution bar
-          const COLORS=["#4f46e5","#059669","#d97706","#dc2626","#7c3aed","#0284c7","#065f46"];
+          const COLORS=["#2563eb","#059669","#d97706","#dc2626","#1d4ed8","#0284c7","#065f46"];
           return(
             <div style={{display:"flex",flexDirection:"column",gap:0}}>
               {/* 4-stat cards */}
@@ -397,10 +397,10 @@ export default function Projects(){
                   <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Status</div>
                   {perm.update
                     ?<select value={pv.status} onChange={e=>ovUpdateStatus(e.target.value)}
-                        style={{width:"100%",border:"none",background:"transparent",fontSize:15,fontWeight:700,color:"#4f46e5",cursor:"pointer",padding:0,outline:"none"}}>
+                        style={{width:"100%",border:"none",background:"transparent",fontSize:15,fontWeight:700,color:"#2563eb",cursor:"pointer",padding:0,outline:"none"}}>
                         {ALL_STATUSES.map(s=><option key={s}>{s}</option>)}
                       </select>
-                    :<div style={{fontSize:15,fontWeight:700,color:"#4f46e5"}}>{pv.status}</div>
+                    :<div style={{fontSize:15,fontWeight:700,color:"#2563eb"}}>{pv.status}</div>
                   }
                 </div>
                 {/* Due Date */}
@@ -417,7 +417,7 @@ export default function Projects(){
                 {/* Team Size */}
                 <div style={{background:"#f5f3ff",borderRadius:10,padding:"14px 16px"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Team Size</div>
-                  <div style={{fontSize:15,fontWeight:700,color:"#7c3aed"}}>{pv.team_size||emps.length} members</div>
+                  <div style={{fontSize:15,fontWeight:700,color:"#1d4ed8"}}>{pv.team_size||emps.length} members</div>
                 </div>
                 {/* Total Hours */}
                 <div style={{background:"#f0fdf4",borderRadius:10,padding:"14px 16px"}}>
@@ -519,7 +519,7 @@ export default function Projects(){
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,background:"#f5f3ff",border:"1px solid #ddd6fe",cursor:"pointer",gridColumn:"span 2"}}
               onClick={()=>setForm(f=>({...f,is_recurring:!f.is_recurring,start_date:!f.is_recurring?"":f.start_date,end_date:!f.is_recurring?"":f.end_date,status:!f.is_recurring?"In Progress":f.status}))}>
-              <input type="checkbox" checked={!!form.is_recurring} readOnly style={{width:15,height:15,accentColor:"#7c3aed",cursor:"pointer",flexShrink:0}}/>
+              <input type="checkbox" checked={!!form.is_recurring} readOnly style={{width:15,height:15,accentColor:"#1d4ed8",cursor:"pointer",flexShrink:0}}/>
               <div>
                 <div style={{fontSize:12,fontWeight:600,color:"#5b21b6"}}>Recurring Project</div>
                 <div style={{fontSize:11,color:"#6b7280"}}>No fixed start/end date — this project runs on an ongoing basis</div>
@@ -556,7 +556,7 @@ export default function Projects(){
                   const sel=(form.assignee_ids||[]).includes(e.id);
                   return(
                     <div key={e.id} onClick={()=>{const ids=form.assignee_ids||[];setForm({...form,assignee_ids:sel?ids.filter(i=>i!==e.id):[...ids,e.id]});}}
-                      style={{padding:"3px 9px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#4f46e5":"#f0f2f5",color:sel?"#fff":"#4b5563",userSelect:"none"}}>
+                      style={{padding:"3px 9px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:sel?"#2563eb":"#f0f2f5",color:sel?"#fff":"#4b5563",userSelect:"none"}}>
                       {e.name}
                     </div>
                   );
@@ -569,7 +569,7 @@ export default function Projects(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"10px 18px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <button onClick={save} disabled={saving} style={{padding:"8px 14px",borderRadius:6,border:"none",background:saving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
             {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Creating…"):(editing?"Save Changes":"Create Project")}
           </button>
         </div>
@@ -587,7 +587,7 @@ export default function Projects(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 20px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setClosePending(null)} style={{padding:"8px 14px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={confirmClose} disabled={!closeDate} style={{padding:"8px 14px",borderRadius:6,border:"none",background:closeDate?"#4f46e5":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:closeDate?"pointer":"not-allowed"}}>Confirm {closePending?.status}</button>
+          <button onClick={confirmClose} disabled={!closeDate} style={{padding:"8px 14px",borderRadius:6,border:"none",background:closeDate?"#2563eb":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:closeDate?"pointer":"not-allowed"}}>Confirm {closePending?.status}</button>
         </div>
       </Modal>
       {/* ── Schedule Meeting Modal ── */}
@@ -608,7 +608,7 @@ export default function Projects(){
                   const on=meetForm.days.includes(d);
                   return(
                     <button key={d} onClick={()=>toggleDay(d)}
-                      style={{padding:"5px 12px",borderRadius:20,border:"1px solid "+(on?"#4f46e5":"#d1d5db"),background:on?"#4f46e5":"#fff",color:on?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+                      style={{padding:"5px 12px",borderRadius:20,border:"1px solid "+(on?"#2563eb":"#d1d5db"),background:on?"#2563eb":"#fff",color:on?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>
                       {d}
                     </button>
                   );
@@ -634,7 +634,7 @@ export default function Projects(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setMeetModal(false)} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Skip</button>
-          <button onClick={saveMeeting} disabled={meetSaving} style={{padding:"8px 18px",borderRadius:6,border:"none",background:meetSaving?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:meetSaving?"not-allowed":"pointer"}}>
+          <button onClick={saveMeeting} disabled={meetSaving} style={{padding:"8px 18px",borderRadius:6,border:"none",background:meetSaving?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:meetSaving?"not-allowed":"pointer"}}>
             {meetSaving?"Scheduling…":"Schedule"}
           </button>
         </div>

@@ -134,9 +134,9 @@ export function SearchSelect({value,onChange,options=[],groups=[],placeholder="S
           )}
           {filtOpts.map(o=>(
             <div key={o.value} onMouseDown={()=>{onChange(o.value);setOpen(false);setQ("");}}
-              style={{...rowStyle,background:String(o.value)===String(value)?"#ede9fe":"transparent"}}
-              onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"#f5f3ff"}
-              onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"transparent"}
+              style={{...rowStyle,background:String(o.value)===String(value)?"#dbeafe":"transparent"}}
+              onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#dbeafe":"#f5f3ff"}
+              onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#dbeafe":"transparent"}
             >{o.label}</div>
           ))}
           {filtGroups.map(g=>(
@@ -144,9 +144,9 @@ export function SearchSelect({value,onChange,options=[],groups=[],placeholder="S
               <div style={groupLabelStyle}>{g.label}</div>
               {g.options.map(o=>(
                 <div key={o.value} onMouseDown={()=>{onChange(o.value);setOpen(false);setQ("");}}
-                  style={{...rowStyle,paddingLeft:16,color:"#6b7280",background:String(o.value)===String(value)?"#ede9fe":"transparent"}}
-                  onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"#f5f3ff"}
-                  onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#ede9fe":"transparent"}
+                  style={{...rowStyle,paddingLeft:16,color:"#6b7280",background:String(o.value)===String(value)?"#dbeafe":"transparent"}}
+                  onMouseEnter={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#dbeafe":"#f5f3ff"}
+                  onMouseLeave={e=>e.currentTarget.style.background=String(o.value)===String(value)?"#dbeafe":"transparent"}
                 >{o.label}</div>
               ))}
             </div>
@@ -158,8 +158,8 @@ export function SearchSelect({value,onChange,options=[],groups=[],placeholder="S
 }
 
 // ── Colors ────────────────────────────────────────────────────
-export const COLORS = ['#4f46e5','#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777'];
-export const PIE_CLR = ['#4f46e5','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#2563eb'];
+export const COLORS = ['#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777','#64748b','#1d4ed8'];
+export const PIE_CLR = ['#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777','#64748b','#1d4ed8'];
 
 export const LICENSE_COLORS = {
   active:   { bg:'#d1fae5', color:'#065f46' },
@@ -187,7 +187,7 @@ export const STATUS_STYLE = {
   'In Progress': { bg:'#fff7ed', c:'#c2410c' },
   'Completed':   { bg:'#d1fae5', c:'#065f46' },
   'Pending':     { bg:'#fef9c3', c:'#92400e' },
-  'Rescheduled': { bg:'#ede9fe', c:'#5b21b6' },
+  'Rescheduled': { bg:'#dbeafe', c:'#5b21b6' },
   'Cancelled':   { bg:'#fee2e2', c:'#991b1b' },
 };
 
@@ -260,7 +260,7 @@ export function Toast({ msg }) {
 }
 
 // ── Spinner ────────────────────────────────────────────────────
-export function Spinner({ size = 20, color = '#4f46e5' }) {
+export function Spinner({ size = 20, color = '#2563eb' }) {
   return (
     <div style={{
       width:size, height:size, border:`2px solid #e5e7eb`,
@@ -286,7 +286,7 @@ export function LoadingBox({ text = 'Loading…' }) {
 }
 
 // ── Pb (Progress bar) ──────────────────────────────────────────
-export function Pb({ value, color = '#4f46e5', height = 6 }) {
+export function Pb({ value, color = '#2563eb', height = 6 }) {
   const pct = Math.min(100, Math.max(0, value || 0));
   return (
     <div style={{background:'#e5e7eb', borderRadius:999, height, overflow:'hidden'}}>
@@ -305,8 +305,39 @@ export function StatusDrop({ value, onChange }) {
   );
 }
 
+// ── Modal keyboard shortcuts ─────────────────────────────────────
+// Project-wide convention: Escape cancels/closes, Enter completes/saves
+// (skipped while focus is on a <textarea>, <select>, or <button> so their
+// own native Enter behavior — newline, choose option, activate — still wins).
+// Native <select> elements already support Up/Down arrow-key navigation
+// in every browser, so no extra handling is needed for that part.
+export function useModalHotkeys(onClose, onSubmit, opts = {}) {
+  const { enabled = true, disableEscape = false, disableEnter = false } = opts;
+  useEffect(() => {
+    if (!enabled) return;
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        if (disableEscape) return;
+        e.preventDefault();
+        onClose && onClose();
+        return;
+      }
+      if (e.key === 'Enter') {
+        if (disableEnter || !onSubmit) return;
+        const tag = document.activeElement?.tagName;
+        if (tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
+        e.preventDefault();
+        onSubmit();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, onSubmit, enabled, disableEscape, disableEnter]);
+}
+
 // ── Modal ──────────────────────────────────────────────────────
-export function Modal({ open, onClose, title, children, width = 520 }) {
+export function Modal({ open, onClose, onSubmit, title, children, width = 520 }) {
+  useModalHotkeys(onClose, onSubmit, { enabled: open });
   if (!open) return null;
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}

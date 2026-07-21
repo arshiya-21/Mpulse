@@ -1,6 +1,7 @@
 import api from './index.js';
 export const getAll        = (params)  => api.get('/employees', { params });
 export const getAllManagers = ()        => api.get('/employees', { params: { all_managers: 'true' } });
+export const getMarketingTeam = ()      => api.get('/employees', { params: { for_marketing: 'true' } });
 export const getOne        = (id)      => api.get(`/employees/${id}`);
 export const create        = (data)    => api.post('/employees', data);
 export const update        = (id, d)   => api.put(`/employees/${id}`, d);

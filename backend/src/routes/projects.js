@@ -8,14 +8,21 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Helper – compute TAT days server-side
 // For closed/completed projects, ref = actual closure date (closed_at if stored, else today when it was closed)
 // Using end_date as ref was wrong — it always gave TAT=0 regardless of how late the project closed.
+// Anchors a Date/timestamp to UTC midnight of its LOCAL calendar date — same
+// representation node-postgres uses for DATE columns (start_date/end_date), so
+// diffing against those never picks up a stray time-of-day fraction.
+function calendarDay(d) {
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+
 function calcTAT(startDate, endDate, status, closedAt) {
   if (!startDate || !endDate) return { target_days: 0, actual_days: 0, tat_days: 0 };
-  const today  = new Date();
-  const start  = new Date(startDate);
-  const end    = new Date(endDate);
+  const today = calendarDay(new Date());
+  const start = new Date(startDate);
+  const end   = new Date(endDate);
   let   ref;
   if (['Closed','Completed'].includes(status)) {
-    ref = closedAt ? new Date(closedAt) : today;
+    ref = closedAt ? calendarDay(new Date(closedAt)) : today;
   } else {
     ref = today;
   }

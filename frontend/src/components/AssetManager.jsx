@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import * as assetsApi from "../api/assets";
 import * as employeesApi from "../api/employees";
 import * as deptApi from "../api/departments";
+import { useModalHotkeys } from "./shared.jsx";
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const inputS={width:"100%",padding:"9px 12px",fontSize:13,border:"1px solid #e4e7ec",borderRadius:7,background:"#fff",color:"#111827",outline:"none",boxSizing:"border-box"};
@@ -90,14 +91,16 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departme
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[open,editing]);
 
-  if(!open) return null;
-
   function set(k,v){ setForm(prev=>({...prev,[k]:v})); }
 
   function submit(){
     if(!form.name.trim()){ alert("Asset Name is required"); return; }
     onSave(form);
   }
+
+  useModalHotkeys(onClose,submit,{enabled:open});
+
+  if(!open) return null;
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={onClose}>
@@ -110,7 +113,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departme
         <div style={{padding:"20px 24px",overflowY:"auto",flex:1,display:"flex",flexDirection:"column",gap:18}}>
           {/* ASSET INFORMATION */}
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>Asset Information</div>
+            <div style={{fontSize:11,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>Asset Information</div>
             <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:14}}>
               <label style={labelS}>Asset Name *</label>
               <input value={form.name} onChange={e=>set("name",e.target.value)} placeholder="e.g. Dell Latitude 5520 — Ravi's Laptop" style={inputS}/>
@@ -153,7 +156,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departme
 
           {/* PURCHASE & WARRANTY */}
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Purchase & Warranty</div>
+            <div style={{fontSize:11,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Purchase & Warranty</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 <label style={labelS}>Purchase Date</label>
@@ -178,7 +181,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departme
 
           {/* ASSIGNMENT */}
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Assignment</div>
+            <div style={{fontSize:11,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Assignment</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 <label style={labelS}>Status</label>
@@ -211,7 +214,7 @@ function AssetModal({open,onClose,onSave,nextId,editing,types,employees,departme
 
           {/* NOTES */}
           <div>
-            <div style={{fontSize:11,fontWeight:800,color:"#4f46e5",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Notes</div>
+            <div style={{fontSize:11,fontWeight:800,color:"#2563eb",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12,paddingTop:6,borderTop:"1px solid #f0f2f5"}}>Notes</div>
             <textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={3} placeholder="Any additional notes about this asset…" style={{...inputS,resize:"vertical",fontFamily:"inherit"}}/>
           </div>
         </div>
@@ -254,6 +257,9 @@ function TypeMasterModal({open,onClose,types,setTypes}){
     }
     prevLengthRef.current=types.length;
   },[types.length]);
+
+  // Enter is left to the add/edit panel's own fields; this modal only adds Escape-to-close.
+  useModalHotkeys(onClose,null,{enabled:open});
 
   if(!open) return null;
 
@@ -370,12 +376,14 @@ function TransferModal({open,asset,employees,typeIcon,onClose,onSubmit}){
     if(open){ setTo(""); setDate(todayStr()); setReason(""); }
   },[open,asset&&asset.id]);
 
-  if(!open||!asset) return null;
-
   function submit(){
     if(!to){ alert("Please select an employee to transfer to"); return; }
     onSubmit({to,date,reason:reason.trim()});
   }
+
+  useModalHotkeys(onClose,submit,{enabled:open&&!!asset});
+
+  if(!open||!asset) return null;
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={onClose}>
@@ -386,7 +394,7 @@ function TransferModal({open,asset,employees,typeIcon,onClose,onSubmit}){
         </div>
         <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
           <div style={{display:"flex",alignItems:"center",gap:12,background:"#f8f9fb",border:"1px solid #f0f2f5",borderRadius:8,padding:12}}>
-            <div style={{width:40,height:40,borderRadius:8,background:"#eef2ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{typeIcon}</div>
+            <div style={{width:40,height:40,borderRadius:8,background:"#eff6ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{typeIcon}</div>
             <div>
               <div style={{fontWeight:700,color:"#111827",fontSize:14}}>{asset.name}</div>
               <div style={{fontSize:12,color:"#6b7280"}}>{asset.id} · Currently with: {asset.assignee||"Unassigned"}</div>
@@ -429,12 +437,14 @@ function ServiceModal({open,asset,onClose,onSubmit}){
     if(open){ setDate(todayStr()); setIssue(""); setAction(""); setServicedBy(""); setCost(""); }
   },[open,asset&&asset.id]);
 
-  if(!open||!asset) return null;
-
   function submit(){
     if(!issue.trim()){ alert("Issue is required"); return; }
     onSubmit({date,issue:issue.trim(),action:action.trim(),servicedBy:servicedBy.trim(),cost:Number(cost)||0});
   }
+
+  useModalHotkeys(onClose,submit,{enabled:open&&!!asset});
+
+  if(!open||!asset) return null;
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(15,17,23,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={onClose}>

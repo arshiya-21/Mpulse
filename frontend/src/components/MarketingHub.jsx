@@ -1,7 +1,16 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
+import * as marketingApi from "../api/marketing.js";
+import * as employeesApi from "../api/employees.js";
+import { useModalHotkeys } from "./shared.jsx";
+import { uploadFile } from "../api/uploads.js";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
+const API_ORIGIN=(import.meta.env.VITE_API_URL||'http://localhost:4000/api').replace(/\/api\/?$/,'');
+function fileUrl(p){ return p?`${API_ORIGIN}${p}`:''; }
 const inputStyle={width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:14,color:"#111827",boxSizing:"border-box"};
 const cardStyle={background:"#fff",borderRadius:10,border:"1px solid #e5e7eb",padding:"16px 20px"};
-const thStyle={textAlign:"left",fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:0.4,padding:"10px 14px",borderBottom:"1px solid #e5e7eb",whiteSpace:"nowrap"};
+const thStyle={textAlign:"left",fontSize:11,fontWeight:700,color:"#fff",background:"#9ca3af",textTransform:"uppercase",letterSpacing:0.4,padding:"10px 14px",borderBottom:"1px solid #e5e7eb",whiteSpace:"nowrap"};
 const tdStyle={padding:"11px 14px",fontSize:13,color:"#111827",borderBottom:"1px solid #f3f4f6",verticalAlign:"middle"};
 const labelStyle={display:"block",fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:6};
 
@@ -9,7 +18,6 @@ const tabs=["Dashboard","Leads","Demos","Orders","Implementation","Renewals","Re
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const YEARS=["2026","2025"];
 const LEAD_STATUSES=["Not Started","Follow Up","On Hold","Converted"];
-const PRODUCT_OPTIONS=["Sandman","DigiSmart","Sandman +VComp","Gateway","Energy Analytics"];
 
 const STATUS_STYLES={
   "Converted":{bg:"#ecfdf5",color:"#059669"},
@@ -25,13 +33,13 @@ const STATUS_STYLES={
   "Requested":{bg:"#eff6ff",color:"#2563eb"},
   "Scheduled":{bg:"#fffbeb",color:"#d97706"},
   "Completed":{bg:"#ecfdf5",color:"#059669"},
-  "Follow-Up":{bg:"#f5f3ff",color:"#7c3aed"},
+  "Follow-Up":{bg:"#f5f3ff",color:"#1d4ed8"},
   "Converted to Order":{bg:"#ecfdf5",color:"#059669"},
   "Cancelled":{bg:"#fef2f2",color:"#dc2626"},
   "In Progress":{bg:"#eff6ff",color:"#2563eb"},
   "Draft":{bg:"#f3f4f6",color:"#6b7280"},
   "Confirmed":{bg:"#eff6ff",color:"#2563eb"},
-  "PO Received":{bg:"#f5f3ff",color:"#7c3aed"},
+  "PO Received":{bg:"#f5f3ff",color:"#1d4ed8"},
   "Invoiced":{bg:"#fffbeb",color:"#d97706"},
   "Payment Done":{bg:"#ecfdf5",color:"#059669"},
   "Active (Go-Live)":{bg:"#ecfdf5",color:"#059669"},
@@ -74,96 +82,25 @@ function ProductPill({label}){
 }
 
 // ── Mock data — matches the mockup. Replace with API data once backend is wired. ──
-const seedLeads=[
-  {leadNo:"00001",customer:"Narayanan Castings",owner:"Ravi Kumar",email:"vn@nrcastings.com",phone:"9841234567",createdDate:"2026-01-05",lastModified:"2026-03-14",status:"Converted",product:"Sandman"},
-  {leadNo:"00002",customer:"Coimbatore Forge Works",owner:"Anitha",email:"bm@cfw.in",phone:"9843456789",createdDate:"2026-01-12",lastModified:"2026-03-18",status:"Follow Up",product:"DigiSmart"},
-  {leadNo:"00003",customer:"Sri Murugan Iron Works",owner:"Meena",email:"sk@smiw.in",phone:"9876543210",createdDate:"2026-01-18",lastModified:"2026-03-20",status:"Follow Up",product:"Sandman +VComp"},
-  {leadNo:"00004",customer:"Vijay Steel India",owner:"Anitha",email:"vr@vijsteel.com",phone:"9952341678",createdDate:"2026-02-03",lastModified:"2026-03-22",status:"Not Started",product:"Gateway"},
-  {leadNo:"00005",customer:"Madurai Metal Crafts",owner:"Suresh",email:"ds@mmc.co.in",phone:"9944123456",createdDate:"2026-02-10",lastModified:"2026-03-25",status:"Not Started",product:"Energy Analytics"},
-];
 
-const allDemos=[
-  {customer:"Narayanan Castings",demoNo:"DEMO-001",outcome:"Positive",date:"2026-04-06",remarks:"Customer reviewed quote. Interested. Next step: PO approval from management.",by:"Ravi Kumar"},
-  {customer:"Coimbatore Forge Works",demoNo:"DEMO-002",outcome:"Neutral",date:"2026-03-25",remarks:"Demo completed. Awaiting internal budget approval.",by:"Anitha"},
-  {customer:"Sri Murugan Iron Works",demoNo:"DEMO-003",outcome:"Positive",date:"2026-03-28",remarks:"Very interested, requested pricing for VComp add-on.",by:"Meena"},
-  {customer:"Salem Alloy Foundry",demoNo:"DEMO-004",outcome:"Positive",date:"2026-02-15",remarks:"Demo led to signed order.",by:"Anitha"},
-];
-const recentDemos=[allDemos[0]];
-const demoFollowUps=[
-  {customer:"Narayanan Castings",ref:"DEMO-001 · Ravi Kumar",note:"Customer reviewed quote. Interested. Next step: PO approval from management.",overdue:"Overdue 90d",outcome:"Positive"},
-];
 
-const pipeline=[
-  {label:"Leads",value:5,pct:100,color:"#4f46e5"},
-  {label:"Demos Conducted",value:4,pct:80,color:"#4f46e5"},
-  {label:"Follow-Up",value:1,pct:20,color:"#4f46e5"},
-  {label:"Orders",value:4,pct:80,color:"#4f46e5"},
-  {label:"Active Go-Live",value:2,pct:40,color:"#4f46e5"},
-];
-
-const implementations=[
-  {customer:"Salem Alloy Foundry",product:"DigiSmart",progress:75,phase:2,goLiveDate:"2025-11-15"},
-  {customer:"Narayanan Castings",product:"Sandman",progress:100,phase:3,goLiveDate:"2025-12-20"},
-];
-
-function mkSteps(texts,doneCount){
-  return texts.map((t,i)=>({text:t,done:i<doneCount}));
-}
-const implementationRecords=[
-  {
-    customer:"Narayanan Castings",orderNo:"ORD-001",product:"Sandman",billingType:"Annual",users:5,done:true,
-    phases:[
-      {phase:0,title:"Phase 0: Kickoff",weeks:null,status:"Completed",desc:"Start → SandMan Proposal → Receipt of PO → SandMan Data Audit",
-        steps:mkSteps(["Start","SandMan Proposal shared with customer","PO received from customer","SandMan Data Audit completed","Kickoff meeting scheduled"],5),
-        startDate:"2025-10-15",endDate:"2025-10-25",responsiblePerson:"Ravi Kumar",notes:"PO received on time. Data audit done in 2 days.",documents:[]},
-      {phase:1,title:"Phase 1: Data Collection",weeks:"4–6 Weeks",status:"Completed",desc:"Virtual Kickoff Meeting · Data collection (Historical 6 months + SCADA handshaking)",
-        steps:mkSteps(["Virtual Kickoff Meeting","Data collection - Historical 6 months","SCADA handshaking","Sensor mapping","Baseline report","Data cleanup","QA pass 1","QA pass 2","Client review call","Sign-off doc drafted","Sign-off doc signed","Handover to analysis team"],12),
-        startDate:"2025-10-26",endDate:"2025-11-20",responsiblePerson:"Ravi Kumar",notes:"",documents:[]},
-      {phase:2,title:"Phase 2: Analysis & Modelling",weeks:"4–5 Weeks",status:"Completed",desc:"Documentation · Data Analysis Modelling · Data Science Team Review · Data Validation Checklist",
-        steps:mkSteps(["Documentation","Data Analysis Modelling","Data Science Team Review","Data Validation Checklist","Final model sign-off"],5),
-        startDate:"2025-11-21",endDate:"2025-12-15",responsiblePerson:"Meena",notes:"",documents:[]},
-      {phase:3,title:"Phase 3: Go-Live",weeks:"1–2 Weeks",status:"Completed",desc:"Sandmix Implementation · Virtual Meeting · Sign Off",
-        steps:mkSteps(["Sandmix Implementation","Virtual Meeting","Sign Off","Post go-live support call","Handover to CS team","Training session","Documentation delivered","Final closure"],8),
-        startDate:"2025-12-16",endDate:"2025-12-20",responsiblePerson:"Anitha",notes:"",documents:[]},
-    ]
-  },
-  {
-    customer:"Salem Alloy Foundry",orderNo:"ORD-002",product:"DigiSmart",billingType:"Annual",users:3,done:false,
-    phases:[
-      {phase:0,title:"Phase 0: Kickoff",weeks:null,status:"Completed",desc:"Start → Proposal → Receipt of PO → Data Audit",
-        steps:mkSteps(["Start","Proposal","Receipt of PO","Data Audit"],4),
-        startDate:"2025-09-01",endDate:"2025-09-10",responsiblePerson:"Anitha",notes:"",documents:[]},
-      {phase:1,title:"Phase 1: Data Collection",weeks:"4–6 Weeks",status:"Completed",desc:"Virtual Kickoff Meeting · Data collection",
-        steps:mkSteps(["Virtual Kickoff Meeting","Data collection","Sensor mapping","Baseline report","QA pass","Client review call","Sign-off doc drafted","Sign-off doc signed"],8),
-        startDate:"2025-09-11",endDate:"2025-10-10",responsiblePerson:"Anitha",notes:"",documents:[]},
-      {phase:2,title:"Phase 2: Analysis & Modelling",weeks:"4–5 Weeks",status:"In Progress",desc:"Documentation · Data Analysis Modelling",
-        steps:mkSteps(["Documentation","Data Analysis Modelling","Data Science Team Review","Data Validation Checklist","Final model sign-off"],2),
-        startDate:"2025-10-11",endDate:"",responsiblePerson:"Meena",notes:"",documents:[]},
-      {phase:3,title:"Phase 3: Go-Live",weeks:"1–2 Weeks",status:"Not Started",desc:"Sandmix Implementation · Virtual Meeting · Sign Off",
-        steps:mkSteps(["Sandmix Implementation","Virtual Meeting","Sign Off"],0),
-        startDate:"",endDate:"",responsiblePerson:"",notes:"",documents:[]},
-    ]
-  }
-];
 function implOverallPct(rec){
   const totC=rec.phases.reduce((s,p)=>s+p.steps.filter(st=>st.done).length,0);
   const totT=rec.phases.reduce((s,p)=>s+p.steps.length,0);
   return totT===0?0:Math.round((totC/totT)*100);
 }
+// A phase with every step checked is Completed regardless of the stored status field —
+// keeps the display correct even if a phase's status was never manually updated.
+function phaseDisplayStatus(p){
+  return p.steps.length>0&&p.steps.every(s=>s.done)?"Completed":p.status;
+}
+function currentPhaseOf(rec){
+  const active=rec.phases.find(p=>phaseDisplayStatus(p)!=="Completed");
+  return active?active.phase:(rec.phases[rec.phases.length-1]?.phase??0);
+}
 
-const renewals=[
-  {customer:"Narayanan Castings",product:"Sandman",contractEnd:"2026-10-31",daysLeft:"109d left",status:"Active",value:"₹1,80,000",lastRenewed:"2026-10-01"},
-  {customer:"Salem Alloy Foundry",product:"DigiSmart",contractEnd:"2026-11-30",daysLeft:"139d left",status:"Active",value:"₹1,20,000",lastRenewed:"—"},
-];
-
-const seedRenewals=[
-  {id:"REN-001",customer:"Narayanan Castings",product:"Sandman",license:"Annual",users:5,contractStart:"2025-11-01",contractEnd:"2026-10-31",value:"₹1,80,000",assignedTo:"Ravi Kumar",notes:"",renewalStatus:"Active",history:[
-    {renewedOn:"2026-10-01",contractStart:"2025-11-01",contractEnd:"2026-10-31",value:"₹1,80,000",status:"Renewed",notes:"Annual renewal confirmed via email. No changes to scope."},
-  ]},
-  {id:"REN-002",customer:"Salem Alloy Foundry",product:"DigiSmart",license:"Annual",users:3,contractStart:"2025-12-01",contractEnd:"2026-11-30",value:"₹1,20,000",assignedTo:"Anitha",notes:"",renewalStatus:"Active",history:[]},
-];
 function daysLeftFrom(dateStr){
-  const now=new Date("2026-07-14");
+  const now=new Date(todayISO());
   const end=new Date(dateStr);
   return Math.round((end-now)/(1000*60*60*24));
 }
@@ -175,29 +112,16 @@ function renewalStatusFor(r){
   return "Active";
 }
 
-const allOrders=[
-  {orderNo:"ORD-001",customer:"Narayanan Castings",product:"Sandman",value:"₹1,80,000",paid:"₹1,80,000",outstanding:"₹0",status:"Paid",date:"2025-10-15",
-    poNo:"PO-2025-041",poUploaded:false,orderStatus:"Active (Go-Live)",paymentStatus:"Fully Paid",assignedTo:"Ravi Kumar"},
-  {orderNo:"ORD-002",customer:"Salem Alloy Foundry",product:"DigiSmart",value:"₹1,20,000",paid:"₹1,20,000",outstanding:"₹0",status:"Paid",date:"2025-11-20",
-    poNo:"PO-2025-089",poUploaded:false,orderStatus:"Active (Go-Live)",paymentStatus:"Fully Paid",assignedTo:"Anitha"},
-  {orderNo:"ORD-003",customer:"Coimbatore Forge Works",product:"DigiSmart",value:"₹95,000",paid:"₹47,500",outstanding:"₹47,500",status:"Partial",date:"2026-01-10",
-    poNo:null,poUploaded:false,orderStatus:"Invoiced",paymentStatus:"Advance Paid",assignedTo:"Anitha"},
-  {orderNo:"ORD-004",customer:"Tirupur Die Cast Ltd",product:"Sandman +VComp",value:"₹1,60,000",paid:"₹0",outstanding:"₹1,60,000",status:"Pending",date:"2026-03-20",
-    poNo:"PO-2026-012",poUploaded:false,orderStatus:"PO Received",paymentStatus:"Pending",assignedTo:"Ravi Kumar"},
-];
-
 const DEMO_STATUSES=["Requested","Scheduled","Completed","Follow-Up","Converted to Order","Cancelled"];
-const DEMO_TYPES=["On-Site","Online","Virtual"];
-const seedDemosList=[
-  {demoNo:"DEMO-001",customer:"Narayanan Castings",contactPerson:"V. Narayanan",product:"Sandman",demoDate:"2026-03-10",type:"On-Site",conductedBy:"Ravi Kumar",status:"Follow-Up",nextFollowUp:"2026-04-15",activities:[
-    {date:"2026-04-06",outcome:"Positive",next:"2026-04-15",note:"Customer reviewed quote. Interested. Next step: PO approval from management.",by:"Ravi Kumar"},
-    {date:"2026-03-21",outcome:"Neutral",next:null,note:"Follow-up call done. Customer asked for pricing. Sent quotation via email.",by:"Ravi Kumar"},
-    {date:"2026-03-10",outcome:"Positive",next:null,note:"Demo went well. Customer liked sand parameter tracking. Interested in annual license.",by:"Ravi Kumar"},
-  ]},
-  {demoNo:"DEMO-002",customer:"Coimbatore Forge Works",contactPerson:"Balaji M",product:"DigiSmart",demoDate:"2026-03-18",type:"Online",conductedBy:"Anitha",status:"Scheduled",nextFollowUp:null,activities:[]},
-  {demoNo:"DEMO-003",customer:"Sri Murugan Iron Works",contactPerson:"Selvam K",product:"Sandman +VComp",demoDate:"2026-04-02",type:"On-Site",conductedBy:"Pragash",status:"Requested",nextFollowUp:null,activities:[]},
-  {demoNo:"DEMO-004",customer:"Vijay Steel India",contactPerson:"Vijay R",product:"Gateway",demoDate:"2026-04-08",type:"Virtual",conductedBy:"Meena",status:"Requested",nextFollowUp:null,activities:[]},
-];
+// Keeps the customer's Lead status in step with how their demo is progressing.
+const DEMO_STATUS_TO_LEAD_STATUS={
+  "Requested":"Follow Up",
+  "Scheduled":"Follow Up",
+  "Completed":"Follow Up",
+  "Follow-Up":"Follow Up",
+  "Converted to Order":"Converted",
+  "Cancelled":"On Hold",
+};
 function nextDemoNo(demos){
   const max=demos.reduce((m,d)=>Math.max(m,parseInt(String(d.demoNo).replace("DEMO-",""),10)||0),0);
   return "DEMO-"+String(max+1).padStart(3,"0");
@@ -205,7 +129,7 @@ function nextDemoNo(demos){
 
 const ORDER_STATUSES=["Draft","Confirmed","PO Received","Invoiced","Payment Done","Active (Go-Live)"];
 const PAYMENT_STATUSES=["Pending","Advance Paid","Fully Paid"];
-const ORDER_STATUS_ACCENT={"Draft":"#9ca3af","Confirmed":"#2563eb","PO Received":"#7c3aed","Invoiced":"#d97706","Payment Done":"#2563eb","Active (Go-Live)":"#059669","Cancelled":"#dc2626"};
+const ORDER_STATUS_ACCENT={"Draft":"#9ca3af","Confirmed":"#2563eb","PO Received":"#1d4ed8","Invoiced":"#d97706","Payment Done":"#2563eb","Active (Go-Live)":"#059669","Cancelled":"#dc2626"};
 function orderProgressCount(status){
   if(status==="Cancelled") return 0;
   const idx=ORDER_STATUSES.indexOf(status);
@@ -227,7 +151,17 @@ function nextLeadNo(leads){
 }
 
 function getPeriodWindow(period,year,month){
-  const now=new Date("2026-07-14");
+  const now=new Date();
+  if(period==="Today"){
+    const s=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    return {start:s,end:s,label:"Today"};
+  }
+  if(period==="This Week"){
+    const diffToMonday=(now.getDay()+6)%7;
+    const s=new Date(now.getFullYear(),now.getMonth(),now.getDate()-diffToMonday);
+    const e=new Date(s.getFullYear(),s.getMonth(),s.getDate()+6);
+    return {start:s,end:e,label:"This Week"};
+  }
   if(period==="This Month"){
     const s=new Date(now.getFullYear(),now.getMonth(),1), e=new Date(now.getFullYear(),now.getMonth()+1,0);
     return {start:s,end:e,label:MONTHS[now.getMonth()]+" "+now.getFullYear()};
@@ -303,28 +237,23 @@ function DrillPanel({title,icon,data,columns,periodLabel,onClose}){
   );
 }
 
-function PhaseStepper({phase}){
+function PhaseStepper({phase,totalPhases}){
+  const count=totalPhases||1;
   return(
     <div style={{display:"flex",alignItems:"center",gap:4}}>
-      {[0,1,2,3].map((p,i)=>(
+      {Array.from({length:count},(_,p)=>p).map((p,i)=>(
         <div key={p} style={{display:"flex",alignItems:"center",gap:4}}>
-          <div style={{width:20,height:20,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,background:p<=phase?"#4f46e5":"#f3f4f6",color:p<=phase?"#fff":"#9ca3af",border:p===phase?"2px solid #4f46e5":"none"}}>{p}</div>
-          {i<3&&<div style={{width:12,height:2,background:p<phase?"#4f46e5":"#e5e7eb"}}/>}
+          <div style={{width:20,height:20,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,background:p<=phase?"#2563eb":"#f3f4f6",color:p<=phase?"#fff":"#9ca3af",border:p===phase?"2px solid #2563eb":"none"}}>{p}</div>
+          {i<count-1&&<div style={{width:12,height:2,background:p<phase?"#2563eb":"#e5e7eb"}}/>}
         </div>
       ))}
     </div>
   );
 }
 
-const LEAD_SOURCE_OPTIONS=["Trade Fair","Google Ads","LinkedIn","Email Campaign","Referral","Cold Call","Website","Webinar","Social Media"];
 const COUNTRY_OPTIONS=["India","USA","UAE","Germany","Japan","China","UK","Australia"];
 const STATE_OPTIONS=["Tamil Nadu","Maharashtra","Gujarat","Karnataka","Rajasthan","Telangana","Andhra Pradesh","Punjab","Haryana","West Bengal","Madhya Pradesh","Uttar Pradesh"];
 const REGION_OPTIONS=["South","North","East","West"];
-const BUSINESS_AREA_OPTIONS=["Automotive","Heavy Engineering","Railways","Defence","General Engineering","Pipe Fittings","Pumps & Valves"];
-const DEFAULT_PRODUCTS=["Sandman","Sandman +VComp","DigiSmart","Gateway","Energy Analytics"];
-const FOUNDRY_TYPE_OPTIONS=["Steel","Automotive","Cast Iron","Railway","Other Metal","Machinery","DI Pipe","Sanitary / Municipal"];
-const SAND_TYPE_OPTIONS=["Green Sand","Alphaset Sand","No-Bake Sand","Lost Foam Sand","Permanent Mould Sand"];
-const OWNER_OPTIONS=["Ravi Kumar","Anitha","Meena","Suresh"];
 
 const sectionHeaderStyle={fontSize:12,fontWeight:700,color:"#374151",background:"#f8f9fb",padding:"10px 24px",borderTop:"1px solid #e5e7eb",borderBottom:"1px solid #e5e7eb",textTransform:"uppercase",letterSpacing:0.4};
 const reqMark=<span style={{color:"#dc2626"}}>*</span>;
@@ -343,7 +272,7 @@ function CheckboxGrid({options,selected,onToggle}){
 }
 
 /* ---------------- Lead Modal ---------------- */
-function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSourceOptions}){
+function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSourceOptions,businessAreaOptions,ownerOptions,foundryInfoOptions,sandTypeOptions,onOpenBusinessAreaMaster,onOpenFoundryTypeMaster,onOpenSandTypeMaster,existingCustomers}){
   const [leadNo]=useState(initial?.leadNo||nextLeadNumber);
 
   const [foundryName,setFoundryName]=useState(initial?.foundryName||initial?.customer||"");
@@ -374,7 +303,7 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
 
   const [painPoints,setPainPoints]=useState(initial?.painPoints||"");
 
-  const [owner,setOwner]=useState(initial?.owner||OWNER_OPTIONS[0]);
+  const [owner,setOwner]=useState(initial?.owner||ownerOptions[0]||"");
   const [createdDate,setCreatedDate]=useState(initial?.createdDate||todayISO());
 
   function toggle(arr,setArr,val){
@@ -402,18 +331,13 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
 
   function validate(){
     if(!foundryName.trim()){ alert("Please enter the foundry name."); return false; }
-    if(!leadSource){ alert("Please select a lead source."); return false; }
+    if((existingCustomers||[]).some(c=>c.trim().toLowerCase()===foundryName.trim().toLowerCase())){
+      alert("A Lead for this customer already exists. Please check the list before creating a duplicate.");
+      return false;
+    }
     if(!firstName.trim()){ alert("Please enter the contact person's first name."); return false; }
-    if(!lastName.trim()){ alert("Please enter the contact person's last name."); return false; }
-    if(!email.trim()){ alert("Please enter an email address."); return false; }
-    if(!contactNumber.trim()){ alert("Please enter a contact number."); return false; }
-    if(!designation.trim()){ alert("Please enter a designation."); return false; }
-    if(!street.trim()){ alert("Please enter the street address."); return false; }
-    if(!city.trim()){ alert("Please enter a city."); return false; }
-    if(!zip.trim()){ alert("Please enter a ZIP / postal code."); return false; }
-    if(!state){ alert("Please select a state."); return false; }
-    if(!region){ alert("Please select a region."); return false; }
-    if(!painPoints.trim()){ alert("Please describe the current pain points."); return false; }
+    if(!leadSource){ alert("Please select a lead source."); return false; }
+    if(!email.trim()&&!contactNumber.trim()){ alert("Please enter an email address or a contact number."); return false; }
     return true;
   }
 
@@ -430,6 +354,8 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
       onClose();
     }
   }
+
+  useModalHotkeys(onClose,()=>handleSave(false));
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
@@ -452,26 +378,26 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
               </select>
             </div>
             <div><label style={labelStyle}>Contact Person First Name {reqMark}</label><input style={inputStyle} value={firstName} onChange={e=>setFirstName(e.target.value)}/></div>
-            <div><label style={labelStyle}>Country / Territory {reqMark}</label>
+            <div><label style={labelStyle}>Country / Territory</label>
               <select style={inputStyle} value={country} onChange={e=>setCountry(e.target.value)}>
                 {COUNTRY_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
               </select>
             </div>
-            <div><label style={labelStyle}>Contact Person Last Name {reqMark}</label><input style={inputStyle} value={lastName} onChange={e=>setLastName(e.target.value)}/></div>
-            <div><label style={labelStyle}>Street {reqMark}</label><textarea style={{...inputStyle,minHeight:60,resize:"vertical"}} value={street} onChange={e=>setStreet(e.target.value)}/></div>
+            <div><label style={labelStyle}>Contact Person Last Name</label><input style={inputStyle} value={lastName} onChange={e=>setLastName(e.target.value)}/></div>
+            <div><label style={labelStyle}>Street</label><textarea style={{...inputStyle,minHeight:60,resize:"vertical"}} value={street} onChange={e=>setStreet(e.target.value)}/></div>
             <div><label style={labelStyle}>Email Address {reqMark}</label><input type="email" style={inputStyle} value={email} onChange={e=>setEmail(e.target.value)}/></div>
-            <div><label style={labelStyle}>City {reqMark}</label><input style={inputStyle} value={city} onChange={e=>setCity(e.target.value)}/></div>
+            <div><label style={labelStyle}>City</label><input style={inputStyle} value={city} onChange={e=>setCity(e.target.value)}/></div>
             <div><label style={labelStyle}>Contact Person Number {reqMark}</label><input style={inputStyle} value={contactNumber} onChange={e=>setContactNumber(e.target.value)}/></div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div><label style={labelStyle}>ZIP / Postal Code {reqMark}</label><input style={inputStyle} value={zip} onChange={e=>setZip(e.target.value)}/></div>
-              <div><label style={labelStyle}>State {reqMark}</label>
+              <div><label style={labelStyle}>ZIP / Postal Code</label><input style={inputStyle} value={zip} onChange={e=>setZip(e.target.value)}/></div>
+              <div><label style={labelStyle}>State</label>
                 <select style={inputStyle} value={state} onChange={e=>setState(e.target.value)}>
                   <option value="">--None--</option>
                   {STATE_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
             </div>
-            <div><label style={labelStyle}>Designation {reqMark}</label><input style={inputStyle} value={designation} onChange={e=>setDesignation(e.target.value)}/></div>
+            <div><label style={labelStyle}>Designation</label><input style={inputStyle} value={designation} onChange={e=>setDesignation(e.target.value)}/></div>
             <div><label style={labelStyle}>Lead Status</label>
               <select style={inputStyle} value={leadStatus} onChange={e=>setLeadStatus(e.target.value)}>
                 {LEAD_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
@@ -480,17 +406,20 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
           </div>
 
           <div style={{padding:"18px 24px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            <div><label style={labelStyle}>Region {reqMark}</label>
+            <div><label style={labelStyle}>Region</label>
               <select style={inputStyle} value={region} onChange={e=>setRegion(e.target.value)}>
                 <option value="">--None--</option>
                 {REGION_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div><label style={labelStyle}>Business Area</label>
-              <select style={inputStyle} value={businessArea} onChange={e=>setBusinessArea(e.target.value)}>
-                <option value="">--None--</option>
-                {BUSINESS_AREA_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
-              </select>
+              <div style={{display:"flex",gap:8}}>
+                <select style={inputStyle} value={businessArea} onChange={e=>setBusinessArea(e.target.value)}>
+                  <option value="">--None--</option>
+                  {businessAreaOptions.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+                <button type="button" onClick={onOpenBusinessAreaMaster} title="Manage business areas" style={{flexShrink:0,padding:"0 12px",borderRadius:8,border:"1px solid #fde68a",background:"#fff",color:"#b45309",fontWeight:600,fontSize:13,cursor:"pointer"}}>+</button>
+              </div>
             </div>
           </div>
 
@@ -499,14 +428,20 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
             <CheckboxGrid options={productOptions} selected={customerPotential} onToggle={v=>toggle(customerPotential,setCustomerPotential,v)}/>
           </div>
 
-          <div style={sectionHeaderStyle}>Foundry Information</div>
+          <div style={{...sectionHeaderStyle,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span>Foundry Information</span>
+            <button type="button" onClick={onOpenFoundryTypeMaster} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",color:"#374151",fontWeight:600,fontSize:11,cursor:"pointer",textTransform:"none",letterSpacing:0}}>+ Manage</button>
+          </div>
           <div style={{padding:"18px 24px"}}>
-            <CheckboxGrid options={FOUNDRY_TYPE_OPTIONS} selected={foundryInfo} onToggle={v=>toggle(foundryInfo,setFoundryInfo,v)}/>
+            <CheckboxGrid options={foundryInfoOptions} selected={foundryInfo} onToggle={v=>toggle(foundryInfo,setFoundryInfo,v)}/>
           </div>
 
-          <div style={sectionHeaderStyle}>Sand System Information</div>
+          <div style={{...sectionHeaderStyle,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span>Sand System Information</span>
+            <button type="button" onClick={onOpenSandTypeMaster} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",color:"#374151",fontWeight:600,fontSize:11,cursor:"pointer",textTransform:"none",letterSpacing:0}}>+ Manage</button>
+          </div>
           <div style={{padding:"18px 24px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-            <CheckboxGrid options={SAND_TYPE_OPTIONS} selected={sandTypes} onToggle={v=>toggle(sandTypes,setSandTypes,v)}/>
+            <CheckboxGrid options={sandTypeOptions} selected={sandTypes} onToggle={v=>toggle(sandTypes,setSandTypes,v)}/>
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               <div><label style={labelStyle}>Mixer Make</label><input style={inputStyle} value={mixerMake} onChange={e=>setMixerMake(e.target.value)}/></div>
               <div><label style={labelStyle}>Mixer Type</label><input style={inputStyle} value={mixerType} onChange={e=>setMixerType(e.target.value)}/></div>
@@ -515,9 +450,9 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
             </div>
           </div>
 
-          <div style={sectionHeaderStyle}>Current Pain Points</div>
+          <div style={sectionHeaderStyle}>Remarks</div>
           <div style={{padding:"18px 24px"}}>
-            <label style={labelStyle}>Description {reqMark}</label>
+            <label style={labelStyle}>Description</label>
             <textarea style={{...inputStyle,minHeight:80,resize:"vertical"}} value={painPoints} onChange={e=>setPainPoints(e.target.value)}/>
           </div>
 
@@ -526,9 +461,9 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
             <div>
               <label style={labelStyle}>Owner</label>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:"#4f46e5",color:"#fff",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{owner[0]}</div>
+                <div style={{width:28,height:28,borderRadius:"50%",background:"#2563eb",color:"#fff",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{owner[0]}</div>
                 <select style={inputStyle} value={owner} onChange={e=>setOwner(e.target.value)}>
-                  {OWNER_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                  {ownerOptions.map(o=><option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
             </div>
@@ -545,8 +480,8 @@ function LeadModal({onClose,onSave,nextLeadNumber,initial,productOptions,leadSou
 
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb",flexShrink:0}}>
           <button onClick={onClose} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
-          <button onClick={()=>handleSave(true)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #4f46e5",background:"#fff",fontWeight:600,fontSize:13,color:"#4f46e5",cursor:"pointer"}}>Save & New</button>
-          <button onClick={()=>handleSave(false)} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#4f46e5",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
+          <button onClick={()=>handleSave(true)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #2563eb",background:"#fff",fontWeight:600,fontSize:13,color:"#2563eb",cursor:"pointer"}}>Save & New</button>
+          <button onClick={()=>handleSave(false)} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
         </div>
       </div>
     </div>
@@ -560,6 +495,8 @@ function ChangeOwnerModal({count,onClose,onApply,ownerOptions}){
     if(!newOwner){ alert("Please select a new owner."); return; }
     onApply(newOwner);
   }
+
+  useModalHotkeys(onClose,handleApply);
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
@@ -584,7 +521,9 @@ function ChangeOwnerModal({count,onClose,onApply,ownerOptions}){
   );
 }
 
-function ProductMasterModal({products,onClose,onAdd,onEdit,onDelete,leadCounts}){
+// Generic master-list modal (used by Product Master, Lead Source Master, Business Area Master —
+// same add/edit/delete-with-usage-count UI, only the labels/icon/accent differ).
+function MasterListModal({title,itemNoun,icon,accent,placeholder,items,onClose,onAdd,onEdit,onDelete,leadCounts,usageNoun="lead",onManagePhases}){
   const [newName,setNewName]=useState("");
   const [editingId,setEditingId]=useState(null);
   const [editName,setEditName]=useState("");
@@ -592,164 +531,221 @@ function ProductMasterModal({products,onClose,onAdd,onEdit,onDelete,leadCounts})
   function handleAdd(){
     const name=newName.trim();
     if(!name) return;
-    if(products.some(p=>p.name.toLowerCase()===name.toLowerCase())){
-      alert("That product already exists.");
+    if(items.some(i=>i.name.toLowerCase()===name.toLowerCase())){
+      alert(`That ${itemNoun} already exists.`);
       return;
     }
     onAdd(name);
     setNewName("");
   }
-  function startEdit(p){ setEditingId(p.id); setEditName(p.name); }
-  function saveEdit(p){
+  function startEdit(i){ setEditingId(i.id); setEditName(i.name); }
+  function saveEdit(i){
     const name=editName.trim();
     if(!name) return;
-    onEdit(p.id,name);
+    onEdit(i.id,name);
     setEditingId(null);
   }
-  function handleDelete(p){
-    const count=leadCounts[p.name]||0;
+  function handleDelete(i){
+    const count=leadCounts[i.name]||0;
     const msg=count>0
-      ? `"${p.name}" is used by ${count} lead(s). Delete it anyway? Existing leads will keep the label but it won't be selectable for new ones.`
-      : `Delete product "${p.name}"?`;
-    if(window.confirm(msg)) onDelete(p.id);
+      ? `"${i.name}" is used by ${count} ${usageNoun}(s). Delete it anyway? Existing ${usageNoun}s will keep the label but it won't be selectable for new ones.`
+      : `Delete ${itemNoun} "${i.name}"?`;
+    if(window.confirm(msg)) onDelete(i.id);
   }
 
+  // Enter is left to the per-row Add/Save inputs (each already handles its own Enter key);
+  // this modal only adds the Escape-to-close convention.
+  useModalHotkeys(onClose,null);
+
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={onClose}>
       <div style={{background:"#fff",borderRadius:12,width:520,maxWidth:"92vw",maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 50px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",borderBottom:"1px solid #e5e7eb",flexShrink:0}}>
-          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>Product Master</div>
+          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{title}</div>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#6b7280",cursor:"pointer"}}>×</button>
         </div>
 
         <div style={{padding:"20px 24px",flex:1,overflow:"hidden",display:"flex",flexDirection:"column",minHeight:0}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:8,flexShrink:0}}>ADD NEW PRODUCT</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:8,flexShrink:0}}>ADD NEW {itemNoun.toUpperCase()}</div>
           <div style={{display:"flex",gap:8,marginBottom:24,flexShrink:0}}>
             <input
               style={inputStyle}
               value={newName}
               onChange={e=>setNewName(e.target.value)}
               onKeyDown={e=>{ if(e.key==="Enter") handleAdd(); }}
-              placeholder="e.g. IndustiQ"
+              placeholder={placeholder}
             />
-            <button onClick={handleAdd} style={{padding:"9px 20px",borderRadius:8,border:"none",background:"#4f46e5",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>Add</button>
+            <button onClick={handleAdd} style={{padding:"9px 20px",borderRadius:8,border:"none",background:accent,color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>Add</button>
           </div>
 
-          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:10,flexShrink:0}}>PRODUCTS ({products.length})</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:10,flexShrink:0}}>{itemNoun.toUpperCase()}S ({items.length})</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,overflowY:"auto",flex:1,paddingRight:4}}>
-            {products.map(p=>(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,border:"1px solid #e5e7eb",borderRadius:10,padding:"10px 14px"}}>
-                <div style={{width:32,height:32,borderRadius:8,background:"#f5f3ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>📦</div>
-                {editingId===p.id?(
+            {items.map(i=>(
+              <div key={i.id} style={{display:"flex",alignItems:"center",gap:10,border:"1px solid #e5e7eb",borderRadius:10,padding:"10px 14px"}}>
+                <div style={{width:32,height:32,borderRadius:8,background:"#f5f3ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>{icon}</div>
+                {editingId===i.id?(
                   <input
                     style={{...inputStyle,flex:1,padding:"6px 10px"}}
                     value={editName}
                     autoFocus
                     onChange={e=>setEditName(e.target.value)}
-                    onKeyDown={e=>{ if(e.key==="Enter") saveEdit(p); }}
+                    onKeyDown={e=>{ if(e.key==="Enter") saveEdit(i); }}
                   />
                 ):(
-                  <div style={{flex:1,fontSize:14,fontWeight:600,color:"#111827"}}>{p.name}</div>
+                  <div style={{flex:1,fontSize:14,fontWeight:600,color:"#111827"}}>{i.name}</div>
                 )}
-                <div style={{fontSize:12,color:"#9ca3af",whiteSpace:"nowrap"}}>{leadCounts[p.name]||0} leads</div>
-                {editingId===p.id?(
-                  <button onClick={()=>saveEdit(p)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #4f46e5",background:"#4f46e5",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer"}}>Save</button>
+                <div style={{fontSize:12,color:"#9ca3af",whiteSpace:"nowrap"}}>{leadCounts[i.name]||0} {usageNoun}s</div>
+                {onManagePhases&&(
+                  <button onClick={()=>onManagePhases(i)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:12,color:"#111827",cursor:"pointer"}}>Phases</button>
+                )}
+                {editingId===i.id?(
+                  <button onClick={()=>saveEdit(i)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid "+accent,background:accent,color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer"}}>Save</button>
                 ):(
-                  <button onClick={()=>startEdit(p)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:12,color:"#111827",cursor:"pointer"}}>Edit</button>
+                  <button onClick={()=>startEdit(i)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:12,color:"#111827",cursor:"pointer"}}>Edit</button>
                 )}
-                <button onClick={()=>handleDelete(p)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fecaca",background:"#fee2e2",fontWeight:600,fontSize:12,color:"#b91c1c",cursor:"pointer"}}>Delete</button>
+                <button onClick={()=>handleDelete(i)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fecaca",background:"#fee2e2",fontWeight:600,fontSize:12,color:"#b91c1c",cursor:"pointer"}}>Delete</button>
               </div>
             ))}
-            {products.length===0&&<div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>No products yet.</div>}
+            {items.length===0&&<div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>No {itemNoun}s yet.</div>}
           </div>
         </div>
 
         <div style={{display:"flex",justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb",flexShrink:0}}>
-          <button onClick={onClose} style={{padding:"9px 22px",borderRadius:8,border:"none",background:"#4f46e5",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Done</button>
+          <button onClick={onClose} style={{padding:"9px 22px",borderRadius:8,border:"none",background:accent,fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Done</button>
         </div>
       </div>
     </div>
   );
 }
 
-function LeadSourceMasterModal({sources,onClose,onAdd,onEdit,onDelete,leadCounts}){
-  const [newName,setNewName]=useState("");
-  const [editingId,setEditingId]=useState(null);
-  const [editName,setEditName]=useState("");
+/* ---------------- Product Phases Modal ---------------- */
+function PhaseFormPanel({product,initial,onCancel,onSave}){
+  const [phaseNumber,setPhaseNumber]=useState(initial?String(initial.phase_number):"");
+  const [title,setTitle]=useState(initial?.title||"");
+  const [weeks,setWeeks]=useState(initial?.weeks||"");
+  const [description,setDescription]=useState(initial?.description||"");
+  const [stepsText,setStepsText]=useState((initial?.steps||[]).join("\n"));
 
-  function handleAdd(){
-    const name=newName.trim();
-    if(!name) return;
-    if(sources.some(s=>s.name.toLowerCase()===name.toLowerCase())){
-      alert("That lead source already exists.");
-      return;
-    }
-    onAdd(name);
-    setNewName("");
-  }
-  function startEdit(s){ setEditingId(s.id); setEditName(s.name); }
-  function saveEdit(s){
-    const name=editName.trim();
-    if(!name) return;
-    onEdit(s.id,name);
-    setEditingId(null);
-  }
-  function handleDelete(s){
-    const count=leadCounts[s.name]||0;
-    const msg=count>0
-      ? `"${s.name}" is used by ${count} lead(s). Delete it anyway? Existing leads will keep the label but it won't be selectable for new ones.`
-      : `Delete lead source "${s.name}"?`;
-    if(window.confirm(msg)) onDelete(s.id);
+  function handleSave(){
+    if(phaseNumber===""){ alert("Please enter a phase number."); return; }
+    if(!title.trim()){ alert("Please enter a phase title."); return; }
+    onSave({
+      product_id:product.id,
+      phase_number:Number(phaseNumber),
+      title:title.trim(),
+      weeks:weeks.trim(),
+      description:description.trim(),
+      steps:stepsText.split("\n").map(s=>s.trim()).filter(Boolean),
+    });
   }
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
-      <div style={{background:"#fff",borderRadius:12,width:520,maxWidth:"92vw",maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 50px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
+    <div style={{padding:"18px 20px",border:"1px solid #e5e7eb",borderRadius:10,marginBottom:16,background:"#fafbfc"}}>
+      <div style={{fontSize:13,fontWeight:700,color:"#111827",marginBottom:14}}>{initial?"Edit Phase":"New Phase"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <div>
+          <label style={labelStyle}>Phase Number {reqMark}</label>
+          <input type="number" style={inputStyle} value={phaseNumber} onChange={e=>setPhaseNumber(e.target.value)} placeholder="e.g. 0"/>
+        </div>
+        <div>
+          <label style={labelStyle}>Weeks</label>
+          <input style={inputStyle} value={weeks} onChange={e=>setWeeks(e.target.value)} placeholder="e.g. 4–6 Weeks"/>
+        </div>
+      </div>
+      <div style={{marginBottom:14}}>
+        <label style={labelStyle}>Title {reqMark}</label>
+        <input style={inputStyle} value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. Phase 0: Kickoff"/>
+      </div>
+      <div style={{marginBottom:14}}>
+        <label style={labelStyle}>Description</label>
+        <input style={inputStyle} value={description} onChange={e=>setDescription(e.target.value)} placeholder="e.g. Start → Proposal → Receipt of PO → Data Audit"/>
+      </div>
+      <div style={{marginBottom:16}}>
+        <label style={labelStyle}>Steps <span style={{color:"#9ca3af",fontWeight:500}}>(one per line)</span></label>
+        <textarea style={{...inputStyle,minHeight:100,resize:"vertical"}} value={stepsText} onChange={e=>setStepsText(e.target.value)} placeholder={"Start\nProposal\nReceipt of PO\nData Audit"}/>
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+        <button onClick={onCancel} style={{padding:"8px 16px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
+        <button onClick={handleSave} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save Phase</button>
+      </div>
+    </div>
+  );
+}
+
+function ProductPhasesModal({product,onClose}){
+  const [phases,setPhases]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showForm,setShowForm]=useState(false);
+  const [editingPhase,setEditingPhase]=useState(null);
+
+  function load(){
+    return marketingApi.getProductPhases(product.id).then(r=>{ setPhases(r.data); setLoading(false); })
+      .catch(err=>{ console.error(err); setLoading(false); });
+  }
+  useEffect(()=>{ load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  function handleAddNew(){ setEditingPhase(null); setShowForm(true); }
+  function handleEdit(p){ setEditingPhase(p); setShowForm(true); }
+  function handleDelete(p){
+    if(!window.confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
+    marketingApi.removeProductPhase(p.id).then(load).catch(err=>alert(err?.response?.data?.error||"Failed to delete phase."));
+  }
+  function handleSave(data){
+    const req=editingPhase?marketingApi.updateProductPhase(editingPhase.id,data):marketingApi.createProductPhase(data);
+    req.then(()=>{ setShowForm(false); setEditingPhase(null); load(); })
+      .catch(err=>alert(err?.response?.data?.error||"Failed to save phase."));
+  }
+
+  // Enter is left to the phase-form panel's own fields; this modal only adds Escape-to-close.
+  useModalHotkeys(onClose,null);
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={onClose}>
+      <div style={{background:"#fff",borderRadius:12,width:640,maxWidth:"94vw",maxHeight:"88vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 50px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",borderBottom:"1px solid #e5e7eb",flexShrink:0}}>
-          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>Lead Source Master</div>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:"#9ca3af",letterSpacing:0.4,textTransform:"uppercase"}}>Implementation Phases</div>
+            <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{product.name}</div>
+          </div>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#6b7280",cursor:"pointer"}}>×</button>
         </div>
 
-        <div style={{padding:"20px 24px",flex:1,overflow:"hidden",display:"flex",flexDirection:"column",minHeight:0}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:8,flexShrink:0}}>ADD NEW LEAD SOURCE</div>
-          <div style={{display:"flex",gap:8,marginBottom:24,flexShrink:0}}>
-            <input
-              style={inputStyle}
-              value={newName}
-              onChange={e=>setNewName(e.target.value)}
-              onKeyDown={e=>{ if(e.key==="Enter") handleAdd(); }}
-              placeholder="e.g. Cold Email"
-            />
-            <button onClick={handleAdd} style={{padding:"9px 20px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>Add</button>
-          </div>
+        <div style={{padding:"20px 24px",flex:1,overflowY:"auto"}}>
+          {!showForm&&(
+            <button onClick={handleAddNew} style={{marginBottom:16,padding:"8px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ Add Phase</button>
+          )}
 
-          <div style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:0.4,marginBottom:10,flexShrink:0}}>SOURCES ({sources.length})</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8,overflowY:"auto",flex:1,paddingRight:4}}>
-            {sources.map(s=>(
-              <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,border:"1px solid #e5e7eb",borderRadius:10,padding:"10px 14px"}}>
-                <div style={{width:32,height:32,borderRadius:8,background:"#eff6ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>🚀</div>
-                {editingId===s.id?(
-                  <input
-                    style={{...inputStyle,flex:1,padding:"6px 10px"}}
-                    value={editName}
-                    autoFocus
-                    onChange={e=>setEditName(e.target.value)}
-                    onKeyDown={e=>{ if(e.key==="Enter") saveEdit(s); }}
-                  />
-                ):(
-                  <div style={{flex:1,fontSize:14,fontWeight:600,color:"#111827"}}>{s.name}</div>
-                )}
-                <div style={{fontSize:12,color:"#9ca3af",whiteSpace:"nowrap"}}>{leadCounts[s.name]||0} leads</div>
-                {editingId===s.id?(
-                  <button onClick={()=>saveEdit(s)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #2563eb",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:12,cursor:"pointer"}}>Save</button>
-                ):(
-                  <button onClick={()=>startEdit(s)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:12,color:"#111827",cursor:"pointer"}}>Edit</button>
-                )}
-                <button onClick={()=>handleDelete(s)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fecaca",background:"#fee2e2",fontWeight:600,fontSize:12,color:"#b91c1c",cursor:"pointer"}}>Delete</button>
-              </div>
-            ))}
-            {sources.length===0&&<div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>No lead sources yet.</div>}
-          </div>
+          {showForm&&(
+            <PhaseFormPanel product={product} initial={editingPhase} onCancel={()=>{setShowForm(false);setEditingPhase(null);}} onSave={handleSave}/>
+          )}
+
+          {loading?(
+            <div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>Loading…</div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {phases.map(p=>(
+                <div key={p.id} style={{border:"1px solid #e5e7eb",borderRadius:10,padding:"12px 16px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <div style={{width:26,height:26,borderRadius:"50%",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{p.phase_number}</div>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#111827"}}>{p.title} {p.weeks&&<span style={{fontWeight:500,color:"#9ca3af",fontSize:11}}>· {p.weeks}</span>}</div>
+                        {p.description&&<div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{p.description}</div>}
+                        <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>{(p.steps||[]).length} step{(p.steps||[]).length===1?"":"s"}</div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexShrink:0}}>
+                      <button onClick={()=>handleEdit(p)} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:11,color:"#111827",cursor:"pointer"}}>Edit</button>
+                      <button onClick={()=>handleDelete(p)} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #fecaca",background:"#fee2e2",fontWeight:600,fontSize:11,color:"#b91c1c",cursor:"pointer"}}>Delete</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {phases.length===0&&<div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>No phases yet for this product.</div>}
+            </div>
+          )}
         </div>
 
         <div style={{display:"flex",justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb",flexShrink:0}}>
@@ -774,19 +770,19 @@ function ProductTagPicker({selected,onAdd,onRemove,productOptions}){
         ))}
       </div>
       <select style={inputStyle} value="" onChange={e=>{ if(e.target.value) onAdd(e.target.value); }}>
-        <option value="">+ Add product...</option>
+        <option value="" disabled hidden>--Select product--</option>
         {available.map(o=><option key={o} value={o}>{o}</option>)}
       </select>
     </div>
   );
 }
 
-function DemoModal({onClose,onSave,nextDemoNumber,initial,productOptions,ownerOptions,customerOptions}){
+function DemoModal({onClose,onSave,nextDemoNumber,initial,productOptions,ownerOptions,customerOptions,demoTypeOptions,onOpenDemoTypeMaster}){
   const [demoNo]=useState(initial?.demoNo||nextDemoNumber);
   const [customer,setCustomer]=useState(initial?.customer||"");
   const [products,setProducts]=useState(initial?.product?initial.product.split(" + "):[]);
   const [demoDate,setDemoDate]=useState(initial?.demoDate||todayISO());
-  const [type,setType]=useState(initial?.type||DEMO_TYPES[0]);
+  const [type,setType]=useState(initial?.type||demoTypeOptions[0]||"");
   const [contactPerson,setContactPerson]=useState(initial?.contactPerson||"");
   const [conductedBy,setConductedBy]=useState(initial?.conductedBy||ownerOptions[0]);
   const [status,setStatus]=useState(initial?.status||"Requested");
@@ -813,6 +809,8 @@ function DemoModal({onClose,onSave,nextDemoNumber,initial,productOptions,ownerOp
       activities:initial?.activities||[],
     });
   }
+
+  useModalHotkeys(onClose,handleSave);
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
@@ -844,9 +842,12 @@ function DemoModal({onClose,onSave,nextDemoNumber,initial,productOptions,ownerOp
             </div>
             <div>
               <label style={labelStyle}>Type of Demonstration {reqMark}</label>
-              <select style={inputStyle} value={type} onChange={e=>setType(e.target.value)}>
-                {DEMO_TYPES.map(o=><option key={o} value={o}>{o}</option>)}
-              </select>
+              <div style={{display:"flex",gap:8}}>
+                <select style={inputStyle} value={type} onChange={e=>setType(e.target.value)}>
+                  {demoTypeOptions.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+                <button type="button" onClick={onOpenDemoTypeMaster} title="Manage demonstration types" style={{flexShrink:0,padding:"0 12px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",color:"#374151",fontWeight:600,fontSize:13,cursor:"pointer"}}>+</button>
+              </div>
             </div>
             <div>
               <label style={labelStyle}>Demo Contact Person <span style={{color:"#9ca3af",fontWeight:500}}>(at customer)</span></label>
@@ -889,15 +890,17 @@ function DemoModal({onClose,onSave,nextDemoNumber,initial,productOptions,ownerOp
 }
 
 /* ---------------- Order Modal ---------------- */
-function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,ownerOptions,customerOptions}){
+function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,ownerOptions,customerOptions,mandatory}){
   const [orderNo]=useState(initial?.orderNo||nextOrderNumber);
   const [customer,setCustomer]=useState(initial?.customer||"");
   const [product,setProduct]=useState(initial?.product||productOptions[0]||"");
   const [date,setDate]=useState(initial?.date||todayISO());
-  const [value,setValue]=useState(initial?String(initial.value).replace(/[₹,]/g,""):"");
-  const [paid,setPaid]=useState(initial?String(initial.paid).replace(/[₹,]/g,""):"0");
+  const [value,setValue]=useState(initial?.value!=null?String(initial.value).replace(/[₹,]/g,""):"");
+  const [paid,setPaid]=useState(initial?.paid!=null?String(initial.paid).replace(/[₹,]/g,""):"0");
   const [poNo,setPoNo]=useState(initial?.poNo||"");
-  const [poUploaded,setPoUploaded]=useState(initial?.poUploaded||false);
+  const [poDocumentUrl,setPoDocumentUrl]=useState(initial?.poDocumentUrl||"");
+  const [poDocumentName,setPoDocumentName]=useState(initial?.poDocumentName||"");
+  const [uploadingPo,setUploadingPo]=useState(false);
   const [orderStatus,setOrderStatus]=useState(initial?.orderStatus||"Draft");
   const [paymentStatus,setPaymentStatus]=useState(initial?.paymentStatus||"Pending");
   const [assignedTo,setAssignedTo]=useState(initial?.assignedTo||ownerOptions[0]);
@@ -918,17 +921,35 @@ function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,owner
       orderNo,customer:customer.trim(),product,date,
       value:formatRupee(v),paid:formatRupee(p),outstanding:formatRupee(outstanding),
       status:outstanding<=0?"Paid":p>0?"Partial":"Pending",
-      poNo:poNo.trim()||null,poUploaded,orderStatus,paymentStatus,assignedTo,
+      poNo:poNo.trim()||null,poDocumentUrl:poDocumentUrl||null,poDocumentName:poDocumentName||null,orderStatus,paymentStatus,assignedTo,
     });
   }
+  async function handlePoFile(e){
+    const file=e.target.files?.[0];
+    if(!file) return;
+    setUploadingPo(true);
+    try{
+      const res=await uploadFile(file);
+      setPoDocumentUrl(res.data.url);
+      setPoDocumentName(file.name);
+    }catch{ alert("Upload failed — max 10 MB, and only jpg/png/gif/webp/pdf/doc/docx/xls/xlsx/txt/zip files are allowed."); }
+    finally{ setUploadingPo(false); e.target.value=""; }
+  }
+
+  useModalHotkeys(onClose,handleSave,{disableEscape:mandatory});
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={mandatory?undefined:onClose}>
       <div style={{background:"#fff",borderRadius:12,width:700,maxWidth:"94vw",maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 50px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",borderBottom:"1px solid #e5e7eb",flexShrink:0}}>
-          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{initial?"Edit Order":"New Order"}</div>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#6b7280",cursor:"pointer"}}>×</button>
+          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{initial?.orderNo?"Edit Order":"New Order"}</div>
+          {!mandatory&&<button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#6b7280",cursor:"pointer"}}>×</button>}
         </div>
+        {mandatory&&(
+          <div style={{background:"#eff6ff",borderBottom:"1px solid #bfdbfe",padding:"8px 24px",fontSize:12,fontWeight:600,color:"#1d4ed8"}}>
+            This demo was converted to an order — complete and save the details below to create it.
+          </div>
+        )}
 
         <div style={{padding:"6px 24px",textAlign:"right",fontSize:12,color:"#6b7280",flexShrink:0}}>{reqMark} = Required</div>
 
@@ -954,11 +975,11 @@ function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,owner
             </div>
             <div>
               <label style={labelStyle}>Order Value (₹) {reqMark}</label>
-              <input type="number" style={inputStyle} value={value} onChange={e=>setValue(e.target.value)} placeholder="e.g. 180000"/>
+              <input type="text" inputMode="numeric" style={inputStyle} value={value===""?"":Number(value).toLocaleString("en-IN")} onChange={e=>setValue(e.target.value.replace(/[^0-9]/g,""))} placeholder="e.g. 1,80,000"/>
             </div>
             <div>
               <label style={labelStyle}>Amount Paid (₹)</label>
-              <input type="number" style={inputStyle} value={paid} onChange={e=>setPaid(e.target.value)} placeholder="0"/>
+              <input type="text" inputMode="numeric" style={inputStyle} value={paid===""?"":Number(paid).toLocaleString("en-IN")} onChange={e=>setPaid(e.target.value.replace(/[^0-9]/g,""))} placeholder="0"/>
             </div>
             <div>
               <label style={labelStyle}>Assigned To</label>
@@ -974,10 +995,18 @@ function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,owner
               <label style={labelStyle}>PO Number</label>
               <input style={inputStyle} value={poNo} onChange={e=>setPoNo(e.target.value)} placeholder="e.g. PO-2026-012"/>
             </div>
-            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#111827",cursor:"pointer",paddingBottom:9}}>
-              <input type="checkbox" checked={poUploaded} onChange={e=>setPoUploaded(e.target.checked)}/>
-              PO document uploaded
-            </label>
+            <div style={{paddingBottom:2}}>
+              <label style={labelStyle}>PO Document</label>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,border:"1px dashed #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:uploadingPo?"wait":"pointer"}}>
+                  📎 {uploadingPo?"Uploading…":poDocumentUrl?"Replace":"Upload"}
+                  <input type="file" style={{display:"none"}} disabled={uploadingPo} onChange={handlePoFile}/>
+                </label>
+                {poDocumentUrl&&(
+                  <a href={fileUrl(poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {poDocumentName||"View file"}</a>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={sectionHeaderStyle}>Status</div>
@@ -1003,8 +1032,8 @@ function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,owner
         </div>
 
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb",flexShrink:0}}>
-          <button onClick={onClose} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
-          <button onClick={handleSave} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#4f46e5",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
+          {!mandatory&&<button onClick={onClose} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>}
+          <button onClick={handleSave} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
         </div>
       </div>
     </div>
@@ -1030,6 +1059,8 @@ function AddFollowUpModal({demo,onClose,onSave,ownerOptions}){
     });
   }
 
+  useModalHotkeys(onClose,handleSave);
+
   const activities=demo.activities||[];
 
   return(
@@ -1042,10 +1073,10 @@ function AddFollowUpModal({demo,onClose,onSave,ownerOptions}){
 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 24px",borderBottom:"1px solid #e5e7eb",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:34,height:34,borderRadius:"50%",background:"#4f46e5",color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{demo.customer[0]}</div>
+            <div style={{width:34,height:34,borderRadius:"50%",background:"#2563eb",color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{demo.customer[0]}</div>
             <div>
               <div style={{fontSize:14,fontWeight:700,color:"#111827"}}>{demo.customer}</div>
-              <div style={{fontSize:12,color:"#4f46e5",fontWeight:600}}>Demo: {demo.demoDate} · {demo.type}</div>
+              <div style={{fontSize:12,color:"#2563eb",fontWeight:600}}>Demo: {demo.demoDate} · {demo.type}</div>
             </div>
           </div>
           <StatusPill label={demo.status}/>
@@ -1057,12 +1088,12 @@ function AddFollowUpModal({demo,onClose,onSave,ownerOptions}){
             {activities.map((a,ai)=>{
               const o=OUTCOME_STYLES[a.outcome]||{dot:"#9ca3af",icon:""};
               return(
-                <div key={ai} style={{display:"flex",gap:8,marginBottom:14}}>
+                <div key={ai} style={{display:"flex",gap:8,paddingBottom:14,marginBottom:14,borderBottom:ai<activities.length-1?"1px solid #f0f2f5":"none"}}>
                   <div style={{width:8,height:8,borderRadius:"50%",background:o.dot,marginTop:5,flexShrink:0}}/>
                   <div style={{fontSize:12}}>
                     <div style={{fontWeight:700,color:o.color||"#374151"}}>{o.icon} {a.outcome}</div>
-                    <div style={{color:"#9ca3af",marginTop:1}}>{a.date}</div>
-                    {a.next&&<div style={{color:"#2563eb",fontWeight:600,marginTop:3,display:"flex",alignItems:"center",gap:3}}>📅 {a.next}</div>}
+                    <div style={{color:"#9ca3af",marginTop:1}}>Logged {a.date}</div>
+                    {a.next&&<div style={{color:"#2563eb",fontWeight:600,marginTop:3,display:"flex",alignItems:"center",gap:3}}>📅 Next follow-up: {a.next}</div>}
                     <div style={{color:"#374151",marginTop:4}}>{a.note}</div>
                     <div style={{color:"#9ca3af",marginTop:3}}>— {a.by}</div>
                   </div>
@@ -1114,7 +1145,7 @@ function AddFollowUpModal({demo,onClose,onSave,ownerOptions}){
 
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb",flexShrink:0}}>
           <button onClick={onClose} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
-          <button onClick={handleSave} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#4f46e5",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save Follow-up</button>
+          <button onClick={handleSave} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save Follow-up</button>
         </div>
       </div>
     </div>
@@ -1128,9 +1159,15 @@ function ActivityCell({demo,onTrack}){
     <div>
       {hasActivity?(
         <>
-          <div style={{fontSize:12,color:"#2563eb",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>📅 {demo.nextFollowUp||demo.activities[demo.activities.length-1].date}</div>
-          <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{demo.activities.length} activities</div>
-          <button onClick={()=>onTrack(demo)} style={{marginTop:4,padding:"3px 10px",borderRadius:6,border:"1px solid #c7d2fe",background:"#eef2ff",color:"#4f46e5",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Follow-up</button>
+          <div onClick={()=>onTrack(demo)} title="View follow-up history" style={{cursor:"pointer"}}>
+            {demo.nextFollowUp?(
+              <div style={{fontSize:12,color:"#2563eb",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>📅 Next: {demo.nextFollowUp}</div>
+            ):(
+              <div style={{fontSize:12,color:"#6b7280",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>🕓 Last: {demo.activities[demo.activities.length-1].date}</div>
+            )}
+            <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{demo.activities.length} {demo.activities.length===1?"activity":"activities"}</div>
+          </div>
+          <button onClick={()=>onTrack(demo)} style={{marginTop:4,padding:"3px 10px",borderRadius:6,border:"1px solid #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Follow-up</button>
         </>
       ):(
         <>
@@ -1207,18 +1244,13 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
           <div style={{fontSize:12,color:"#6b7280",fontWeight:600}}>Demos</div>
           <div style={{fontSize:18,fontWeight:800,color:"#111827"}}>{statusFilter}</div>
         </div>
-        <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#4f46e5",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ New Demo</button>
+        <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ New Demo</button>
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {subTabs.map(t=>{
-          const active=statusFilter===t;
-          return(
-            <button key={t} onClick={()=>pickTab(t)} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+(active?"#4f46e5":"#d1d5db"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#374151",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-              {t} ({counts[t]})
-            </button>
-          );
-        })}
+        <select value={statusFilter} onChange={e=>pickTab(e.target.value)} style={{...inputStyle,width:220}}>
+          {subTabs.map(t=><option key={t} value={t}>{t} ({counts[t]})</option>)}
+        </select>
         <div style={{marginLeft:"auto",position:"relative",width:220}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:14}}>🔍</span>
           <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Search demos..." style={{...inputStyle,paddingLeft:34}}/>
@@ -1233,7 +1265,7 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
             <thead>
               <tr>
                 {cols.map(c=>(
-                  <th key={c.key} style={{...thStyle,cursor:"pointer",color:sortKey===c.key?"#4f46e5":"#6b7280"}} onClick={()=>toggleSort(c.key)}>
+                  <th key={c.key} style={{...thStyle,cursor:"pointer"}} onClick={()=>toggleSort(c.key)}>
                     {c.header} {sortKey===c.key?(sortDir==="asc"?"↑":"↓"):"⇅"}
                   </th>
                 ))}
@@ -1245,7 +1277,7 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
               {pageRows.map((d,i)=>(
                 <Fragment key={d.demoNo+"-frag"}>
                   <tr key={d.demoNo} style={expanded===d.demoNo?{background:"#eff6ff"}:undefined}>
-                    <td style={{...tdStyle,color:"#2563eb",fontWeight:700,whiteSpace:"nowrap"}}>
+                    <td style={{...tdStyle,color:"#111827",fontWeight:700,whiteSpace:"nowrap"}}>
                       <div>{(page-1)*pageSize+i+1}</div>
                       <div style={{display:"flex",alignItems:"center",gap:4}}>
                         {d.demoNo}
@@ -1256,7 +1288,7 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
                       <div style={{fontWeight:600,color:"#111827"}}>{d.customer}</div>
                       <div style={{fontSize:11,color:"#9ca3af"}}>{d.contactPerson}</div>
                     </td>
-                    <td style={tdStyle}><ProductPill label={d.product}/></td>
+                    <td style={tdStyle}>{d.product}</td>
                     <td style={{...tdStyle,color:"#6b7280",whiteSpace:"nowrap"}}>{d.demoDate}</td>
                     <td style={tdStyle}><span style={{padding:"3px 9px",borderRadius:6,fontSize:11,fontWeight:600,background:"#f3f4f6",color:"#374151"}}>{d.type}</span></td>
                     <td style={tdStyle}>{d.conductedBy}</td>
@@ -1281,8 +1313,8 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
                               <span style={{fontSize:13,color:"#6b7280"}}>{d.customer}</span>
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:14}}>
-                              <span style={{fontSize:12,color:"#6b7280",fontWeight:600}}>{(d.activities||[]).length} activities</span>
-                              <button onClick={()=>onTrack?onTrack(d):null} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#4f46e5",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Add Follow-up</button>
+                              <span style={{fontSize:12,color:"#6b7280",fontWeight:600}}>{(d.activities||[]).length} {(d.activities||[]).length===1?"activity":"activities"}</span>
+                              <button onClick={()=>onTrack?onTrack(d):null} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Add Follow-up</button>
                             </div>
                           </div>
 
@@ -1332,7 +1364,7 @@ function DemosTab({demos,onAddNew,onEdit,onDelete,onTrack}){
           <div style={{display:"flex",gap:6,alignItems:"center"}}>
             <button onClick={()=>setPage(1)} disabled={page===1} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",cursor:page===1?"default":"pointer",opacity:page===1?0.5:1}}>«</button>
             <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",cursor:page===1?"default":"pointer",opacity:page===1?0.5:1}}>‹ Prev</button>
-            <span style={{padding:"5px 10px",borderRadius:6,background:"#4f46e5",color:"#fff",fontWeight:700}}>{page}</span>
+            <span style={{padding:"5px 10px",borderRadius:6,background:"#2563eb",color:"#fff",fontWeight:700}}>{page}</span>
             <span>of {totalPages}</span>
             <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",cursor:page===totalPages?"default":"pointer",opacity:page===totalPages?0.5:1}}>Next ›</button>
             <button onClick={()=>setPage(totalPages)} disabled={page===totalPages} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",cursor:page===totalPages?"default":"pointer",opacity:page===totalPages?0.5:1}}>»</button>
@@ -1448,22 +1480,15 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:13,fontWeight:700,color:"#059669",background:"#ecfdf5",padding:"7px 14px",borderRadius:20}}>₹{Math.round(totalValue/1000)}K total</span>
-          <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#4f46e5",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ New Order</button>
+          <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ New Order</button>
         </div>
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-        {subTabs.map(t=>{
-          const active=statusFilter===t;
-          return(
-            <button key={t} onClick={()=>setStatusFilter(t)} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+(active?"#4f46e5":"#d1d5db"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#374151",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-              {t} ({counts[t]})
-            </button>
-          );
-        })}
-        <button onClick={()=>setStatusFilter("PaymentPending")} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+(statusFilter==="PaymentPending"?"#dc2626":"#fecaca"),background:statusFilter==="PaymentPending"?"#dc2626":"#fff",color:statusFilter==="PaymentPending"?"#fff":"#dc2626",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-          💳 Payment Pending ({paymentPending.length})
-        </button>
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{...inputStyle,width:220}}>
+          {subTabs.map(t=><option key={t} value={t}>{t} ({counts[t]})</option>)}
+          <option value="PaymentPending">💳 Payment Pending ({paymentPending.length})</option>
+        </select>
         <div style={{marginLeft:"auto",position:"relative",width:220}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:14}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search orders..." style={{...inputStyle,paddingLeft:34}}/>
@@ -1479,7 +1504,7 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
               <tr>
                 <th style={thStyle}>#</th>
                 {cols.map(c=>(
-                  <th key={c.key} style={{...thStyle,cursor:"pointer",color:sortKey===c.key?"#4f46e5":"#6b7280"}} onClick={()=>toggleSort(c.key)}>
+                  <th key={c.key} style={{...thStyle,cursor:"pointer"}} onClick={()=>toggleSort(c.key)}>
                     {c.header} {sortKey===c.key?(sortDir==="asc"?"↑":"↓"):"⇅"}
                   </th>
                 ))}
@@ -1491,21 +1516,25 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
               {filtered.map((o,i)=>(
                 <tr key={o.orderNo}>
                   <td style={{...tdStyle,color:"#9ca3af"}}>{i+1}</td>
-                  <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>{o.orderNo}</td>
+                  <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{o.orderNo}</td>
                   <td style={{...tdStyle,fontWeight:600}}>{o.customer}</td>
-                  <td style={tdStyle}><ProductPill label={o.product}/></td>
+                  <td style={tdStyle}>{o.product}</td>
                   <td style={{...tdStyle,color:"#6b7280",whiteSpace:"nowrap"}}>{o.date}</td>
                   <td style={tdStyle}>
-                    <div style={{fontWeight:700}}>{o.value}</div>
-                    {parseRupee(o.paid)>0&&<div style={{fontSize:11,color:"#059669"}}>✓ {o.paid}</div>}
-                    {parseRupee(o.outstanding)>0&&<div style={{fontSize:11,color:"#dc2626"}}>⚠ {o.outstanding} due</div>}
+                    <div style={{fontWeight:700,color:"#111827"}}>{o.value}</div>
+                    {parseRupee(o.paid)>0&&<div style={{fontSize:11,color:"#6b7280"}}>✓ {o.paid}</div>}
+                    {parseRupee(o.outstanding)>0&&<div style={{fontSize:11,color:"#6b7280"}}>⚠ {o.outstanding} due</div>}
                   </td>
                   <td style={tdStyle}>
-                    <div>{o.poNo||"—"}</div>
-                    <div style={{fontSize:11,color:o.poUploaded?"#059669":"#d97706"}}>{o.poUploaded?"✓ Uploaded":"⚠ Not uploaded"}</div>
+                    <div style={{color:"#111827"}}>{o.poNo||"—"}</div>
+                    {o.poDocumentUrl?(
+                      <a href={fileUrl(o.poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{fontSize:11,color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {o.poDocumentName||"View file"}</a>
+                    ):(
+                      <div style={{fontSize:11,color:"#6b7280"}}>⚠ Not uploaded</div>
+                    )}
                   </td>
                   <td style={tdStyle}><StatusPill label={o.orderStatus}/></td>
-                  <td style={tdStyle}><StatusPill label={o.paymentStatus}/></td>
+                  <td style={tdStyle}>{o.paymentStatus}</td>
                   <td style={tdStyle}>{o.assignedTo}</td>
                   <td style={tdStyle}><ProgressDots status={o.orderStatus} onSelect={onSetStatus?stage=>onSetStatus(o,stage):undefined}/></td>
                   <td style={tdStyle}>
@@ -1531,25 +1560,31 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
 /* ---------------- Implementation Tab ---------------- */
 function PhaseCard({p,onUpdate}){
   const [open,setOpen]=useState(false);
-  const badgeColor=p.status==="Completed"?"#059669":p.status==="In Progress"?"#2563eb":p.status==="On Hold"?"#d97706":"#9ca3af";
+  const displayStatus=phaseDisplayStatus(p);
+  const badgeColor=displayStatus==="Completed"?"#059669":displayStatus==="In Progress"?"#2563eb":displayStatus==="On Hold"?"#d97706":"#9ca3af";
   const completed=p.steps.filter(s=>s.done).length;
   const total=p.steps.length;
   const pct=total===0?0:Math.round((completed/total)*100);
 
+  // Steps must be completed in order, and once checked they're locked — no unchecking.
+  const nextIndex=p.steps.findIndex(s=>!s.done);
   function toggleStep(i){
-    onUpdate({steps:p.steps.map((s,idx)=>idx===i?{...s,done:!s.done}:s)});
+    if(i!==nextIndex) return;
+    const steps=p.steps.map((s,idx)=>idx===i?{...s,done:true}:s);
+    const status=steps.every(s=>s.done)?"Completed":"In Progress";
+    onUpdate({steps,status});
   }
   function setField(field,value){ onUpdate({[field]:value}); }
 
   return(
     <div style={{...cardStyle,padding:0,overflow:"hidden",marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px"}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px",cursor:"pointer"}}>
         <div style={{width:36,height:36,borderRadius:"50%",background:badgeColor,color:"#fff",fontSize:15,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{p.phase}</div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
             <span style={{fontSize:15,fontWeight:700,color:"#111827"}}>{p.title}</span>
             {p.weeks&&<span style={{fontSize:12,color:"#9ca3af"}}>{p.weeks}</span>}
-            <StatusPill label={p.status}/>
+            <StatusPill label={displayStatus}/>
           </div>
           <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{p.desc}</div>
         </div>
@@ -1558,7 +1593,7 @@ function PhaseCard({p,onUpdate}){
             <div style={{height:"100%",width:pct+"%",background:badgeColor,borderRadius:4}}/>
           </div>
           <span style={{fontSize:13,fontWeight:700,color:"#111827",whiteSpace:"nowrap"}}>{completed}/{total}</span>
-          <button onClick={()=>setOpen(o=>!o)} style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:13}}>{open?"▲":"▼"}</button>
+          <span style={{color:"#9ca3af",fontSize:13}}>{open?"▲":"▼"}</span>
         </div>
       </div>
       {open&&(
@@ -1566,12 +1601,15 @@ function PhaseCard({p,onUpdate}){
           <div>
             <label style={labelStyle}>CHECKLIST</label>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {p.steps.map((s,i)=>(
-                <label key={i} style={{display:"flex",alignItems:"center",gap:9,fontSize:13,cursor:"pointer",color:s.done?"#9ca3af":"#111827",textDecoration:s.done?"line-through":"none"}}>
-                  <input type="checkbox" checked={s.done} onChange={()=>toggleStep(i)}/>
-                  {s.text}
-                </label>
-              ))}
+              {p.steps.map((s,i)=>{
+                const isNext=i===nextIndex;
+                return(
+                  <label key={i} style={{display:"flex",alignItems:"center",gap:9,fontSize:13,cursor:s.done?"default":isNext?"pointer":"not-allowed",color:s.done?"#9ca3af":isNext?"#111827":"#c4c9d1",textDecoration:s.done?"line-through":"none"}}>
+                    <input type="checkbox" checked={s.done} disabled={!isNext} onChange={()=>toggleStep(i)}/>
+                    {s.text}
+                  </label>
+                );
+              })}
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1601,7 +1639,7 @@ function PhaseCard({p,onUpdate}){
             </div>
             <div>
               <label style={labelStyle}>DOCUMENTS</label>
-              <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,border:"1px dashed #c7d2fe",background:"#eef2ff",color:"#4f46e5",fontSize:12,fontWeight:600,cursor:"pointer"}}>
+              <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,border:"1px dashed #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer"}}>
                 📎 Upload
                 <input type="file" style={{display:"none"}} onChange={e=>{ if(e.target.files[0]) setField("documents",[...(p.documents||[]),e.target.files[0].name]); }}/>
               </label>
@@ -1618,35 +1656,48 @@ function PhaseCard({p,onUpdate}){
   );
 }
 
-function ImplementationTab({records,onUpdatePhase}){
+function ImplementationTab({records,onUpdatePhase,onAddPhases,productOptions}){
   const [filter,setFilter]=useState("Active");
+  const [activeTab,setActiveTab]=useState("Active");
   const [search,setSearch]=useState("");
-  const [selectedCustomer,setSelectedCustomer]=useState(records[0]?.customer||null);
+  const [productFilter,setProductFilter]=useState("All Products");
+  const [selectedOrderNo,setSelectedOrderNo]=useState(records[0]?.orderNo||null);
 
   const visible=useMemo(()=>{
     let rows=records;
     if(filter==="Active") rows=rows.filter(r=>implOverallPct(r)<100);
+    if(productFilter!=="All Products") rows=rows.filter(r=>r.product===productFilter);
     const term=search.trim().toLowerCase();
     if(term) rows=rows.filter(r=>r.customer.toLowerCase().includes(term));
     return rows;
-  },[records,filter,search]);
+  },[records,filter,productFilter,search]);
 
-  const selected=visible.find(r=>r.customer===selectedCustomer)||visible[0]||null;
+  const selected=visible.find(r=>r.orderNo===selectedOrderNo)||visible[0]||null;
   const overallPct=selected?implOverallPct(selected):0;
 
   return(
     <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18,alignItems:"start"}}>
       <div>
-        <div style={{display:"flex",gap:0,marginBottom:12,background:"#fff",border:"1px solid #e4e7ec",borderRadius:8,padding:3}}>
-          {["Active","All"].map(f=>{
-            const count=f==="All"?records.length:records.filter(r=>implOverallPct(r)<100).length;
-            return(
-              <button key={f} onClick={()=>setFilter(f)} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:filter===f?"#4f46e5":"transparent",color:filter===f?"#fff":"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                {f} ({count})
-              </button>
-            );
-          })}
+        <div style={{display:"flex",gap:0,marginBottom:10,background:"#fff",border:"1px solid #e4e7ec",borderRadius:8,padding:3,alignItems:"stretch"}}>
+          <button onClick={()=>{setActiveTab("Active");setFilter("Active");setProductFilter("All Products");}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:activeTab==="Active"?"#2563eb":"transparent",color:activeTab==="Active"?"#fff":"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            Active ({records.filter(r=>implOverallPct(r)<100).length})
+          </button>
+          <button onClick={()=>setActiveTab("Product")} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:activeTab==="Product"?"#2563eb":"transparent",color:activeTab==="Product"?"#fff":"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            Product
+          </button>
+          <button onClick={()=>{setActiveTab("All");setFilter("All");setProductFilter("All Products");}} style={{flex:1,padding:"8px 0",borderRadius:6,border:"none",background:activeTab==="All"?"#2563eb":"transparent",color:activeTab==="All"?"#fff":"#6b7280",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            All ({records.length})
+          </button>
         </div>
+        {activeTab==="Product"&&(
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+            <label style={{fontSize:12,fontWeight:700,color:"#6b7280",whiteSpace:"nowrap"}}>Product:</label>
+            <select value={productFilter} onChange={e=>setProductFilter(e.target.value)} style={{...inputStyle,flex:1,padding:"7px 10px",fontSize:12}}>
+              <option value="All Products">All Products</option>
+              {productOptions.map(p=><option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        )}
         <div style={{position:"relative",marginBottom:12}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:14}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search customer..." style={{...inputStyle,paddingLeft:34}}/>
@@ -1654,11 +1705,11 @@ function ImplementationTab({records,onUpdatePhase}){
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {visible.map(r=>{
             const pct=implOverallPct(r);
-            const active=selected&&r.customer===selected.customer;
+            const active=selected&&r.orderNo===selected.orderNo;
             return(
-              <div key={r.customer} onClick={()=>setSelectedCustomer(r.customer)} style={{
-                cursor:"pointer",border:"1px solid "+(active?"#4f46e5":"#e5e7eb"),
-                background:active?"#eef2ff":"#fff",borderRadius:10,padding:"12px 14px",
+              <div key={r.orderNo} onClick={()=>setSelectedOrderNo(r.orderNo)} style={{
+                cursor:"pointer",border:"1px solid "+(active?"#2563eb":"#e5e7eb"),
+                background:active?"#eff6ff":"#fff",borderRadius:10,padding:"12px 14px",
               }}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{fontSize:14,fontWeight:700,color:"#111827"}}>{r.customer}</span>
@@ -1667,9 +1718,9 @@ function ImplementationTab({records,onUpdatePhase}){
                 <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{r.orderNo} · {r.product}</div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
                   <div style={{flex:1,height:6,borderRadius:4,background:"#f3f4f6",overflow:"hidden"}}>
-                    <div style={{height:"100%",width:pct+"%",background:pct===100?"#059669":"#4f46e5",borderRadius:4}}/>
+                    <div style={{height:"100%",width:pct+"%",background:pct===100?"#059669":"#2563eb",borderRadius:4}}/>
                   </div>
-                  <span style={{fontSize:11,fontWeight:700,color:"#6b7280"}}>{r.phases.filter(p=>p.status==="Completed").length}/{r.phases.length}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:"#6b7280"}}>{r.phases.filter(p=>phaseDisplayStatus(p)==="Completed").length}/{r.phases.length}</span>
                 </div>
               </div>
             );
@@ -1684,10 +1735,10 @@ function ImplementationTab({records,onUpdatePhase}){
             <div style={{...cardStyle,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:"#111827"}}>{selected.customer}</div>
-                <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{selected.orderNo} · {selected.product} · {selected.billingType} · {selected.users} users</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{selected.orderNo} · {selected.product}</div>
               </div>
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:26,fontWeight:800,color:overallPct===100?"#059669":"#4f46e5"}}>{overallPct}%</div>
+                <div style={{fontSize:26,fontWeight:800,color:overallPct===100?"#059669":"#2563eb"}}>{overallPct}%</div>
                 <div style={{display:"flex",gap:4,justifyContent:"flex-end",marginTop:2}}>
                   {selected.phases.map(p=>(
                     <span key={p.phase} style={{width:8,height:8,borderRadius:"50%",background:p.status==="Completed"?"#059669":p.status==="In Progress"?"#2563eb":"#e5e7eb"}}/>
@@ -1696,7 +1747,15 @@ function ImplementationTab({records,onUpdatePhase}){
                 <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>Overall</div>
               </div>
             </div>
-            {selected.phases.map(p=><PhaseCard key={p.phase} p={p} onUpdate={patch=>onUpdatePhase(selected.customer,p.phase,patch)}/>)}
+            {selected.phases.length===0?(
+              <div style={{...cardStyle,padding:40,textAlign:"center"}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#111827",marginBottom:6}}>No phases configured for {selected.product}</div>
+                <div style={{fontSize:13,color:"#6b7280",marginBottom:16}}>Add an implementation phase template for this product to start tracking progress.</div>
+                <button onClick={()=>onAddPhases(selected.product)} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:600,fontSize:13,cursor:"pointer"}}>+ Add Phases for {selected.product}</button>
+              </div>
+            ):(
+              selected.phases.map(p=><PhaseCard key={p.phase} p={p} onUpdate={patch=>onUpdatePhase(selected,p.phase,patch)}/>)
+            )}
           </>
         ):(
           <div style={{...cardStyle,padding:60,textAlign:"center",color:"#9ca3af"}}>Select a customer to view implementation progress.</div>
@@ -1708,6 +1767,86 @@ function ImplementationTab({records,onUpdatePhase}){
 
 /* ---------------- Renewals Tab ---------------- */
 const RENEWAL_STATUS_OPTIONS=["Active","Due Soon","Overdue","Renewed","Churned"];
+
+function EditRenewalModal({renewal,onClose,onSave}){
+  const [license,setLicense]=useState(renewal.license||"");
+  const [users,setUsers]=useState(renewal.users||"");
+  const [contractStart,setContractStart]=useState(renewal.contractStart||"");
+  const [contractEnd,setContractEnd]=useState(renewal.contractEnd||"");
+  const [value,setValue]=useState(String(renewal.value||"").replace(/[₹,]/g,""));
+  const [assignedTo,setAssignedTo]=useState(renewal.assignedTo||"");
+  const [notes,setNotes]=useState(renewal.notes||"");
+
+  function handleSave(){
+    onSave({
+      ...renewal,
+      license:license.trim(),
+      users:users?Number(users):"",
+      contractStart,contractEnd,
+      value:formatRupee(Number(value)||0),
+      assignedTo:assignedTo.trim(),
+      notes:notes.trim(),
+    });
+  }
+
+  useModalHotkeys(onClose,handleSave);
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
+      <div style={{background:"#fff",borderRadius:12,width:520,maxWidth:"92vw",boxShadow:"0 20px 50px rgba(0,0,0,0.25)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",borderBottom:"1px solid #e5e7eb"}}>
+          <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{renewal.id?"Edit Contract":"Complete Renewal"} — {renewal.customer}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:"#6b7280",cursor:"pointer"}}>×</button>
+        </div>
+        {!renewal.id&&(
+          <div style={{background:"#eff6ff",borderBottom:"1px solid #bfdbfe",padding:"8px 24px",fontSize:12,fontWeight:600,color:"#1d4ed8"}}>
+            This customer's implementation is complete — fill in the contract details below to create the renewal.
+          </div>
+        )}
+        <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <div>
+              <label style={labelStyle}>License</label>
+              <input style={inputStyle} value={license} onChange={e=>setLicense(e.target.value)} placeholder="e.g. Annual"/>
+            </div>
+            <div>
+              <label style={labelStyle}>Users</label>
+              <input type="number" style={inputStyle} value={users} onChange={e=>setUsers(e.target.value)}/>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <div>
+              <label style={labelStyle}>Contract Start</label>
+              <input type="date" style={inputStyle} value={contractStart} onChange={e=>setContractStart(e.target.value)}/>
+            </div>
+            <div>
+              <label style={labelStyle}>Contract End</label>
+              <input type="date" style={inputStyle} value={contractEnd} onChange={e=>setContractEnd(e.target.value)}/>
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <div>
+              <label style={labelStyle}>Order Value (₹)</label>
+              <input type="number" style={inputStyle} value={value} onChange={e=>setValue(e.target.value)}/>
+            </div>
+            <div>
+              <label style={labelStyle}>Assigned To</label>
+              <input style={inputStyle} value={assignedTo} onChange={e=>setAssignedTo(e.target.value)}/>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Notes</label>
+            <textarea style={{...inputStyle,minHeight:70,resize:"vertical"}} value={notes} onChange={e=>setNotes(e.target.value)}/>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"16px 24px",borderTop:"1px solid #e5e7eb"}}>
+          <button onClick={onClose} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
+          <button onClick={handleSave} style={{padding:"9px 18px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RenewModal({renewal,onClose,onSave}){
   const [newStartDate,setNewStartDate]=useState(renewal.contractEnd);
@@ -1723,24 +1862,16 @@ function RenewModal({renewal,onClose,onSave}){
   function handleSave(){
     if(!newStartDate){ alert("Please select a new contract start date."); return; }
     if(!newEndDate){ alert("Please select a new contract end date."); return; }
-    const oldContractStart=renewal.contractStart;
-    const oldContractEnd=renewal.contractEnd;
-    const oldValue=renewal.value;
     onSave({
       contractStart:newStartDate,
       contractEnd:newEndDate,
       value:formatRupee(Number(newValue)||0),
       renewalStatus:renewStatus,
-      historyEntry:{
-        renewedOn:todayISO(),
-        contractStart:oldContractStart,
-        contractEnd:oldContractEnd,
-        value:oldValue,
-        status:"Renewed",
-        notes:renewNotes.trim()||"—",
-      },
+      notes:renewNotes.trim()||"—",
     });
   }
+
+  useModalHotkeys(onClose,handleSave);
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(17,24,39,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={onClose}>
@@ -1786,7 +1917,7 @@ function RenewModal({renewal,onClose,onSave}){
   );
 }
 
-function RenewalsTab({renewals,onRenew}){
+function RenewalsTab({renewals,onRenew,onEdit}){
   const [statusFilter,setStatusFilter]=useState("All");
   const [search,setSearch]=useState("");
   const [renewing,setRenewing]=useState(null);
@@ -1822,14 +1953,9 @@ function RenewalsTab({renewals,onRenew}){
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {subTabs.map(t=>{
-          const active=statusFilter===t;
-          return(
-            <button key={t} onClick={()=>setStatusFilter(t)} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+(active?"#4f46e5":"#d1d5db"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#374151",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-              {t} ({counts[t]})
-            </button>
-          );
-        })}
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{...inputStyle,width:200}}>
+          {subTabs.map(t=><option key={t} value={t}>{t} ({counts[t]})</option>)}
+        </select>
         <div style={{marginLeft:"auto",position:"relative",width:220}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:14}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search customer..." style={{...inputStyle,paddingLeft:34}}/>
@@ -1870,13 +1996,13 @@ function RenewalsTab({renewals,onRenew}){
                         <button onClick={()=>setExpanded(prev=>prev===r.id?null:r.id)} style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:10}}>{isOpen?"▲":"▼"}</button>
                       </td>
                       <td style={{...tdStyle,fontWeight:700,cursor:"pointer"}} onClick={()=>setExpanded(prev=>prev===r.id?null:r.id)}>{r.customer}</td>
-                      <td style={tdStyle}><ProductPill label={r.product}/></td>
+                      <td style={tdStyle}>{r.product}</td>
                       <td style={tdStyle}>{r.license}</td>
                       <td style={tdStyle}>{r.users}</td>
                       <td style={{...tdStyle,color:"#6b7280"}}>{r.contractStart}</td>
                       <td style={{...tdStyle,color:"#6b7280",fontWeight:700}}>{r.contractEnd}</td>
                       <td style={tdStyle}>
-                        <span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:700,
+                        <span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:700,whiteSpace:"nowrap",
                           background:r.daysLeftNum<0?"#fef2f2":r.daysLeftNum<=30?"#fffbeb":"#ecfdf5",
                           color:r.daysLeftNum<0?"#dc2626":r.daysLeftNum<=30?"#d97706":"#059669"}}>
                           {r.daysLeftNum<0?Math.abs(r.daysLeftNum)+"d overdue":r.daysLeftNum+"d left"}
@@ -1887,7 +2013,10 @@ function RenewalsTab({renewals,onRenew}){
                       <td style={tdStyle}>{r.assignedTo}</td>
                       <td style={{...tdStyle,color:"#6b7280"}}>{r.notes||"—"}</td>
                       <td style={tdStyle}>
-                        <button onClick={()=>setRenewing(r)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"#059669",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>↻ Renew</button>
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>onEdit(r)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",color:"#111827",fontWeight:600,fontSize:12,cursor:"pointer"}}>Edit</button>
+                          <button onClick={()=>setRenewing(r)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"#059669",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>↻ Renew</button>
+                        </div>
                       </td>
                     </tr>
                     {isOpen&&(
@@ -1977,7 +2106,7 @@ function ReportCard({report,onOpen}){
         <div style={{fontSize:13,color:"#374151",marginBottom:16,minHeight:40}}>{report.description}</div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:report.tagColor.bg,color:report.tagColor.color}}>{report.tag}</span>
-          <button onClick={()=>onOpen(report.id)} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #4f46e5",background:"#fff",color:"#4f46e5",fontWeight:700,fontSize:13,cursor:"pointer"}}>Open Report →</button>
+          <button onClick={()=>onOpen(report.id)} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #2563eb",background:"#fff",color:"#2563eb",fontWeight:700,fontSize:13,cursor:"pointer"}}>Generate Report →</button>
         </div>
       </div>
     </div>
@@ -1999,7 +2128,7 @@ function ReportsHome({onOpen}){
 function ReportShell({title,icon,onBack,children}){
   return(
     <div>
-      <button onClick={onBack} style={{background:"none",border:"none",color:"#4f46e5",fontWeight:600,fontSize:13,cursor:"pointer",marginBottom:14,padding:0}}>← Back to Reports</button>
+      <button onClick={onBack} style={{background:"none",border:"none",color:"#2563eb",fontWeight:600,fontSize:13,cursor:"pointer",marginBottom:14,padding:0}}>← Back to Reports</button>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
         <div style={{width:38,height:38,borderRadius:8,background:"#1e2a56",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{icon}</div>
         <div style={{fontSize:18,fontWeight:800,color:"#111827"}}>{title}</div>
@@ -2091,7 +2220,52 @@ function ReportDocument({title,subtitle,dateLabel,count,countLabel,totalValueDis
   );
 }
 
+async function downloadReportPdf(title){
+  const node=document.querySelector(".mp-print-area");
+  if(!node) return;
+  const canvas=await html2canvas(node,{scale:2,backgroundColor:"#ffffff"});
+  const img=canvas.toDataURL("image/png");
+  const pdf=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const pageW=pdf.internal.pageSize.getWidth();
+  const pageH=pdf.internal.pageSize.getHeight();
+  const imgH=(canvas.height*pageW)/canvas.width;
+  let heightLeft=imgH;
+  let y=0;
+  pdf.addImage(img,"PNG",0,y,pageW,imgH);
+  heightLeft-=pageH;
+  while(heightLeft>0){
+    y=heightLeft-imgH;
+    pdf.addPage();
+    pdf.addImage(img,"PNG",0,y,pageW,imgH);
+    heightLeft-=pageH;
+  }
+  const fileSlug=title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  pdf.save(`${fileSlug}-${todayISO()}.pdf`);
+}
+
+function downloadReportExcel(title){
+  const table=document.querySelector(".mp-print-area table");
+  if(!table) return;
+  const wb=XLSX.utils.table_to_book(table,{sheet:title.replace(/[\\/*?:[\]]/g,"").slice(0,31)||"Report"});
+  const fileSlug=title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  XLSX.writeFile(wb,`${fileSlug}-${todayISO()}.xlsx`);
+}
+
 function ReportPrintToolbar({title,count,countLabel,dateLabel,onBack,onAllReports}){
+  const [downloading,setDownloading]=useState(false);
+  const [menuOpen,setMenuOpen]=useState(false);
+  async function handleDownloadPdf(){
+    setMenuOpen(false);
+    setDownloading(true);
+    try{ await downloadReportPdf(title); }
+    catch(err){ console.error(err); alert("Failed to generate PDF."); }
+    finally{ setDownloading(false); }
+  }
+  function handleDownloadExcel(){
+    setMenuOpen(false);
+    try{ downloadReportExcel(title); }
+    catch(err){ console.error(err); alert("Failed to generate Excel file."); }
+  }
   return(
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
       <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -2099,19 +2273,34 @@ function ReportPrintToolbar({title,count,countLabel,dateLabel,onBack,onAllReport
         <button onClick={onAllReports} style={{padding:"8px 14px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#374151",cursor:"pointer"}}>← All Reports</button>
         <span style={{fontSize:13,color:"#6b7280"}}>{title} · {count} {countLabel} · {dateLabel}</span>
       </div>
-      <button onClick={()=>window.print()} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>🖨️ Print / PDF</button>
+      <div style={{position:"relative"}}>
+        <button onClick={()=>setMenuOpen(o=>!o)} disabled={downloading} style={{padding:"9px 16px",borderRadius:8,border:"none",background:"#2563eb",color:"#fff",fontWeight:700,fontSize:13,cursor:downloading?"wait":"pointer",display:"flex",alignItems:"center",gap:6}}>⬇️ {downloading?"Generating…":"Download"} {!downloading&&"▾"}</button>
+        {menuOpen&&(
+          <>
+            <div style={{position:"fixed",inset:0,zIndex:19}} onClick={()=>setMenuOpen(false)}/>
+            <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",background:"#fff",border:"1px solid #e5e7eb",borderRadius:8,boxShadow:"0 8px 20px rgba(0,0,0,0.15)",overflow:"hidden",zIndex:20,minWidth:170}}>
+              <button onClick={handleDownloadPdf} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 14px",border:"none",background:"#fff",fontSize:13,fontWeight:600,color:"#374151",cursor:"pointer"}}>📄 PDF (full report)</button>
+              <button onClick={handleDownloadExcel} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 14px",border:"none",borderTop:"1px solid #f3f4f6",background:"#fff",fontSize:13,fontWeight:600,color:"#374151",cursor:"pointer"}}>📊 Excel (table only)</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-function DemoActivityReport({demos,onBack}){
+function DemoActivityReport({demos,ownerOptions,onBack}){
   const [statusFilter,setStatusFilter]=useState("All Statuses");
   const [conductedByFilter,setConductedByFilter]=useState("All");
-  const [dateFrom,setDateFrom]=useState("");
-  const [dateTo,setDateTo]=useState("");
+  const [dateFrom,setDateFrom]=useState(()=>{
+    const d=new Date(todayISO());
+    d.setDate(d.getDate()-7);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  });
+  const [dateTo,setDateTo]=useState(todayISO());
   const [generated,setGenerated]=useState(false);
 
-  const conductedByOptions=useMemo(()=>Array.from(new Set(demos.map(d=>d.conductedBy))).sort(),[demos]);
+  const conductedByOptions=ownerOptions;
 
   const filteredDemos=useMemo(()=>{
     return demos.filter(d=>{
@@ -2145,7 +2334,7 @@ function DemoActivityReport({demos,onBack}){
   if(generated){
     const kpis=[
       {label:"Demos in Report",value:filteredDemos.length,accent:"#2563eb"},
-      {label:"Total Activities",value:totalActivities,accent:"#7c3aed"},
+      {label:"Total Activities",value:totalActivities,accent:"#1d4ed8"},
       {label:"Converted",value:convertedCount,accent:"#059669"},
       {label:"Follow-Up Pending",value:followUpPendingCount,accent:"#d97706"},
     ];
@@ -2165,11 +2354,11 @@ function DemoActivityReport({demos,onBack}){
                   <tr key={i}>
                     <td style={{...tdStyle,color:"#9ca3af"}}>{i+1}</td>
                     <td style={{...tdStyle,fontWeight:700}}>{r.customer}</td>
-                    <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>{r.demoNo}</td>
+                    <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{r.demoNo}</td>
                     <td style={tdStyle}><ProductPill label={r.product}/></td>
                     <td style={{...tdStyle,color:"#6b7280"}}>{r.date}</td>
                     <td style={tdStyle}>{r.outcome?<OutcomeBadge label={r.outcome}/>:"—"}</td>
-                    <td style={{...tdStyle,color:"#2563eb"}}>{r.next||"—"}</td>
+                    <td style={{...tdStyle,color:"#111827"}}>{r.next||"—"}</td>
                     <td style={{...tdStyle,color:"#374151"}}>{r.note}</td>
                     <td style={tdStyle}>{r.by}</td>
                   </tr>
@@ -2212,7 +2401,7 @@ function DemoActivityReport({demos,onBack}){
         </div>
         <div style={{display:"flex",gap:16,marginBottom:16}}>
           <ReportKpi value={filteredDemos.length} label="Demos in Report" accent="#2563eb"/>
-          <ReportKpi value={totalActivities} label="Total Activities" accent="#7c3aed"/>
+          <ReportKpi value={totalActivities} label="Total Activities" accent="#1d4ed8"/>
           <ReportKpi value={convertedCount} label="Converted" accent="#059669"/>
           <ReportKpi value={followUpPendingCount} label="Follow-Up Pending" accent="#d97706"/>
         </div>
@@ -2262,7 +2451,7 @@ function PoReceiptReport({orders,onBack}){
                 {filteredOrders.map((o,i)=>(
                   <tr key={o.orderNo}>
                     <td style={{...tdStyle,color:"#9ca3af"}}>{i+1}</td>
-                    <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>{o.orderNo}</td>
+                    <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{o.orderNo}</td>
                     <td style={{...tdStyle,fontWeight:700}}>{o.customer}</td>
                     <td style={tdStyle}><ProductPill label={o.product}/></td>
                     <td style={{...tdStyle,color:"#6b7280"}}>{o.date}</td>
@@ -2271,7 +2460,13 @@ function PoReceiptReport({orders,onBack}){
                     <td style={tdStyle}><StatusPill label={o.orderStatus}/></td>
                     <td style={tdStyle}><StatusPill label={o.paymentStatus}/></td>
                     <td style={tdStyle}>{o.assignedTo}</td>
-                    <td style={{...tdStyle,fontStyle:"italic",color:o.poUploaded?"#059669":"#9ca3af"}}>{o.poUploaded?"Uploaded":"Not uploaded"}</td>
+                    <td style={{...tdStyle,fontStyle:o.poDocumentUrl?"normal":"italic"}}>
+                      {o.poDocumentUrl?(
+                        <a href={fileUrl(o.poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {o.poDocumentName||"View file"}</a>
+                      ):(
+                        <span style={{color:"#9ca3af"}}>Not uploaded</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {filteredOrders.length===0&&<tr><td colSpan={11} style={{...tdStyle,textAlign:"center",color:"#9ca3af",padding:32}}>No orders match your filters.</td></tr>}
@@ -2360,7 +2555,7 @@ function LeadStatusReport({leads,onBack}){
                 {filteredLeads.map((l,i)=>(
                   <tr key={l.leadNo}>
                     <td style={{...tdStyle,color:"#9ca3af"}}>{i+1}</td>
-                    <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>Lead - {l.leadNo}</td>
+                    <td style={{...tdStyle,color:"#111827",fontWeight:700}}>Lead - {l.leadNo}</td>
                     <td style={{...tdStyle,fontWeight:700}}>{l.customer}</td>
                     <td style={tdStyle}>{l.owner}</td>
                     <td style={tdStyle}><ProductPill label={l.product}/></td>
@@ -2412,16 +2607,16 @@ function LeadStatusReport({leads,onBack}){
   );
 }
 
-function ReportsTab({leads,demos,orders}){
-  const [activeReport,setActiveReport]=useState("demoActivity");
-  if(activeReport==="demoActivity") return <DemoActivityReport demos={demos} onBack={()=>setActiveReport(null)}/>;
+function ReportsTab({leads,demos,orders,ownerOptions}){
+  const [activeReport,setActiveReport]=useState(null);
+  if(activeReport==="demoActivity") return <DemoActivityReport demos={demos} ownerOptions={ownerOptions} onBack={()=>setActiveReport(null)}/>;
   if(activeReport==="poReceipt") return <PoReceiptReport orders={orders} onBack={()=>setActiveReport(null)}/>;
   if(activeReport==="leadStatus") return <LeadStatusReport leads={leads} onBack={()=>setActiveReport(null)}/>;
   return <ReportsHome onOpen={setActiveReport}/>;
 }
 
 /* ---------------- Leads Tab ---------------- */
-function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLeadSourceMaster,onChangeOwner}){
+function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLeadSourceMaster,onChangeOwner,ownerOptions}){
   const [statusFilter,setStatusFilter]=useState("All");
   const [search,setSearch]=useState("");
   const [sortKey,setSortKey]=useState("leadNo");
@@ -2490,20 +2685,13 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
 
   return(
     <div>
-      <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:13,fontWeight:600,color:"#92400e",display:"flex",alignItems:"center",gap:8}}>
-        ⚠️ Please confirm that the customer is not already listed as an Account before proceeding to create a new Lead.
-      </div>
-
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:38,height:38,borderRadius:8,background:"#fef3c7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🎯</div>
-          <div>
-            <div style={{fontSize:12,color:"#6b7280",fontWeight:600}}>Leads</div>
-            <div style={{fontSize:18,fontWeight:800,color:"#111827"}}>{statusFilter}</div>
-          </div>
+        <div>
+          <div style={{fontSize:12,color:"#6b7280",fontWeight:600}}>Leads</div>
+          <div style={{fontSize:18,fontWeight:800,color:"#111827"}}>{statusFilter}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #4f46e5",background:"#fff",color:"#4f46e5",fontWeight:600,fontSize:13,cursor:"pointer"}}>New</button>
+          <button onClick={onAddNew} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #2563eb",background:"#fff",color:"#2563eb",fontWeight:600,fontSize:13,cursor:"pointer"}}>New</button>
           <button onClick={handleOpenChangeOwner} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",color:"#111827",fontWeight:600,fontSize:13,cursor:"pointer"}}>Change Owner</button>
           <button onClick={onOpenProductMaster} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #a7f3d0",background:"#fff",color:"#059669",fontWeight:600,fontSize:13,cursor:"pointer"}}>⚙ Product Master</button>
           <button onClick={onOpenLeadSourceMaster} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #bfdbfe",background:"#fff",color:"#2563eb",fontWeight:600,fontSize:13,cursor:"pointer"}}>⚙ Lead Source Master</button>
@@ -2511,14 +2699,9 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-        {subTabs.map(t=>{
-          const active=statusFilter===t;
-          return(
-            <button key={t} onClick={()=>setStatusFilter(t)} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+(active?"#4f46e5":"#d1d5db"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#374151",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-              {t} ({counts[t]})
-            </button>
-          );
-        })}
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{...inputStyle,width:200}}>
+          {subTabs.map(t=><option key={t} value={t}>{t} ({counts[t]})</option>)}
+        </select>
         <div style={{marginLeft:"auto",position:"relative",width:260}}>
           <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#9ca3af",fontSize:14}}>🔍</span>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search this list..." style={{...inputStyle,paddingLeft:34}}/>
@@ -2534,7 +2717,7 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
               <tr>
                 <th style={{...thStyle,width:36}}><input type="checkbox" checked={selected.length>0&&selected.length===filtered.length} onChange={toggleSelectAll}/></th>
                 {cols.map(c=>(
-                  <th key={c.key} style={{...thStyle,cursor:"pointer",color:sortKey===c.key?"#4f46e5":"#6b7280"}} onClick={()=>toggleSort(c.key)}>
+                  <th key={c.key} style={{...thStyle,cursor:"pointer"}} onClick={()=>toggleSort(c.key)}>
                     {c.header} {sortKey===c.key?(sortDir==="asc"?"↑":"↓"):"⇅"}
                   </th>
                 ))}
@@ -2546,15 +2729,15 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
               {filtered.map((l,i)=>(
                 <tr key={l.leadNo}>
                   <td style={tdStyle}><input type="checkbox" checked={selected.includes(l.leadNo)} onChange={()=>toggleSelect(l.leadNo)}/></td>
-                  <td style={{...tdStyle,color:"#2563eb",fontWeight:700,whiteSpace:"nowrap"}}>Lead - {l.leadNo}</td>
-                  <td style={{...tdStyle,color:"#2563eb",fontWeight:600}}>{l.owner}</td>
+                  <td style={{...tdStyle,color:"#111827",fontWeight:700,whiteSpace:"nowrap"}}>Lead - {l.leadNo}</td>
+                  <td style={{...tdStyle,color:"#111827",fontWeight:600}}>{l.owner}</td>
                   <td style={{...tdStyle,fontWeight:600}}>{l.customer}</td>
-                  <td style={tdStyle}><a href={"mailto:"+l.email} style={{color:"#2563eb"}}>{l.email}</a></td>
+                  <td style={tdStyle}><a href={"mailto:"+l.email} style={{color:"#111827"}}>{l.email}</a></td>
                   <td style={{...tdStyle,whiteSpace:"nowrap"}}>{l.phone}</td>
-                  <td style={{...tdStyle,color:"#6b7280",whiteSpace:"nowrap"}}>{l.createdDate}</td>
-                  <td style={{...tdStyle,color:"#6b7280",whiteSpace:"nowrap"}}>{l.lastModified}</td>
+                  <td style={{...tdStyle,whiteSpace:"nowrap"}}>{l.createdDate}</td>
+                  <td style={{...tdStyle,whiteSpace:"nowrap"}}>{l.lastModified}</td>
                   <td style={tdStyle}><StatusPill label={l.status}/></td>
-                  <td style={tdStyle}><ProductPill label={l.product}/></td>
+                  <td style={tdStyle}>{l.product}</td>
                   <td style={tdStyle}>
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={()=>onEdit(l)} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:12,color:"#111827",cursor:"pointer"}}>Edit</button>
@@ -2576,7 +2759,7 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
       {showChangeOwner&&(
         <ChangeOwnerModal
           count={selected.length}
-          ownerOptions={OWNER_OPTIONS}
+          ownerOptions={ownerOptions}
           onClose={()=>setShowChangeOwner(false)}
           onApply={handleApplyChangeOwner}
         />
@@ -2585,14 +2768,193 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
   );
 }
 
-function loadPersisted(key,fallback){
-  try{
-    const raw=localStorage.getItem(key);
-    if(!raw) return fallback;
-    return JSON.parse(raw);
-  }catch{
-    return fallback;
-  }
+function fromBackendLead(row){
+  const potential=row.customer_potential||[];
+  return{
+    id:row.id,
+    leadNo:row.lead_no,
+    foundryName:row.foundry_name,
+    customer:row.foundry_name,
+    leadSource:row.lead_source_name||"",
+    contactFirstName:row.contact_first_name||"",
+    contactLastName:row.contact_last_name||"",
+    country:row.country||"India",
+    street:row.street||"",
+    email:row.email||"",
+    city:row.city||"",
+    phone:row.phone||"",
+    zip:row.zip||"",
+    state:row.state||"",
+    designation:row.designation||"",
+    status:row.status,
+    region:row.region||"",
+    businessArea:row.business_area||"",
+    customerPotential:potential,
+    foundryInfo:row.foundry_info||[],
+    sandTypes:row.sand_types||[],
+    mixerMake:row.mixer_make||"",
+    mixerType:row.mixer_type||"",
+    mixerBatchSize:row.mixer_batch_size||"",
+    hourlySandOutput:row.hourly_sand_output||"",
+    painPoints:row.pain_points||"",
+    product:potential.length?potential.join(" + "):"—",
+    owner:row.owner||"",
+    createdDate:row.created_date?String(row.created_date).slice(0,10):"",
+    lastModified:row.last_modified?String(row.last_modified).slice(0,10):"",
+  };
+}
+function toBackendLead(record,leadSources){
+  const source=leadSources.find(s=>s.name===record.leadSource);
+  return{
+    lead_no:record.leadNo,
+    foundry_name:record.foundryName,
+    lead_source_id:source?source.id:null,
+    contact_first_name:record.contactFirstName,
+    contact_last_name:record.contactLastName,
+    country:record.country,
+    street:record.street,
+    email:record.email,
+    city:record.city,
+    phone:record.phone,
+    zip:record.zip,
+    state:record.state,
+    designation:record.designation,
+    status:record.status,
+    region:record.region,
+    business_area:record.businessArea,
+    customer_potential:record.customerPotential||[],
+    foundry_info:record.foundryInfo||[],
+    sand_types:record.sandTypes||[],
+    mixer_make:record.mixerMake,
+    mixer_type:record.mixerType,
+    mixer_batch_size:record.mixerBatchSize,
+    hourly_sand_output:record.hourlySandOutput,
+    pain_points:record.painPoints,
+    owner:record.owner,
+    created_date:record.createdDate,
+  };
+}
+
+function fromBackendOrder(row){
+  return{
+    id:row.id,
+    orderNo:row.order_no,
+    customer:row.customer,
+    product:row.product,
+    date:row.order_date?String(row.order_date).slice(0,10):"",
+    value:formatRupee(row.value),
+    paid:formatRupee(row.paid),
+    outstanding:formatRupee(row.outstanding),
+    status:row.payment_progress,
+    poNo:row.po_no||"",
+    poDocumentUrl:row.po_document_url||"",
+    poDocumentName:row.po_document_name||"",
+    poUploaded:!!row.po_document_url,
+    orderStatus:row.order_status,
+    paymentStatus:row.payment_status,
+    assignedTo:row.assigned_to||"",
+  };
+}
+function toBackendOrder(record){
+  return{
+    order_no:record.orderNo,
+    customer:record.customer,
+    product:record.product,
+    order_date:record.date,
+    value:parseRupee(record.value),
+    paid:parseRupee(record.paid),
+    outstanding:parseRupee(record.outstanding),
+    payment_progress:record.status,
+    po_no:record.poNo||null,
+    po_document_url:record.poDocumentUrl||null,
+    po_document_name:record.poDocumentName||null,
+    order_status:record.orderStatus,
+    payment_status:record.paymentStatus,
+    assigned_to:record.assignedTo||null,
+  };
+}
+// Orders reach the Implementation tab once they've progressed past order/PO drafting.
+const IMPLEMENTATION_STAGE_STATUSES=["PO Received","Invoiced","Payment Done","Active (Go-Live)"];
+
+function fromBackendRenewal(row){
+  return{
+    id:row.id,
+    renewalNo:row.renewal_no,
+    orderId:row.order_id,
+    customer:row.customer,
+    product:row.product,
+    license:row.license||"",
+    users:row.users||"",
+    contractStart:row.contract_start?String(row.contract_start).slice(0,10):"",
+    contractEnd:row.contract_end?String(row.contract_end).slice(0,10):"",
+    value:formatRupee(row.value),
+    assignedTo:row.assigned_to||"",
+    notes:row.notes||"",
+    renewalStatus:row.renewal_status,
+    history:(row.history||[]).map(h=>({
+      renewedOn:h.renewed_on?String(h.renewed_on).slice(0,10):"",
+      contractStart:h.contract_start?String(h.contract_start).slice(0,10):"",
+      contractEnd:h.contract_end?String(h.contract_end).slice(0,10):"",
+      value:formatRupee(h.value),
+      status:h.status,
+      notes:h.notes||"",
+    })),
+  };
+}
+function toBackendRenewal(record){
+  return{
+    customer:record.customer,
+    product:record.product,
+    license:record.license||null,
+    users:record.users?Number(record.users):null,
+    contract_start:record.contractStart||null,
+    contract_end:record.contractEnd||null,
+    value:parseRupee(record.value),
+    assigned_to:record.assignedTo||null,
+    notes:record.notes||null,
+    renewal_status:record.renewalStatus||"Active",
+  };
+}
+function nextRenewalNo(renewals){
+  const max=renewals.reduce((m,r)=>Math.max(m,parseInt(String(r.renewalNo).replace("REN-",""),10)||0),0);
+  return "REN-"+String(max+1).padStart(3,"0");
+}
+
+function fromBackendDemo(row){
+  return{
+    id:row.id,
+    demoNo:row.demo_no,
+    customer:row.customer,
+    contactPerson:row.contact_person||"",
+    product:row.product,
+    demoDate:row.demo_date?String(row.demo_date).slice(0,10):"",
+    type:row.type||"",
+    conductedBy:row.conducted_by||"",
+    status:row.status,
+    nextFollowUp:row.next_follow_up?String(row.next_follow_up).slice(0,10):null,
+    createdDate:row.created_date?String(row.created_date).slice(0,10):"",
+    activities:(row.activities||[]).map(a=>({
+      date:a.activity_date?String(a.activity_date).slice(0,10):"",
+      outcome:a.outcome,
+      next:a.next_follow_up?String(a.next_follow_up).slice(0,10):null,
+      note:a.note||"",
+      by:a.logged_by||"",
+    })),
+  };
+}
+function toBackendDemo(record){
+  return{
+    demo_no:record.demoNo,
+    customer:record.customer,
+    contact_person:record.contactPerson||null,
+    product:record.product,
+    demo_date:record.demoDate,
+    type:record.type||null,
+    conducted_by:record.conductedBy||null,
+    status:record.status,
+    next_follow_up:record.nextFollowUp||null,
+    created_date:record.createdDate||null,
+  };
 }
 
 export default function MarketingHub(){
@@ -2601,41 +2963,108 @@ export default function MarketingHub(){
   const [year,setYear]=useState("All Years");
   const [month,setMonth]=useState("All Months");
   const [activeDrill,setActiveDrill]=useState(null);
-  const [leads,setLeads]=useState(()=>loadPersisted("mpulse_leads",seedLeads));
+  const [leads,setLeads]=useState([]);
   const [showLeadModal,setShowLeadModal]=useState(false);
   const [editingLead,setEditingLead]=useState(null);
-  const [products,setProducts]=useState(()=>loadPersisted("mpulse_products", DEFAULT_PRODUCTS.map((name,i)=>({id:String(i+1),name}))));
+  const [products,setProducts]=useState([]);
   const [showProductMaster,setShowProductMaster]=useState(false);
+  const [phasesProduct,setPhasesProduct]=useState(null);
+  const [leadSources,setLeadSources]=useState([]);
+  const [showLeadSourceMaster,setShowLeadSourceMaster]=useState(false);
+  const [businessAreas,setBusinessAreas]=useState([]);
+  const [showBusinessAreaMaster,setShowBusinessAreaMaster]=useState(false);
+  const [foundryTypes,setFoundryTypes]=useState([]);
+  const [showFoundryTypeMaster,setShowFoundryTypeMaster]=useState(false);
+  const [sandTypeMaster,setSandTypeMaster]=useState([]);
+  const [showSandTypeMaster,setShowSandTypeMaster]=useState(false);
+  const [demoTypes,setDemoTypes]=useState([]);
+  const [showDemoTypeMaster,setShowDemoTypeMaster]=useState(false);
+  const [marketingOwners,setMarketingOwners]=useState([]);
 
-  function nextProductId(){
-    const max=products.reduce((m,p)=>Math.max(m,Number(p.id)||0),0);
-    return String(max+1);
+  function apiError(err,fallback){
+    console.error(err);
+    alert(err?.response?.data?.error||fallback);
   }
-  function handleAddProduct(name){ setProducts(prev=>[...prev,{id:nextProductId(),name}]); }
-  function handleEditProduct(id,name){ setProducts(prev=>prev.map(p=>p.id===id?{...p,name}:p)); }
-  function handleDeleteProduct(id){ setProducts(prev=>prev.filter(p=>p.id!==id)); }
-
-const [leadSources,setLeadSources]=useState(()=>loadPersisted("mpulse_leadSources", LEAD_SOURCE_OPTIONS.map((name,i)=>({id:String(i+1),name}))));  const [showLeadSourceMaster,setShowLeadSourceMaster]=useState(false);
-
-  function nextLeadSourceId(){
-    const max=leadSources.reduce((m,s)=>Math.max(m,Number(s.id)||0),0);
-    return String(max+1);
+  function loadLeads(){
+    return marketingApi.getLeads().then(r=>setLeads(r.data.map(fromBackendLead)))
+      .catch(err=>apiError(err,"Failed to load leads."));
   }
-  function handleAddLeadSource(name){ setLeadSources(prev=>[...prev,{id:nextLeadSourceId(),name}]); }
-  function handleEditLeadSource(id,name){ setLeadSources(prev=>prev.map(s=>s.id===id?{...s,name}:s)); }
-  function handleDeleteLeadSource(id){ setLeadSources(prev=>prev.filter(s=>s.id!==id)); }
+  function loadProducts(){
+    return marketingApi.getProducts().then(r=>setProducts(r.data))
+      .catch(err=>apiError(err,"Failed to load products."));
+  }
+  function loadLeadSources(){
+    return marketingApi.getLeadSources().then(r=>setLeadSources(r.data))
+      .catch(err=>apiError(err,"Failed to load lead sources."));
+  }
+  function loadBusinessAreas(){
+    return marketingApi.getBusinessAreas().then(r=>setBusinessAreas(r.data))
+      .catch(err=>apiError(err,"Failed to load business areas."));
+  }
+  function loadFoundryTypes(){
+    return marketingApi.getFoundryTypes().then(r=>setFoundryTypes(r.data))
+      .catch(err=>apiError(err,"Failed to load foundry types."));
+  }
+  function loadSandTypeMaster(){
+    return marketingApi.getSandTypes().then(r=>setSandTypeMaster(r.data))
+      .catch(err=>apiError(err,"Failed to load sand types."));
+  }
+  function loadDemoTypes(){
+    return marketingApi.getDemoTypes().then(r=>setDemoTypes(r.data))
+      .catch(err=>apiError(err,"Failed to load demo types."));
+  }
+  function loadMarketingOwners(){
+    return employeesApi.getMarketingTeam().then(r=>setMarketingOwners(r.data.map(e=>e.name)))
+      .catch(err=>apiError(err,"Failed to load marketing team."));
+  }
+  useEffect(()=>{
+    loadLeads(); loadProducts(); loadLeadSources(); loadBusinessAreas();
+    loadFoundryTypes(); loadSandTypeMaster(); loadDemoTypes(); loadMarketingOwners(); loadOrders(); loadRenewals(); loadDemos();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
-  const [demos,setDemos]=useState(seedDemosList);
+  function handleAddProduct(name){ marketingApi.createProduct(name).then(loadProducts).catch(err=>apiError(err,"Failed to add product.")); }
+  function handleEditProduct(id,name){ marketingApi.updateProduct(id,name).then(loadProducts).catch(err=>apiError(err,"Failed to update product.")); }
+  function handleDeleteProduct(id){ marketingApi.removeProduct(id).then(loadProducts).catch(err=>apiError(err,"Failed to delete product.")); }
+
+  function handleAddLeadSource(name){ marketingApi.createLeadSource(name).then(loadLeadSources).catch(err=>apiError(err,"Failed to add lead source.")); }
+  function handleEditLeadSource(id,name){ marketingApi.updateLeadSource(id,name).then(loadLeadSources).catch(err=>apiError(err,"Failed to update lead source.")); }
+  function handleDeleteLeadSource(id){ marketingApi.removeLeadSource(id).then(loadLeadSources).catch(err=>apiError(err,"Failed to delete lead source.")); }
+
+  function handleAddBusinessArea(name){ marketingApi.createBusinessArea(name).then(loadBusinessAreas).catch(err=>apiError(err,"Failed to add business area.")); }
+  function handleEditBusinessArea(id,name){ marketingApi.updateBusinessArea(id,name).then(loadBusinessAreas).catch(err=>apiError(err,"Failed to update business area.")); }
+  function handleDeleteBusinessArea(id){ marketingApi.removeBusinessArea(id).then(loadBusinessAreas).catch(err=>apiError(err,"Failed to delete business area.")); }
+
+  function handleAddFoundryType(name){ marketingApi.createFoundryType(name).then(loadFoundryTypes).catch(err=>apiError(err,"Failed to add foundry type.")); }
+  function handleEditFoundryType(id,name){ marketingApi.updateFoundryType(id,name).then(loadFoundryTypes).catch(err=>apiError(err,"Failed to update foundry type.")); }
+  function handleDeleteFoundryType(id){ marketingApi.removeFoundryType(id).then(loadFoundryTypes).catch(err=>apiError(err,"Failed to delete foundry type.")); }
+
+  function handleAddSandType(name){ marketingApi.createSandType(name).then(loadSandTypeMaster).catch(err=>apiError(err,"Failed to add sand type.")); }
+  function handleEditSandType(id,name){ marketingApi.updateSandType(id,name).then(loadSandTypeMaster).catch(err=>apiError(err,"Failed to update sand type.")); }
+  function handleDeleteSandType(id){ marketingApi.removeSandType(id).then(loadSandTypeMaster).catch(err=>apiError(err,"Failed to delete sand type.")); }
+
+  function handleAddDemoType(name){ marketingApi.createDemoType(name).then(loadDemoTypes).catch(err=>apiError(err,"Failed to add demo type.")); }
+  function handleEditDemoType(id,name){ marketingApi.updateDemoType(id,name).then(loadDemoTypes).catch(err=>apiError(err,"Failed to update demo type.")); }
+  function handleDeleteDemoType(id){ marketingApi.removeDemoType(id).then(loadDemoTypes).catch(err=>apiError(err,"Failed to delete demo type.")); }
+
+  const [demos,setDemos]=useState([]);
   const [showDemoModal,setShowDemoModal]=useState(false);
   const [editingDemo,setEditingDemo]=useState(null);
   const [trackingDemo,setTrackingDemo]=useState(null);
+  function loadDemos(){
+    return marketingApi.getDemos().then(r=>setDemos(r.data.map(fromBackendDemo)))
+      .catch(err=>apiError(err,"Failed to load demos."));
+  }
 
   function handleSaveFollowUp(entry){
-    setDemos(prev=>prev.map(d=>{
-      if(d.demoNo!==trackingDemo.demoNo) return d;
-      const activities=[entry,...(d.activities||[])];
-      return {...d,activities,nextFollowUp:entry.next||d.nextFollowUp,status:entry.next?"Follow-Up":d.status};
-    }));
+    marketingApi.addDemoActivity(trackingDemo.id,{
+      activity_date:entry.date,
+      outcome:entry.outcome,
+      next_follow_up:entry.next||null,
+      note:entry.note,
+      logged_by:entry.by,
+    }).then(loadDemos)
+      .catch(err=>apiError(err,"Failed to log follow-up."));
     setTrackingDemo(null);
   }
 
@@ -2643,53 +3072,229 @@ const [leadSources,setLeadSources]=useState(()=>loadPersisted("mpulse_leadSource
   function handleEditDemo(demo){ setEditingDemo(demo); setShowDemoModal(true); }
   function handleDeleteDemo(demo){
     if(!window.confirm(`Delete ${demo.demoNo} (${demo.customer})? This cannot be undone.`)) return;
-    setDemos(prev=>prev.filter(d=>d.demoNo!==demo.demoNo));
+    marketingApi.removeDemo(demo.id).then(loadDemos).catch(err=>apiError(err,"Failed to delete demo."));
   }
+  // A lead's status always tracks its customer's most recent demo — no demo means
+  // "Not Started"; otherwise it mirrors that demo's status. Deriving this live from
+  // current state (instead of pushing an update from inside the save handlers) avoids
+  // races where a stale closure silently skips the update.
+  useEffect(()=>{
+    leads.forEach(lead=>{
+      const customerDemos=demos.filter(d=>d.customer===lead.customer);
+      const latestDemo=customerDemos.reduce((a,b)=>(!a||b.id>a.id?b:a),null);
+      const desiredStatus=latestDemo?(DEMO_STATUS_TO_LEAD_STATUS[latestDemo.status]||lead.status):"Not Started";
+      if(lead.status!==desiredStatus){
+        marketingApi.updateLead(lead.id,toBackendLead({...lead,status:desiredStatus},leadSources))
+          .then(loadLeads)
+          .catch(err=>console.error("Failed to sync lead status for "+lead.customer,err));
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[leads,demos]);
+
   function handleSaveDemo(data){
-    if(editingDemo){
-      setDemos(prev=>prev.map(d=>d.demoNo===editingDemo.demoNo?data:d));
-    } else {
-      setDemos(prev=>[...prev,data]);
-    }
-    setEditingDemo(null);
-    setShowDemoModal(false);
+    const wasConverted=editingDemo?.status==="Converted to Order";
+    const nowConverted=data.status==="Converted to Order";
+    const payload=toBackendDemo(data);
+    const req=editingDemo?marketingApi.updateDemo(editingDemo.id,payload):marketingApi.createDemo(payload);
+    req.then(()=>loadDemos()).then(()=>{
+      setEditingDemo(null);
+      setShowDemoModal(false);
+
+      // Converting a demo to an order opens a pre-filled New Order form for the team to complete,
+      // rather than silently creating an order behind the scenes.
+      if(nowConverted&&!wasConverted){
+        const firstProduct=(data.product||"").split(" + ")[0];
+        setPrefillOrder({
+          customer:data.customer,
+          product:firstProduct,
+          date:todayISO(),
+          assignedTo:data.conductedBy||"",
+        });
+        setEditingOrder(null);
+        setShowOrderModal(true);
+        setTab("Orders");
+      }
+    }).catch(err=>apiError(err,"Failed to save demo."));
   }
 
-  const [orders,setOrders]=useState(allOrders);
-  const [implRecords,setImplRecords]=useState(implementationRecords);
-  function handleUpdateImplPhase(customer,phaseNum,patch){
-    setImplRecords(prev=>prev.map(r=>r.customer!==customer?r:{
-      ...r,
-      phases:r.phases.map(p=>p.phase!==phaseNum?p:{...p,...patch})
-    }));
+  const [orders,setOrders]=useState([]);
+  function loadOrders(){
+    return marketingApi.getOrders().then(r=>setOrders(r.data.map(fromBackendOrder)))
+      .catch(err=>apiError(err,"Failed to load orders."));
   }
-  const [renewalsList,setRenewalsList]=useState(seedRenewals);
+
+  // ── Implementation: phases come from the order's product template (Product Master → Phases);
+  // per-order progress (steps done, status, dates, notes) is persisted separately and merged on top.
+  const [productPhasesByName,setProductPhasesByName]=useState({});
+  const [implProgress,setImplProgress]=useState({});
+
+  useEffect(()=>{
+    const names=Array.from(new Set(orders.map(o=>o.product))).filter(n=>n&&!(n in productPhasesByName));
+    names.forEach(name=>{
+      const product=products.find(p=>p.name===name);
+      if(!product) return;
+      marketingApi.getProductPhases(product.id).then(r=>{
+        setProductPhasesByName(prev=>({...prev,[name]:r.data}));
+      }).catch(err=>console.error("Failed to load phases for "+name,err));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[orders,products]);
+
+  useEffect(()=>{
+    orders.forEach(o=>{
+      if(o.id in implProgress) return;
+      marketingApi.getImplementationProgress(o.id).then(r=>{
+        const byPhase={};
+        r.data.forEach(row=>{
+          byPhase[row.phase_number]={
+            status:row.status,
+            doneSteps:row.done_steps||[],
+            startDate:row.start_date?String(row.start_date).slice(0,10):"",
+            endDate:row.end_date?String(row.end_date).slice(0,10):"",
+            responsiblePerson:row.responsible_person||"",
+            notes:row.notes||"",
+            documents:row.documents||[],
+          };
+        });
+        setImplProgress(prev=>({...prev,[o.id]:byPhase}));
+      }).catch(err=>console.error("Failed to load implementation progress for order "+o.id,err));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[orders]);
+
+  const implRecords=useMemo(()=>{
+    return orders
+      .filter(o=>IMPLEMENTATION_STAGE_STATUSES.includes(o.orderStatus))
+      .map(o=>{
+        const template=productPhasesByName[o.product]||[];
+        const progressForOrder=implProgress[o.id]||{};
+        const phases=template.map(t=>{
+          const prog=progressForOrder[t.phase_number]||{};
+          const doneSteps=prog.doneSteps||[];
+          const steps=(t.steps||[]).map((text,i)=>({text,done:!!doneSteps[i]}));
+          const status=prog.status||(steps.length>0&&steps.every(s=>s.done)?"Completed":steps.some(s=>s.done)?"In Progress":"Not Started");
+          return {
+            phase:t.phase_number,title:t.title,weeks:t.weeks,desc:t.description,steps,status,
+            startDate:prog.startDate||"",endDate:prog.endDate||"",
+            responsiblePerson:prog.responsiblePerson||"",notes:prog.notes||"",documents:prog.documents||[],
+          };
+        });
+        return {id:o.id,customer:o.customer,orderNo:o.orderNo,product:o.product,date:o.date,orderStatus:o.orderStatus,phases};
+      });
+  },[orders,productPhasesByName,implProgress]);
+
+  function handleUpdateImplPhase(order,phaseNum,patch){
+    setImplProgress(prev=>{
+      const orderProg={...(prev[order.id]||{})};
+      const merged={...(orderProg[phaseNum]||{})};
+      if(patch.steps!==undefined) merged.doneSteps=patch.steps.map(s=>s.done);
+      if(patch.status!==undefined) merged.status=patch.status;
+      if(patch.startDate!==undefined) merged.startDate=patch.startDate;
+      if(patch.endDate!==undefined) merged.endDate=patch.endDate;
+      if(patch.responsiblePerson!==undefined) merged.responsiblePerson=patch.responsiblePerson;
+      if(patch.notes!==undefined) merged.notes=patch.notes;
+      if(patch.documents!==undefined) merged.documents=patch.documents;
+      orderProg[phaseNum]=merged;
+
+      marketingApi.saveImplementationProgress({
+        order_id:order.id,
+        phase_number:phaseNum,
+        status:merged.status||"Not Started",
+        done_steps:merged.doneSteps||[],
+        start_date:merged.startDate||null,
+        end_date:merged.endDate||null,
+        responsible_person:merged.responsiblePerson||null,
+        notes:merged.notes||null,
+        documents:merged.documents||[],
+      }).catch(err=>apiError(err,"Failed to save implementation progress."));
+
+      return {...prev,[order.id]:orderProg};
+    });
+  }
+
+  const [renewalsList,setRenewalsList]=useState([]);
+  function loadRenewals(){
+    return marketingApi.getRenewals().then(r=>setRenewalsList(r.data.map(fromBackendRenewal)))
+      .catch(err=>apiError(err,"Failed to load renewals."));
+  }
   function handleRenewContract(id,patch){
-    const {historyEntry,...rest}=patch;
-    setRenewalsList(prev=>prev.map(r=>r.id!==id?r:{
-      ...r,...rest,
-      history:[historyEntry,...(r.history||[])],
-    }));
+    marketingApi.renewRenewal(id,{
+      new_contract_start:patch.contractStart,
+      new_contract_end:patch.contractEnd,
+      new_value:parseRupee(patch.value),
+      renewal_status:patch.renewalStatus,
+      notes:patch.notes,
+    }).then(loadRenewals).catch(err=>apiError(err,"Failed to record renewal."));
   }
+  const [editingRenewal,setEditingRenewal]=useState(null);
+  const [dismissedRenewalOrderIds,setDismissedRenewalOrderIds]=useState(()=>new Set());
+  function handleEditRenewal(renewal){ setEditingRenewal(renewal); }
+  function handleCloseRenewalEdit(){
+    // A cancelled auto-prompt (no id yet = never saved) shouldn't pop right back up this session.
+    if(!editingRenewal?.id&&editingRenewal?.orderId!=null){
+      setDismissedRenewalOrderIds(prev=>new Set(prev).add(editingRenewal.orderId));
+    }
+    setEditingRenewal(null);
+  }
+  function handleSaveRenewalEdit(data){
+    const payload=toBackendRenewal(data);
+    const req=editingRenewal?.id
+      ?marketingApi.updateRenewal(editingRenewal.id,payload)
+      :marketingApi.createRenewal({...payload,renewal_no:nextRenewalNo(renewalsList),order_id:editingRenewal?.orderId??null});
+    req.then(()=>{ setEditingRenewal(null); loadRenewals(); })
+      .catch(err=>apiError(err,"Failed to save renewal."));
+  }
+
+  // Once every phase of an implementation is complete, open a pre-filled Renewal form for the
+  // team to complete — same pattern as converting a demo into an order.
+  useEffect(()=>{
+    if(editingRenewal) return;
+    const rec=implRecords.find(r=>
+      implOverallPct(r)===100&&
+      !renewalsList.some(rw=>rw.orderId===r.id)&&
+      !dismissedRenewalOrderIds.has(r.id)
+    );
+    if(!rec) return;
+    const order=orders.find(o=>o.id===rec.id);
+    const start=todayISO();
+    const endDate=new Date(start);
+    endDate.setFullYear(endDate.getFullYear()+1);
+    const end=endDate.getFullYear()+"-"+String(endDate.getMonth()+1).padStart(2,"0")+"-"+String(endDate.getDate()).padStart(2,"0");
+    setEditingRenewal({
+      orderId:rec.id,
+      customer:rec.customer,
+      product:rec.product,
+      license:"",
+      users:"",
+      contractStart:start,
+      contractEnd:end,
+      value:order?order.value:"₹0",
+      assignedTo:order?.assignedTo||"",
+      notes:"",
+      renewalStatus:"Active",
+    });
+    setTab("Renewals");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[implRecords,renewalsList,editingRenewal,dismissedRenewalOrderIds]);
   const [showOrderModal,setShowOrderModal]=useState(false);
   const [editingOrder,setEditingOrder]=useState(null);
-  function handleAddOrder(){ setEditingOrder(null); setShowOrderModal(true); }
-  function handleEditOrder(order){ setEditingOrder(order); setShowOrderModal(true); }
+  const [prefillOrder,setPrefillOrder]=useState(null);
+  function handleAddOrder(){ setEditingOrder(null); setPrefillOrder(null); setShowOrderModal(true); }
+  function handleEditOrder(order){ setEditingOrder(order); setPrefillOrder(null); setShowOrderModal(true); }
   function handleDeleteOrder(order){
     if(!window.confirm(`Delete ${order.orderNo} (${order.customer})? This cannot be undone.`)) return;
-    setOrders(prev=>prev.filter(o=>o.orderNo!==order.orderNo));
+    marketingApi.removeOrder(order.id).then(loadOrders).catch(err=>apiError(err,"Failed to delete order."));
   }
   function handleSaveOrder(data){
-    if(editingOrder){
-      setOrders(prev=>prev.map(o=>o.orderNo===editingOrder.orderNo?data:o));
-    } else {
-      setOrders(prev=>[...prev,data]);
-    }
-    setEditingOrder(null);
-    setShowOrderModal(false);
+    const payload=toBackendOrder(data);
+    const req=editingOrder?marketingApi.updateOrder(editingOrder.id,payload):marketingApi.createOrder(payload);
+    req.then(()=>{ setEditingOrder(null); setPrefillOrder(null); setShowOrderModal(false); loadOrders(); })
+      .catch(err=>apiError(err,"Failed to save order."));
   }
   function handleSetOrderStatus(order,stage){
-    setOrders(prev=>prev.map(o=>o.orderNo===order.orderNo?{...o,orderStatus:stage}:o));
+    marketingApi.updateOrder(order.id,toBackendOrder({...order,orderStatus:stage}))
+      .then(loadOrders).catch(err=>apiError(err,"Failed to update order status."));
   }
 
   function toggleDrill(key){ setActiveDrill(prev=>prev===key?null:key); }
@@ -2702,31 +3307,20 @@ const [leadSources,setLeadSources]=useState(()=>loadPersisted("mpulse_leadSource
   function handleEditLead(lead){ setEditingLead(lead); setShowLeadModal(true); }
   function handleDeleteLead(lead){
     if(!window.confirm(`Delete Lead - ${lead.leadNo} (${lead.customer})? This cannot be undone.`)) return;
-    setLeads(prev=>prev.filter(l=>l.leadNo!==lead.leadNo));
+    marketingApi.removeLead(lead.id).then(loadLeads).catch(err=>apiError(err,"Failed to delete lead."));
   }
   function handleSaveLead(data){
-    if(editingLead){
-      setLeads(prev=>prev.map(l=>l.leadNo===editingLead.leadNo?data:l));
-    } else {
-      setLeads(prev=>[...prev,data]);
-    }
+    const payload=toBackendLead(data,leadSources);
+    const req=editingLead
+      ? marketingApi.updateLead(editingLead.id,payload)
+      : marketingApi.createLead(payload);
+    req.then(loadLeads).catch(err=>apiError(err,"Failed to save lead."));
     setEditingLead(null);
   }
   function handleChangeLeadOwner(leadNos,newOwner){
-    setLeads(prev=>prev.map(l=>leadNos.includes(l.leadNo)?{...l,owner:newOwner,lastModified:todayISO()}:l));
+    const ids=leads.filter(l=>leadNos.includes(l.leadNo)).map(l=>l.id);
+    marketingApi.bulkChangeOwner(ids,newOwner).then(loadLeads).catch(err=>apiError(err,"Failed to change owner."));
   }
-
-  useEffect(()=>{
-    try{ localStorage.setItem("mpulse_leads",JSON.stringify(leads)); }catch{}
-  },[leads]);
-
-  useEffect(()=>{
-  try{ localStorage.setItem("mpulse_products",JSON.stringify(products)); }catch{}
-},[products]);
-
-useEffect(()=>{
-  try{ localStorage.setItem("mpulse_leadSources",JSON.stringify(leadSources)); }catch{}
-},[leadSources]);
 
   const win=useMemo(()=>getPeriodWindow(period,year,month),[period,year,month]);
   const productLeadCounts=useMemo(()=>{
@@ -2739,22 +3333,92 @@ useEffect(()=>{
     leadSources.forEach(s=>{ counts[s.name]=leads.filter(l=>l.leadSource===s.name).length; });
     return counts;
   },[leadSources,leads]);
+  const businessAreaCounts=useMemo(()=>{
+    const counts={};
+    businessAreas.forEach(b=>{ counts[b.name]=leads.filter(l=>l.businessArea===b.name).length; });
+    return counts;
+  },[businessAreas,leads]);
+  const foundryTypeCounts=useMemo(()=>{
+    const counts={};
+    foundryTypes.forEach(f=>{ counts[f.name]=leads.filter(l=>(l.foundryInfo||[]).includes(f.name)).length; });
+    return counts;
+  },[foundryTypes,leads]);
+  const sandTypeCounts=useMemo(()=>{
+    const counts={};
+    sandTypeMaster.forEach(s=>{ counts[s.name]=leads.filter(l=>(l.sandTypes||[]).includes(s.name)).length; });
+    return counts;
+  },[sandTypeMaster,leads]);
+  const demoTypeCounts=useMemo(()=>{
+    const counts={};
+    demoTypes.forEach(t=>{ counts[t.name]=demos.filter(d=>d.type===t.name).length; });
+    return counts;
+  },[demoTypes,demos]);
 
   const filteredLeads=useMemo(()=>leads.filter(l=>inWindow(l.lastModified,win)),[leads,win]);
   const followUpLeadsFiltered=useMemo(()=>filteredLeads.filter(l=>l.status==="Follow Up"),[filteredLeads]);
-  const filteredDemos=useMemo(()=>allDemos.filter(d=>inWindow(d.date,win)),[win]);
+  const filteredDemos=useMemo(()=>demos.filter(d=>inWindow(d.demoDate,win)),[demos,win]);
+  const demoFollowUps=useMemo(()=>{
+    return demos
+      .filter(d=>d.nextFollowUp && d.nextFollowUp<todayISO())
+      .map(d=>{
+        const lastActivity=(d.activities||[])[0];
+        const days=Math.round((new Date(todayISO())-new Date(d.nextFollowUp))/86400000);
+        return {
+          customer:d.customer,
+          ref:d.demoNo+" · "+d.conductedBy,
+          note:lastActivity?lastActivity.note:"No notes yet.",
+          overdue:"Overdue "+days+"d",
+          outcome:lastActivity?lastActivity.outcome:d.status,
+        };
+      });
+  },[demos]);
+  const recentDemos=useMemo(()=>{
+    const rows=[];
+    demos.forEach(d=>{
+      (d.activities||[]).forEach(a=>{
+        rows.push({customer:d.customer,demoNo:d.demoNo,outcome:a.outcome,date:a.date,remarks:a.note,by:a.by});
+      });
+      if(!(d.activities||[]).length){
+        rows.push({customer:d.customer,demoNo:d.demoNo,outcome:d.status,date:d.demoDate,remarks:"No activity logged yet.",by:d.conductedBy});
+      }
+    });
+    return rows.filter(r=>r.date).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  },[demos]);
   const filteredOrders=useMemo(()=>orders.filter(o=>inWindow(o.date,win)),[orders,win]);
-  const filteredGoLive=useMemo(()=>implementations.filter(im=>inWindow(im.goLiveDate,win)),[win]);
+  const implGoLiveAll=useMemo(()=>implRecords
+    .filter(rec=>rec.orderStatus==="Active (Go-Live)")
+    .map(rec=>({...rec,progress:implOverallPct(rec),phase:currentPhaseOf(rec),goLiveDate:rec.date})),
+  [implRecords]);
+  const filteredGoLive=useMemo(()=>implGoLiveAll.filter(im=>inWindow(im.goLiveDate,win)),[implGoLiveAll,win]);
 
   const totalOrderValue=useMemo(()=>filteredOrders.reduce((s,o)=>s+parseRupee(o.value),0),[filteredOrders]);
   const paymentReceived=useMemo(()=>filteredOrders.reduce((s,o)=>s+parseRupee(o.paid),0),[filteredOrders]);
   const outstandingPayment=useMemo(()=>filteredOrders.reduce((s,o)=>s+parseRupee(o.outstanding),0),[filteredOrders]);
   const outstandingCount=useMemo(()=>filteredOrders.filter(o=>parseRupee(o.outstanding)>0).length,[filteredOrders]);
 
+  const renewalsWithComputedStatus=useMemo(()=>renewalsList.map(r=>({...r,computedStatus:renewalStatusFor(r),daysLeftNum:daysLeftFrom(r.contractEnd)})),[renewalsList]);
+  const renewalsOverdue=useMemo(()=>renewalsWithComputedStatus.filter(r=>r.computedStatus==="Overdue"),[renewalsWithComputedStatus]);
+  const renewalsDueSoon=useMemo(()=>renewalsWithComputedStatus.filter(r=>r.computedStatus==="Due Soon"),[renewalsWithComputedStatus]);
+  const renewalsDueList=useMemo(()=>[...renewalsOverdue,...renewalsDueSoon],[renewalsOverdue,renewalsDueSoon]);
+
+  const followUpDemosFiltered=useMemo(()=>filteredDemos.filter(d=>d.status==="Follow-Up"),[filteredDemos]);
+  const pipeline=useMemo(()=>{
+    const stages=[
+      {label:"Leads",value:filteredLeads.length,color:"#2563eb"},
+      {label:"Demos Conducted",value:filteredDemos.length,color:"#2563eb"},
+      {label:"Follow-Up",value:followUpDemosFiltered.length,color:"#2563eb"},
+      {label:"Orders",value:filteredOrders.length,color:"#2563eb"},
+      {label:"Active Go-Live",value:filteredGoLive.length,color:"#2563eb"},
+    ];
+    const max=Math.max(1,...stages.map(s=>s.value));
+    return stages.map(s=>({...s,pct:Math.round((s.value/max)*100)}));
+  },[filteredLeads,filteredDemos,followUpDemosFiltered,filteredOrders,filteredGoLive]);
+  const leadToOrderConversion=useMemo(()=>filteredLeads.length?Math.round((filteredOrders.length/filteredLeads.length)*100):0,[filteredLeads,filteredOrders]);
+
   const kpiRow1=[
-    {label:"Total Leads",value:String(filteredLeads.length),sub:win.label,accent:"#4f46e5",icon:"🎯",drillKey:"totalLeads"},
+    {label:"Total Leads",value:String(filteredLeads.length),sub:win.label,accent:"#2563eb",icon:"🎯",drillKey:"totalLeads"},
     {label:"Follow-up Leads",value:String(followUpLeadsFiltered.length),sub:"Pending action",accent:"#d97706",icon:"📞",drillKey:"followUpLeads"},
-    {label:"Demos Conducted",value:String(filteredDemos.length),sub:win.label,accent:"#4f46e5",icon:"🖥️",drillKey:"demosConducted"},
+    {label:"Demos Conducted",value:String(filteredDemos.length),sub:win.label,accent:"#2563eb",icon:"🖥️",drillKey:"demosConducted"},
     {label:"Overdue Follow-ups",value:String(demoFollowUps.length),sub:"Need action now",accent:"#dc2626",icon:"⚠️",drillKey:"overdueFollowUps"},
   ];
   const kpiRow2=[
@@ -2762,12 +3426,12 @@ useEffect(()=>{
     {label:"Total Order Value",value:money(totalOrderValue),sub:win.label,accent:"#059669",icon:"💰",drillKey:"orders"},
     {label:"Payment Received",value:money(paymentReceived),sub:win.label,accent:"#059669",icon:"✅",drillKey:"orders"},
     {label:"Outstanding Payment",value:money(outstandingPayment),sub:outstandingCount+" orders pending",accent:"#dc2626",icon:"🧾",drillKey:"orders"},
-    {label:"Renewals Due",value:"0",sub:"0 overdue · 0 due soon",accent:"#6b7280",icon:"🔄",drillKey:"renewalsDue"},
+    {label:"Renewals Due",value:String(renewalsDueList.length),sub:renewalsOverdue.length+" overdue · "+renewalsDueSoon.length+" due soon",accent:renewalsOverdue.length>0?"#dc2626":"#6b7280",icon:"🔄",drillKey:"renewalsDue"},
   ];
 
   const drillConfigs={
     totalLeads:{title:"All Leads",icon:"🎯",data:filteredLeads,columns:[
-      {header:"Lead No",cell:l=>"Lead - "+l.leadNo,style:{color:"#2563eb",fontWeight:700}},
+      {header:"Lead No",cell:l=>"Lead - "+l.leadNo,style:{color:"#111827",fontWeight:700}},
       {header:"Customer",cell:l=>l.customer,style:{fontWeight:600}},
       {header:"Owner",cell:l=>l.owner},
       {header:"Status",cell:l=><StatusPill label={l.status}/>},
@@ -2775,7 +3439,7 @@ useEffect(()=>{
       {header:"Last Modified",cell:l=>l.lastModified,style:{color:"#6b7280"}},
     ]},
     followUpLeads:{title:"Follow-up Leads",icon:"📞",data:followUpLeadsFiltered,columns:[
-      {header:"Lead No",cell:l=>"Lead - "+l.leadNo,style:{color:"#2563eb",fontWeight:700}},
+      {header:"Lead No",cell:l=>"Lead - "+l.leadNo,style:{color:"#111827",fontWeight:700}},
       {header:"Customer",cell:l=>l.customer,style:{fontWeight:600}},
       {header:"Owner",cell:l=>l.owner},
       {header:"Products",cell:l=><ProductPill label={l.product}/>},
@@ -2783,7 +3447,7 @@ useEffect(()=>{
     ]},
     demosConducted:{title:"All Demos",icon:"🖥️",data:filteredDemos,columns:[
       {header:"Customer",cell:d=>d.customer,style:{fontWeight:600}},
-      {header:"Demo No",cell:d=>d.demoNo,style:{color:"#2563eb",fontWeight:700}},
+      {header:"Demo No",cell:d=>d.demoNo,style:{color:"#111827",fontWeight:700}},
       {header:"Outcome",cell:d=><StatusPill label={d.outcome}/>},
       {header:"Date",cell:d=>d.date,style:{color:"#6b7280"}},
       {header:"By",cell:d=>d.by},
@@ -2798,11 +3462,11 @@ useEffect(()=>{
       {header:"Customer",cell:im=>im.customer,style:{fontWeight:600}},
       {header:"Product",cell:im=><ProductPill label={im.product}/>},
       {header:"Progress",cell:im=>im.progress+"%",style:{fontWeight:700}},
-      {header:"Phase",cell:im=>im.phase+" of 3"},
+      {header:"Phase",cell:im=>im.phase+" of "+(im.phases.length-1)},
       {header:"Go-Live Date",cell:im=>im.goLiveDate,style:{color:"#6b7280"}},
     ]},
     orders:{title:"Orders",icon:"💰",data:filteredOrders,columns:[
-      {header:"Order No",cell:o=>o.orderNo,style:{color:"#2563eb",fontWeight:700}},
+      {header:"Order No",cell:o=>o.orderNo,style:{color:"#111827",fontWeight:700}},
       {header:"Customer",cell:o=>o.customer,style:{fontWeight:600}},
       {header:"Product",cell:o=><ProductPill label={o.product}/>},
       {header:"Value",cell:o=>o.value,style:{fontWeight:700}},
@@ -2811,11 +3475,11 @@ useEffect(()=>{
       {header:"Status",cell:o=><StatusPill label={o.status}/>},
       {header:"Date",cell:o=>o.date,style:{color:"#6b7280"}},
     ]},
-    renewalsDue:{title:"Renewals Due",icon:"🔄",data:[],columns:[
-      {header:"Customer",cell:r=>r.customer},
-      {header:"Product",cell:r=>r.product},
-      {header:"Contract End",cell:r=>r.contractEnd},
-      {header:"Days Left",cell:r=>r.daysLeft},
+    renewalsDue:{title:"Renewals Due",icon:"🔄",data:renewalsDueList,columns:[
+      {header:"Customer",cell:r=>r.customer,style:{fontWeight:600}},
+      {header:"Product",cell:r=><ProductPill label={r.product}/>},
+      {header:"Contract End",cell:r=>r.contractEnd,style:{color:"#6b7280"}},
+      {header:"Days Left",cell:r=>r.daysLeftNum<0?Math.abs(r.daysLeftNum)+"d overdue":r.daysLeftNum+"d left",style:{fontWeight:700}},
     ]},
   };
 
@@ -2825,7 +3489,7 @@ useEffect(()=>{
         {tabs.map(t=>{
           const active=tab===t;
           return(
-            <button key={t} onClick={()=>setTab(t)} style={{padding:"9px 18px",borderRadius:7,border:"none",background:active?"#4f46e5":"transparent",color:active?"#fff":"#6b7280",fontSize:13,fontWeight:active?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button key={t} onClick={()=>setTab(t)} style={{padding:"9px 18px",borderRadius:7,border:"none",background:active?"#2563eb":"transparent",color:active?"#fff":"#6b7280",fontSize:13,fontWeight:active?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>
               {t}
             </button>
           );
@@ -2836,8 +3500,8 @@ useEffect(()=>{
         <>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
             <span style={{fontSize:13,fontWeight:600,color:"#374151",display:"flex",alignItems:"center",gap:6}}>📅 Period:</span>
-            {["All Time","This Month","Last Month","This Year"].map(p=>(
-              <button key={p} onClick={()=>pickQuick(p)} style={{padding:"7px 14px",borderRadius:7,border:"1px solid "+(period===p?"#4f46e5":"#d1d5db"),background:period===p?"#4f46e5":"#fff",color:period===p?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>{p}</button>
+            {["All Time","Today","This Week","This Month","Last Month","This Year"].map(p=>(
+              <button key={p} onClick={()=>pickQuick(p)} style={{padding:"7px 14px",borderRadius:7,border:"1px solid "+(period===p?"#2563eb":"#d1d5db"),background:period===p?"#2563eb":"#fff",color:period===p?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>{p}</button>
             ))}
             <select value={year} onChange={e=>pickYear(e.target.value)} style={{...inputStyle,width:120,padding:"7px 10px"}}>
               <option>All Years</option>
@@ -2868,7 +3532,7 @@ useEffect(()=>{
           <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16,marginBottom:20}}>
             <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 18px",borderBottom:"1px solid #f0f2f5"}}>
-                <div style={{fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>📅 Demo Follow-up Action Centre</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Demo Follow-up Action Centre</div>
                 {demoFollowUps.length>0&&<span style={{fontSize:11,fontWeight:700,color:"#dc2626"}}>{demoFollowUps.length} OVERDUE</span>}
               </div>
               <div style={{padding:14}}>
@@ -2889,7 +3553,7 @@ useEffect(()=>{
             </div>
 
             <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
-              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>📊 Sales Pipeline</div>
+              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Sales Pipeline</div>
               <div style={{padding:"14px 18px",display:"flex",flexDirection:"column",gap:12}}>
                 {pipeline.map(p=>(
                   <div key={p.label}>
@@ -2904,7 +3568,7 @@ useEffect(()=>{
                 ))}
                 <div style={{background:"#f8f9fb",borderRadius:8,padding:"12px 14px",marginTop:4}}>
                   <div style={{fontSize:12,color:"#6b7280"}}>Lead → Order Conversion</div>
-                  <div style={{fontSize:22,fontWeight:800,color:"#2563eb"}}>20%</div>
+                  <div style={{fontSize:22,fontWeight:800,color:"#2563eb"}}>{leadToOrderConversion}%</div>
                 </div>
               </div>
             </div>
@@ -2912,14 +3576,14 @@ useEffect(()=>{
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
             <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
-              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>🎯 Leads – Follow-Up Required ({followUpLeadsFiltered.length})</div>
+              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Leads – Follow-Up Required ({followUpLeadsFiltered.length})</div>
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead><tr>{["Lead No","Customer","Owner","Product","Last Modified"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                   <tbody>
                     {followUpLeadsFiltered.map(l=>(
                       <tr key={l.leadNo}>
-                        <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>Lead - {l.leadNo}</td>
+                        <td style={{...tdStyle,color:"#111827",fontWeight:700}}>Lead - {l.leadNo}</td>
                         <td style={{...tdStyle,fontWeight:600}}>{l.customer}</td>
                         <td style={tdStyle}>{l.owner}</td>
                         <td style={tdStyle}><ProductPill label={l.product}/></td>
@@ -2933,24 +3597,24 @@ useEffect(()=>{
             </div>
 
             <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
-              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>🚀 Implementation Status ({implementations.length} active)</div>
+              <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Implementation Status ({implGoLiveAll.length} active)</div>
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead><tr>{["Customer","Product","Progress","Phases"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                   <tbody>
-                    {implementations.map(im=>(
-                      <tr key={im.customer}>
+                    {implGoLiveAll.map(im=>(
+                      <tr key={im.orderNo}>
                         <td style={{...tdStyle,fontWeight:600}}>{im.customer}</td>
                         <td style={tdStyle}><ProductPill label={im.product}/></td>
                         <td style={tdStyle}>
                           <div style={{display:"flex",alignItems:"center",gap:8}}>
                             <div style={{width:60,height:6,borderRadius:4,background:"#f3f4f6",overflow:"hidden"}}>
-                              <div style={{height:"100%",width:im.progress+"%",background:"#4f46e5",borderRadius:4}}/>
+                              <div style={{height:"100%",width:im.progress+"%",background:"#2563eb",borderRadius:4}}/>
                             </div>
                             <span style={{fontSize:12,fontWeight:700,color:"#111827"}}>{im.progress}%</span>
                           </div>
                         </td>
-                        <td style={tdStyle}><PhaseStepper phase={im.phase}/></td>
+                        <td style={tdStyle}><PhaseStepper phase={im.phase} totalPhases={im.phases.length}/></td>
                       </tr>
                     ))}
                   </tbody>
@@ -2960,29 +3624,33 @@ useEffect(()=>{
           </div>
 
           <div style={{...cardStyle,padding:0,overflow:"hidden",marginBottom:20}}>
-            <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>🔄 Contract Renewals Status</div>
+            <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Contract Renewals Status</div>
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr>{["Customer","Product","Contract End","Days Left","Renewal Status","Value","Last Renewed"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {renewals.map(r=>(
-                    <tr key={r.customer}>
-                      <td style={{...tdStyle,fontWeight:600}}>{r.customer}</td>
-                      <td style={tdStyle}><ProductPill label={r.product}/></td>
-                      <td style={{...tdStyle,color:"#6b7280"}}>{r.contractEnd}</td>
-                      <td style={tdStyle}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>{r.daysLeft}</span></td>
-                      <td style={tdStyle}><StatusPill label={r.status}/></td>
-                      <td style={{...tdStyle,fontWeight:700,color:"#059669"}}>{r.value}</td>
-                      <td style={{...tdStyle,color:"#6b7280"}}>{r.lastRenewed}</td>
-                    </tr>
-                  ))}
+                  {renewalsList.map(r=>{
+                    const daysNum=daysLeftFrom(r.contractEnd);
+                    const daysLeft=daysNum<0?Math.abs(daysNum)+"d overdue":daysNum+"d left";
+                    return(
+                      <tr key={r.id}>
+                        <td style={{...tdStyle,fontWeight:600}}>{r.customer}</td>
+                        <td style={tdStyle}><ProductPill label={r.product}/></td>
+                        <td style={{...tdStyle,color:"#6b7280"}}>{r.contractEnd}</td>
+                        <td style={tdStyle}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:"#ecfdf5",color:"#059669"}}>{daysLeft}</span></td>
+                        <td style={tdStyle}><StatusPill label={renewalStatusFor(r)}/></td>
+                        <td style={{...tdStyle,fontWeight:700,color:"#059669"}}>{r.value}</td>
+                        <td style={{...tdStyle,color:"#6b7280"}}>{(r.history&&r.history[0])?r.history[0].renewedOn:"—"}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
           <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
-            <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>🕐 Recent Demo Activity</div>
+            <div style={{padding:"14px 18px",borderBottom:"1px solid #f0f2f5",fontSize:14,fontWeight:700,color:"#111827",display:"flex",alignItems:"center",gap:8}}>Recent Demo Activity</div>
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr>{["Customer","Demo No","Outcome","Date","Remarks","By"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
@@ -2990,13 +3658,14 @@ useEffect(()=>{
                   {recentDemos.map((d,i)=>(
                     <tr key={i}>
                       <td style={{...tdStyle,fontWeight:600}}>{d.customer}</td>
-                      <td style={{...tdStyle,color:"#2563eb",fontWeight:700}}>{d.demoNo}</td>
+                      <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{d.demoNo}</td>
                       <td style={tdStyle}><StatusPill label={d.outcome}/></td>
                       <td style={{...tdStyle,color:"#6b7280"}}>{d.date}</td>
                       <td style={{...tdStyle,color:"#4b5563",maxWidth:280}}>{d.remarks}</td>
                       <td style={tdStyle}>{d.by}</td>
                     </tr>
                   ))}
+                  {recentDemos.length===0&&<tr><td colSpan={6} style={{...tdStyle,textAlign:"center",color:"#9ca3af",padding:20}}>No recent demo activity.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -3008,7 +3677,8 @@ useEffect(()=>{
         <LeadsTab leads={leads} onAddNew={handleAddLead} onEdit={handleEditLead} onDelete={handleDeleteLead}
           onOpenProductMaster={()=>setShowProductMaster(true)}
           onOpenLeadSourceMaster={()=>setShowLeadSourceMaster(true)}
-          onChangeOwner={handleChangeLeadOwner}/>
+          onChangeOwner={handleChangeLeadOwner}
+          ownerOptions={marketingOwners}/>
       )}
 
       {tab==="Demos"&&(
@@ -3021,15 +3691,24 @@ useEffect(()=>{
       )}
 
       {tab==="Implementation"&&(
-        <ImplementationTab records={implRecords} onUpdatePhase={handleUpdateImplPhase}/>
+        <ImplementationTab records={implRecords} onUpdatePhase={handleUpdateImplPhase}
+          productOptions={products.map(p=>p.name)}
+          onAddPhases={(productName)=>{
+            const p=products.find(pp=>pp.name===productName);
+            if(p) setPhasesProduct(p);
+          }}/>
       )}
 
       {tab==="Renewals"&&(
-        <RenewalsTab renewals={renewalsList} onRenew={handleRenewContract}/>
+        <RenewalsTab renewals={renewalsList} onRenew={handleRenewContract} onEdit={handleEditRenewal}/>
+      )}
+
+      {editingRenewal&&(
+        <EditRenewalModal renewal={editingRenewal} onClose={handleCloseRenewalEdit} onSave={handleSaveRenewalEdit}/>
       )}
 
       {tab==="Reports"&&(
-        <ReportsTab leads={leads} demos={demos} orders={orders}/>
+        <ReportsTab leads={leads} demos={demos} orders={orders} ownerOptions={marketingOwners}/>
       )}
 
       {showLeadModal&&(
@@ -3040,28 +3719,92 @@ useEffect(()=>{
           initial={editingLead}
           productOptions={products.map(p=>p.name)}
           leadSourceOptions={leadSources.map(s=>s.name)}
+          businessAreaOptions={businessAreas.map(b=>b.name)}
+          foundryInfoOptions={foundryTypes.map(f=>f.name)}
+          sandTypeOptions={sandTypeMaster.map(s=>s.name)}
+          ownerOptions={marketingOwners}
+          onOpenBusinessAreaMaster={()=>setShowBusinessAreaMaster(true)}
+          onOpenFoundryTypeMaster={()=>setShowFoundryTypeMaster(true)}
+          onOpenSandTypeMaster={()=>setShowSandTypeMaster(true)}
+          existingCustomers={leads.filter(l=>l.id!==editingLead?.id).map(l=>l.customer)}
         />
       )}
 
       {showProductMaster&&(
-        <ProductMasterModal
-          products={products}
+        <MasterListModal
+          title="Product Master" itemNoun="product" icon="📦" accent="#2563eb" placeholder="e.g. IndustiQ"
+          items={products}
           leadCounts={productLeadCounts}
           onClose={()=>setShowProductMaster(false)}
           onAdd={handleAddProduct}
           onEdit={handleEditProduct}
           onDelete={handleDeleteProduct}
+          onManagePhases={(p)=>setPhasesProduct(p)}
         />
       )}
 
+      {phasesProduct&&(
+        <ProductPhasesModal product={phasesProduct} onClose={()=>setPhasesProduct(null)}/>
+      )}
+
       {showLeadSourceMaster&&(
-        <LeadSourceMasterModal
-          sources={leadSources}
+        <MasterListModal
+          title="Lead Source Master" itemNoun="lead source" icon="🚀" accent="#2563eb" placeholder="e.g. Cold Email"
+          items={leadSources}
           leadCounts={leadSourceCounts}
           onClose={()=>setShowLeadSourceMaster(false)}
           onAdd={handleAddLeadSource}
           onEdit={handleEditLeadSource}
           onDelete={handleDeleteLeadSource}
+        />
+      )}
+
+      {showBusinessAreaMaster&&(
+        <MasterListModal
+          title="Business Area Master" itemNoun="business area" icon="🏭" accent="#b45309" placeholder="e.g. Foundry Equipment"
+          items={businessAreas}
+          leadCounts={businessAreaCounts}
+          onClose={()=>setShowBusinessAreaMaster(false)}
+          onAdd={handleAddBusinessArea}
+          onEdit={handleEditBusinessArea}
+          onDelete={handleDeleteBusinessArea}
+        />
+      )}
+
+      {showFoundryTypeMaster&&(
+        <MasterListModal
+          title="Foundry Information Master" itemNoun="foundry type" icon="🏗️" accent="#374151" placeholder="e.g. Ductile Iron"
+          items={foundryTypes}
+          leadCounts={foundryTypeCounts}
+          onClose={()=>setShowFoundryTypeMaster(false)}
+          onAdd={handleAddFoundryType}
+          onEdit={handleEditFoundryType}
+          onDelete={handleDeleteFoundryType}
+        />
+      )}
+
+      {showSandTypeMaster&&(
+        <MasterListModal
+          title="Sand System Master" itemNoun="sand type" icon="🏖️" accent="#0891b2" placeholder="e.g. Furan Sand"
+          items={sandTypeMaster}
+          leadCounts={sandTypeCounts}
+          onClose={()=>setShowSandTypeMaster(false)}
+          onAdd={handleAddSandType}
+          onEdit={handleEditSandType}
+          onDelete={handleDeleteSandType}
+        />
+      )}
+
+      {showDemoTypeMaster&&(
+        <MasterListModal
+          title="Demonstration Type Master" itemNoun="demo type" icon="🖥️" accent="#1d4ed8" placeholder="e.g. Hybrid"
+          items={demoTypes}
+          leadCounts={demoTypeCounts}
+          usageNoun="demo"
+          onClose={()=>setShowDemoTypeMaster(false)}
+          onAdd={handleAddDemoType}
+          onEdit={handleEditDemoType}
+          onDelete={handleDeleteDemoType}
         />
       )}
 
@@ -3072,8 +3815,10 @@ useEffect(()=>{
           nextDemoNumber={nextDemoNo(demos)}
           initial={editingDemo}
           productOptions={products.map(p=>p.name)}
-          ownerOptions={OWNER_OPTIONS}
-          customerOptions={Array.from(new Set([...leads.map(l=>l.customer),...demos.map(d=>d.customer)])).sort()}
+          ownerOptions={marketingOwners}
+          customerOptions={Array.from(new Set(leads.map(l=>l.customer))).sort()}
+          demoTypeOptions={demoTypes.map(t=>t.name)}
+          onOpenDemoTypeMaster={()=>setShowDemoTypeMaster(true)}
         />
       )}
 
@@ -3082,19 +3827,20 @@ useEffect(()=>{
           demo={trackingDemo}
           onClose={()=>setTrackingDemo(null)}
           onSave={handleSaveFollowUp}
-          ownerOptions={OWNER_OPTIONS}
+          ownerOptions={marketingOwners}
         />
       )}
 
       {showOrderModal&&(
         <OrderModal
-          onClose={()=>{setShowOrderModal(false);setEditingOrder(null);}}
+          onClose={()=>{setShowOrderModal(false);setEditingOrder(null);setPrefillOrder(null);}}
           onSave={handleSaveOrder}
           nextOrderNumber={nextOrderNo(orders)}
-          initial={editingOrder}
+          initial={editingOrder||prefillOrder}
+          mandatory={!editingOrder&&!!prefillOrder}
           productOptions={products.map(p=>p.name)}
-          ownerOptions={OWNER_OPTIONS}
-          customerOptions={Array.from(new Set([...leads.map(l=>l.customer),...demos.map(d=>d.customer),...orders.map(o=>o.customer)])).sort()}
+          ownerOptions={marketingOwners}
+          customerOptions={Array.from(new Set(leads.map(l=>l.customer))).sort()}
         />
       )}
     </div>

@@ -80,7 +80,7 @@ function UserDashboard({user}){
   const kpis=[
     {label:"Tasks Logged",value:tasks.length,icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",value:avgUtil+"%",icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
-    {label:"Total Hours",value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`,icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Total Hours",value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`,icon:"📈",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"On Time",value:onTime,icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Delayed",value:delayed,icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
   ];
@@ -91,7 +91,7 @@ function UserDashboard({user}){
     <div>
       <div style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:"#312e81",color:"#a5b4fc",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name?.[0]}</div>
+          <div style={{width:38,height:38,borderRadius:"50%",background:"#1e3a8a",color:"#93c5fd",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name?.[0]}</div>
           <div>
             <div style={{fontSize:14,fontWeight:700,color:"#111827"}}>My Dashboard — {user.name}</div>
             <div style={{fontSize:12,color:"#9ca3af"}}>Your personal utilization overview</div>
@@ -111,7 +111,7 @@ function UserDashboard({user}){
                   :q.label==="Today"?dateFrom===fmt(today)&&dateTo===fmt(today)
                   :q.label==="This Month"?dateFrom===thisMonthStart&&dateTo===fmt(today)
                   :dateFrom===lastMonthStart&&dateTo===yesterday;
-                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#4f46e5":"#e4e7ec"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
+                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#2563eb":"#e4e7ec"),background:active?"#2563eb":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
               })}
             </div>
           </div>
@@ -151,15 +151,15 @@ function UserDashboard({user}){
                     <AreaChart data={trendData} margin={{left:-20,right:8,top:8,bottom:0}}>
                       <defs>
                         <linearGradient id="utg" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={.15}/>
-                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#2563eb" stopOpacity={.15}/>
+                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
-                      <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#utg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5}}/>
+                      <Area type="monotone" dataKey="v" stroke="#2563eb" strokeWidth={2.5} fill="url(#utg)" dot={{r:3,fill:"#2563eb",strokeWidth:0}} activeDot={{r:5}}/>
                     </AreaChart>
                   </ResponsiveContainer>
                 ):<div style={{height:180,display:"flex",alignItems:"center",justifyContent:"center",color:"#9ca3af",fontSize:13}}>No data for selected range</div>}
@@ -419,11 +419,11 @@ function AdminManagerDashboard(){
     :projects.filter(p=>["Completed","Cancelled"].includes(p.status)).length;
   const onTimeTasks   = filtered.filter(t=>t.tat_days===0).length;
   const kpis=[
-    {label:"Active Employees",  value:activeEmpCount,                  icon:"👥",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Active Employees",  value:activeEmpCount,                  icon:"👥",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Open Projects",     value:openProjects,                    icon:"📁",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Tasks Logged",      value:filtered.length,                 icon:"📋",accent:"#059669",bg:"#ecfdf5"},
     {label:"Avg Utilization",   value:avgUtil+"%",                     icon:"⚡",accent:"#ca8a04",bg:"#fef9c3"},
-    {label:"Total Hours",       value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`, icon:"📈",accent:"#7c3aed",bg:"#ede9fe"},
+    {label:"Total Hours",       value:`${Math.floor(totalMins/60)}h ${totalMins%60}min`, icon:"📈",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"Project Delays",    value:totalDelays,                     icon:"⚠️",accent:"#dc2626",bg:"#fef2f2"},
     {label:"On Time Tasks",     value:onTimeTasks,                     icon:"✅",accent:"#059669",bg:"#ecfdf5"},
     {label:"Closed Projects",   value:closedProjects,                  icon:"🔒",accent:"#065f46",bg:"#f0fdf4"},
@@ -448,7 +448,7 @@ function AdminManagerDashboard(){
                   :q.label==="Today"?dateFrom===fmt(today)&&dateTo===fmt(today)
                   :q.label==="This Month"?dateFrom===thisMonthStart&&dateTo===fmt(today)
                   :dateFrom===lastMonthStart&&dateTo===yesterday;
-                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#4f46e5":"#e4e7ec"),background:active?"#4f46e5":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
+                return <button key={q.label} onClick={q.fn} style={{padding:"4px 10px",borderRadius:5,border:"1px solid "+(active?"#2563eb":"#e4e7ec"),background:active?"#2563eb":"#fff",color:active?"#fff":"#4b5563",fontSize:11,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{q.label}</button>;
               })}
             </div>
           </div>
@@ -529,7 +529,7 @@ function AdminManagerDashboard(){
                         <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                         <Tooltip {...ttip} formatter={v=>[v+"%","Avg Util"]}/>
                         <Bar dataKey="v" radius={[4,4,0,0]} maxBarSize={36} label={{position:"top",fontSize:10,fontWeight:600,fill:"#4b5563",formatter:v=>v+"%"}} onClick={e=>e&&e.full&&(setDrillType("emp"),setDrillValue(e.full))} style={{cursor:"pointer"}}>
-                          {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#7c3aed":"#4f46e5"}/>)}
+                          {empChartData.map((e,i)=><Cell key={i} fill={drillType==="emp"&&drillValue===e.full?"#1d4ed8":"#2563eb"}/>)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -551,15 +551,15 @@ function AdminManagerDashboard(){
                     <AreaChart data={trendData} margin={{left:-20,right:8,top:8,bottom:0}}>
                       <defs>
                         <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={.15}/>
-                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#2563eb" stopOpacity={.15}/>
+                          <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false}/>
                       <XAxis dataKey="x" tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:"#9ca3af"}} axisLine={false} tickLine={false} domain={[0,120]}/>
                       <Tooltip {...ttip} formatter={v=>[v+"%","Utilization"]}/>
-                      <Area type="monotone" dataKey="v" stroke="#4f46e5" strokeWidth={2.5} fill="url(#tg)" dot={{r:3,fill:"#4f46e5",strokeWidth:0}} activeDot={{r:5,fill:"#4f46e5"}}/>
+                      <Area type="monotone" dataKey="v" stroke="#2563eb" strokeWidth={2.5} fill="url(#tg)" dot={{r:3,fill:"#2563eb",strokeWidth:0}} activeDot={{r:5,fill:"#2563eb"}}/>
                     </AreaChart>
                   </ResponsiveContainer>
                 ):<div style={{height:160,display:"flex",alignItems:"center",justifyContent:"center",color:"#9ca3af",fontSize:13}}>No data for selected range</div>}
@@ -591,7 +591,7 @@ function AdminManagerDashboard(){
             <div ref={drillRef} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"12px 14px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:4,height:16,background:"#4f46e5",borderRadius:2}}/>
+                  <div style={{width:4,height:16,background:"#2563eb",borderRadius:2}}/>
                   <span style={{fontSize:13,fontWeight:700}}>
                     {drillType==="dept"?`Tasks — ${drillValue} Dept`:drillType==="emp"?`Tasks — ${drillValue}`:`Tasks — ${drillValue}`}
                   </span>
@@ -617,7 +617,7 @@ function AdminManagerDashboard(){
                               if(p){setSelProjId(p.id);setSelMember(null);}
                               setTimeout(()=>projTeamRef.current?.scrollIntoView({behavior:'smooth',block:'start'}),120);
                             }}
-                            style={{color:"#4f46e5",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}
+                            style={{color:"#2563eb",fontWeight:600,cursor:"pointer",textDecoration:"underline",textDecorationStyle:"dotted",textUnderlineOffset:3}}
                             title="View in Project Team Utilization">
                             {t.project_name||"—"}
                           </span>
@@ -653,7 +653,7 @@ function AdminManagerDashboard(){
           {(
             <div ref={projTeamRef} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:10,marginBottom:14,overflow:"hidden"}}>
               <div style={{padding:"12px 16px",borderBottom:"1px solid #f0f2f5",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                <div style={{width:3,height:18,background:"#4f46e5",borderRadius:2}}/>
+                <div style={{width:3,height:18,background:"#2563eb",borderRadius:2}}/>
                 <span style={{fontSize:13,fontWeight:700}}>Project Team Utilization</span>
                 <div style={{flex:1}}/>
                 <select value={selProjId||""} onChange={e=>{setSelProjId(e.target.value?Number(e.target.value):null);setSelMember(null);}} style={{...selS,fontWeight:600,maxWidth:280}}>
@@ -721,7 +721,7 @@ function AdminManagerDashboard(){
                             const lastDate=fmtDate(m.lastDate);
                             return(
                               <tr key={mi} onClick={()=>setSelMember(isSelected?null:m.name)}
-                                style={{background:isSelected?"#eef2ff":mi%2===0?"#fff":"#fafafa",cursor:"pointer",transition:"background .1s"}}>
+                                style={{background:isSelected?"#eff6ff":mi%2===0?"#fff":"#fafafa",cursor:"pointer",transition:"background .1s"}}>
                                 <td style={{padding:"9px 12px",borderBottom:"1px solid #f0f2f5"}}>
                                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                                     <div style={{width:26,height:26,borderRadius:"50%",background:COLORS[mi%COLORS.length],color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{m.name[0]}</div>
@@ -756,7 +756,7 @@ function AdminManagerDashboard(){
                       return(
                         <div style={{marginTop:14,border:"1px solid #e4e7ec",borderRadius:8,overflow:"hidden"}}>
                           <div style={{padding:"9px 14px",background:"#f8f9fb",borderBottom:"1px solid #e4e7ec",display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:3,height:14,background:"#4f46e5",borderRadius:2}}/>
+                            <div style={{width:3,height:14,background:"#2563eb",borderRadius:2}}/>
                             <span style={{fontSize:12,fontWeight:700,color:"#111827"}}>{selMember} — tasks on {selProj?.name||"All Projects"}</span>
                             <span style={{background:"#eff6ff",color:"#1d4ed8",fontSize:11,fontWeight:600,padding:"1px 7px",borderRadius:20}}>{empTasks.length} tasks</span>
                             <button onClick={e=>{e.stopPropagation();setSelMember(null);}} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#9ca3af"}}>✕</button>

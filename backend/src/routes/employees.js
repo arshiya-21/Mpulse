@@ -83,6 +83,20 @@ router.get('/', verify, async (req, res) => {
       return res.json(rows);
     }
 
+    // Special param: for_marketing=true → active employees whose primary OR
+    // secondary department is Marketing (used for the Lead/Demo/Order "Owner" pickers)
+    if (req.query.for_marketing === 'true') {
+      const { rows } = await db.query(`
+        SELECT e.id, e.name, e.department_id, d.name AS department
+        FROM employees e
+        LEFT JOIN departments d  ON d.id  = e.department_id
+        LEFT JOIN departments d2 ON d2.id = e.secondary_department_id
+        WHERE e.status = 'active' AND (d.name = 'Marketing' OR d2.name = 'Marketing')
+        ORDER BY e.name
+      `);
+      return res.json(rows);
+    }
+
     let q = EMP_SELECT + ' WHERE 1=1';
     const params = [];
 

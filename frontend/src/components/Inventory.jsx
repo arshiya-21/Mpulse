@@ -434,7 +434,7 @@ function ItemsTable({ items, priceLabel, onUpdate, onAdd, onRemove, itemOptions,
       })}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-        <button onClick={onAdd} style={{ background: "none", border: "none", color: "#4f46e5", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0 }}>
+        <button onClick={onAdd} style={{ background: "none", border: "none", color: "#2563eb", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0 }}>
           + Add Item
         </button>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>Total: ₹{total.toLocaleString("en-IN")}</div>
@@ -496,7 +496,7 @@ function InwardModal({ onClose, onSave, nextGrnNumber, initial, itemOptions, all
           <button onClick={onClose} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 13, color: "#111827", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
+          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
             Save Inward
           </button>
         </>
@@ -609,7 +609,7 @@ function OutwardModal({ onClose, onSave, nextDnNumber, initial, itemOptions, all
           <button onClick={onClose} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 13, color: "#111827", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
+          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
             Save Outward
           </button>
         </>
@@ -722,7 +722,7 @@ function InwardTab({ rows, onAddNew, onEdit, onDelete }) {
           <div style={{ fontSize: 13, color: "#6b7280" }}>{filteredRows.length} entries</div>
           <button
             onClick={onAddNew}
-            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
+            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
           >
             + New Inward
           </button>
@@ -747,7 +747,7 @@ function InwardTab({ rows, onAddNew, onEdit, onDelete }) {
           <tbody>
             {filteredRows.map((r, i) => (
               <tr key={`${r.ref}-${i}`}>
-                <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700, whiteSpace: "nowrap" }}>{r.ref}</td>
+                <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700, whiteSpace: "nowrap" }}>{r.ref}</td>
                 <td style={{ ...tdStyle, color: "#6b7280", whiteSpace: "nowrap" }}>{r.date || "—"}</td>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.party}</td>
                 <td style={{ ...tdStyle, color: "#374151" }}>
@@ -853,7 +853,7 @@ function OutwardTab({ rows, onAddNew, onEdit, onDelete }) {
           <div style={{ fontSize: 13, color: "#6b7280" }}>{filteredRows.length} entries</div>
           <button
             onClick={onAddNew}
-            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
+            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
           >
             + New Outward
           </button>
@@ -878,7 +878,7 @@ function OutwardTab({ rows, onAddNew, onEdit, onDelete }) {
           <tbody>
             {filteredRows.map((r, i) => (
               <tr key={`${r.ref}-${i}`}>
-                <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700, whiteSpace: "nowrap" }}>{r.ref}</td>
+                <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700, whiteSpace: "nowrap" }}>{r.ref}</td>
                 <td style={{ ...tdStyle, color: "#6b7280", whiteSpace: "nowrap" }}>{r.date || "—"}</td>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.party}</td>
                 <td style={{ ...tdStyle, color: "#374151" }}>
@@ -968,7 +968,7 @@ function ItemModal({ onClose, onSave, nextItemCode, initial }) {
           <button onClick={onClose} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 13, color: "#111827", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
+          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
             Save
           </button>
         </>
@@ -1114,7 +1114,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
           <div style={{ fontSize: 13, color: "#6b7280" }}>{filteredRows.length} items</div>
           <button
             onClick={onAddNew}
-            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
+            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
           >
             + New Item
           </button>
@@ -1140,7 +1140,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
           <tbody>
             {paginatedRows.map((item) => (
               <tr key={item.code}>
-                <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700, whiteSpace: "nowrap" }}>{item.code}</td>
+                <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700, whiteSpace: "nowrap" }}>{item.code}</td>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{item.name}</td>
                 <td style={{ ...tdStyle, color: "#6b7280" }}>{item.category}</td>
                 <td style={{ ...tdStyle, color: "#6b7280" }}>{item.unit}</td>
@@ -1239,7 +1239,7 @@ function SupplierModal({ onClose, onSave, initial }) {
           <button onClick={onClose} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 13, color: "#111827", cursor: "pointer" }}>
             Cancel
           </button>
-          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
+          <button onClick={handleSave} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}>
             Save
           </button>
         </>
@@ -1492,7 +1492,7 @@ function SuppliersTab({ rows, inwardRows, onAddNew, onEdit, onDelete }) {
           <div style={{ fontSize: 13, color: "#6b7280" }}>{filteredRows.length} suppliers</div>
           <button
             onClick={onAddNew}
-            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#4f46e5", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
+            style={{ padding: "10px 16px", borderRadius: 8, border: "none", background: "#2563eb", fontWeight: 600, fontSize: 13, color: "#fff", cursor: "pointer" }}
           >
             + New Supplier
           </button>
@@ -1520,19 +1520,19 @@ function SuppliersTab({ rows, inwardRows, onAddNew, onEdit, onDelete }) {
               const stats = supplierStats[s.name];
               return (
                 <tr key={s.name}>
-                  <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700 }}>{s.name}</td>
+                  <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700 }}>{s.name}</td>
                   <td style={tdStyle}>{s.contact || "—"}</td>
                   <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{s.phone || "—"}</td>
                   <td style={tdStyle}>
                     {s.email ? (
-                      <a href={`mailto:${s.email}`} style={{ color: "#4f46e5" }}>{s.email}</a>
+                      <a href={`mailto:${s.email}`} style={{ color: "#2563eb" }}>{s.email}</a>
                     ) : (
                       "—"
                     )}
                   </td>
                   <td style={tdStyle}>{s.city || "—"}</td>
                   <td style={tdStyle}>{s.itemsSupplied || "—"}</td>
-                  <td style={{ ...tdStyle, textAlign: "right", color: "#4f46e5", fontWeight: 700 }}>{stats ? stats.count : "—"}</td>
+                  <td style={{ ...tdStyle, textAlign: "right", color: "#2563eb", fontWeight: 700 }}>{stats ? stats.count : "—"}</td>
                   <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: "#059669" }}>
                     {stats ? `₹${stats.total.toLocaleString("en-IN")}` : "–"}
                   </td>
@@ -1806,7 +1806,7 @@ export default function Inventory() {
             <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Inward</div>
           </div>
           <div style={{ ...cardStyle, minWidth: 100, textAlign: "center", padding: "10px 16px" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#7c3aed" }}>₹{(totalDispatched/1000).toFixed(0)}K</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>₹{(totalDispatched/1000).toFixed(0)}K</div>
             <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Outward</div>
           </div>
           <div style={{ ...cardStyle, minWidth: 80, textAlign: "center", padding: "10px 16px" }}>
@@ -1848,8 +1848,8 @@ export default function Inventory() {
                 padding: "0 0 12px",
                 fontSize: 14,
                 fontWeight: 600,
-                color: isActive ? "#4f46e5" : "#6b7280",
-                borderBottom: isActive ? "2px solid #4f46e5" : "2px solid transparent",
+                color: isActive ? "#2563eb" : "#6b7280",
+                borderBottom: isActive ? "2px solid #2563eb" : "2px solid transparent",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1878,7 +1878,7 @@ export default function Inventory() {
               <div style={{ fontSize: 26, fontWeight: 800, color: "#111827", margin: "6px 0 2px" }}>₹{totalProcurement.toLocaleString("en-IN")}</div>
               <div style={{ fontSize: 12, color: "#9ca3af" }}>{inwardRows.length} GRNs received</div>
             </div>
-            <div style={{ ...cardStyle, borderTop: "3px solid #7c3aed" }}>
+            <div style={{ ...cardStyle, borderTop: "3px solid #1d4ed8" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", letterSpacing: 0.5 }}>TOTAL DISPATCHED</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: "#111827", margin: "6px 0 2px" }}>₹{totalDispatched.toLocaleString("en-IN")}</div>
               <div style={{ fontSize: 12, color: "#9ca3af" }}>{outwardRows.length} deliveries done</div>
@@ -1898,7 +1898,7 @@ export default function Inventory() {
           <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 20, overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Stock Summary</div>
-              <a onClick={() => setActiveTab("Stock Register")} style={{ fontSize: 13, fontWeight: 600, color: "#4f46e5", cursor: "pointer" }}>
+              <a onClick={() => setActiveTab("Stock Register")} style={{ fontSize: 13, fontWeight: 600, color: "#2563eb", cursor: "pointer" }}>
                 View All →
               </a>
             </div>
@@ -1953,7 +1953,7 @@ export default function Inventory() {
                   <tbody>
                     {rows.map((r, i) => (
                       <tr key={`${r.ref}-${i}`}>
-                        <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700 }}>{r.ref}</td>
+                        <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700 }}>{r.ref}</td>
                         <td style={{ ...tdStyle, fontWeight: 600 }}>{r.party}</td>
                         <td style={{ ...tdStyle, textAlign: "right" }}>{r.value}</td>
                         <td style={tdStyle}><StatusBadge status={r.status} /></td>
@@ -2025,7 +2025,7 @@ export default function Inventory() {
                   const isLow = item.stock <= item.min;
                   return (
                     <tr key={item.code}>
-                      <td style={{ ...tdStyle, color: "#4f46e5", fontWeight: 700 }}>{item.code}</td>
+                      <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700 }}>{item.code}</td>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{item.name}</td>
                       <td style={{ ...tdStyle, color: "#6b7280" }}>{item.category}</td>
                       <td style={{ ...tdStyle, color: "#6b7280" }}>{item.unit}</td>

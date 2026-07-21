@@ -604,6 +604,291 @@ module.exports = async function migrate() {
     `);
     console.log('✅ inventory tables ready');
 
+    // ── Marketing Hub: Leads ─────────────────────────────────────────────────
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS marketing_lead_sources (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_products (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_business_areas (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_foundry_types (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_sand_types (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_demo_types (
+        id         SERIAL PRIMARY KEY,
+        name       VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_product_phases (
+        id           SERIAL PRIMARY KEY,
+        product_id   INT NOT NULL REFERENCES marketing_products(id) ON DELETE CASCADE,
+        phase_number INT NOT NULL,
+        title        VARCHAR(200) NOT NULL,
+        weeks        VARCHAR(50),
+        description  TEXT,
+        steps        TEXT[]      NOT NULL DEFAULT '{}',
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(product_id, phase_number)
+      );
+      CREATE INDEX IF NOT EXISTS idx_product_phases_product ON marketing_product_phases(product_id);
+
+      CREATE TABLE IF NOT EXISTS marketing_leads (
+        id                 SERIAL PRIMARY KEY,
+        lead_no            VARCHAR(20)  UNIQUE NOT NULL,
+        foundry_name       VARCHAR(200) NOT NULL,
+        lead_source_id     INT REFERENCES marketing_lead_sources(id) ON DELETE SET NULL,
+        contact_first_name VARCHAR(100),
+        contact_last_name  VARCHAR(100),
+        country            VARCHAR(100),
+        street             TEXT,
+        email              VARCHAR(200),
+        city               VARCHAR(100),
+        phone              VARCHAR(50),
+        zip                VARCHAR(20),
+        state              VARCHAR(100),
+        designation        VARCHAR(100),
+        status             VARCHAR(30)  NOT NULL DEFAULT 'Not Started'
+                             CHECK (status IN ('Not Started','Follow Up','On Hold','Converted')),
+        region             VARCHAR(100),
+        business_area      VARCHAR(100),
+        customer_potential TEXT[]       NOT NULL DEFAULT '{}',
+        foundry_info       TEXT[]       NOT NULL DEFAULT '{}',
+        sand_types         TEXT[]       NOT NULL DEFAULT '{}',
+        mixer_make         VARCHAR(100),
+        mixer_type         VARCHAR(100),
+        mixer_batch_size   VARCHAR(50),
+        hourly_sand_output VARCHAR(50),
+        pain_points        TEXT,
+        owner              VARCHAR(200),
+        created_date       DATE         NOT NULL DEFAULT CURRENT_DATE,
+        last_modified       DATE         NOT NULL DEFAULT CURRENT_DATE,
+        created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        updated_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_marketing_leads_status      ON marketing_leads(status);
+      CREATE INDEX IF NOT EXISTS idx_marketing_leads_source      ON marketing_leads(lead_source_id);
+
+      CREATE TABLE IF NOT EXISTS marketing_orders (
+        id              SERIAL PRIMARY KEY,
+        order_no        VARCHAR(20)   UNIQUE NOT NULL,
+        customer        VARCHAR(200)  NOT NULL,
+        product         VARCHAR(100)  NOT NULL,
+        order_date      DATE          NOT NULL,
+        value           NUMERIC(14,2) NOT NULL DEFAULT 0,
+        paid            NUMERIC(14,2) NOT NULL DEFAULT 0,
+        outstanding     NUMERIC(14,2) NOT NULL DEFAULT 0,
+        payment_progress VARCHAR(20)  NOT NULL DEFAULT 'Pending'
+                          CHECK (payment_progress IN ('Paid','Partial','Pending')),
+        po_no           VARCHAR(100),
+        po_uploaded     BOOLEAN       NOT NULL DEFAULT FALSE,
+        order_status    VARCHAR(30)   NOT NULL DEFAULT 'Draft'
+                          CHECK (order_status IN ('Draft','Confirmed','PO Received','Invoiced','Payment Done','Active (Go-Live)','Cancelled')),
+        payment_status  VARCHAR(30)   NOT NULL DEFAULT 'Pending'
+                          CHECK (payment_status IN ('Pending','Advance Paid','Fully Paid')),
+        assigned_to     VARCHAR(200),
+        created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+      );
+      ALTER TABLE marketing_orders
+        ADD COLUMN IF NOT EXISTS po_document_url TEXT,
+        ADD COLUMN IF NOT EXISTS po_document_name VARCHAR(255);
+      CREATE INDEX IF NOT EXISTS idx_marketing_orders_status ON marketing_orders(order_status);
+
+      CREATE TABLE IF NOT EXISTS marketing_implementation_progress (
+        id                 SERIAL PRIMARY KEY,
+        order_id           INT NOT NULL REFERENCES marketing_orders(id) ON DELETE CASCADE,
+        phase_number       INT NOT NULL,
+        status             VARCHAR(30) NOT NULL DEFAULT 'Not Started'
+                             CHECK (status IN ('Not Started','In Progress','Completed','On Hold')),
+        done_steps         BOOLEAN[]   NOT NULL DEFAULT '{}',
+        start_date         DATE,
+        end_date           DATE,
+        responsible_person VARCHAR(200),
+        notes              TEXT,
+        documents          TEXT[]      NOT NULL DEFAULT '{}',
+        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(order_id, phase_number)
+      );
+      CREATE INDEX IF NOT EXISTS idx_impl_progress_order ON marketing_implementation_progress(order_id);
+
+      CREATE TABLE IF NOT EXISTS marketing_renewals (
+        id             SERIAL PRIMARY KEY,
+        renewal_no     VARCHAR(20)   UNIQUE NOT NULL,
+        order_id       INT REFERENCES marketing_orders(id) ON DELETE SET NULL,
+        customer       VARCHAR(200)  NOT NULL,
+        product        VARCHAR(100)  NOT NULL,
+        license        VARCHAR(100),
+        users          INT,
+        contract_start DATE,
+        contract_end   DATE,
+        value          NUMERIC(14,2) NOT NULL DEFAULT 0,
+        assigned_to    VARCHAR(200),
+        notes          TEXT,
+        renewal_status VARCHAR(20)   NOT NULL DEFAULT 'Active'
+                         CHECK (renewal_status IN ('Active','Renewed','Churned')),
+        created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+        updated_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS marketing_renewal_history (
+        id             SERIAL PRIMARY KEY,
+        renewal_id     INT NOT NULL REFERENCES marketing_renewals(id) ON DELETE CASCADE,
+        renewed_on     DATE          NOT NULL,
+        contract_start DATE,
+        contract_end   DATE,
+        value          NUMERIC(14,2) NOT NULL DEFAULT 0,
+        status         VARCHAR(30)   NOT NULL DEFAULT 'Renewed',
+        notes          TEXT,
+        created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_renewal_history_renewal ON marketing_renewal_history(renewal_id);
+
+      CREATE TABLE IF NOT EXISTS motivational_quotes (
+        id         SERIAL PRIMARY KEY,
+        text       TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS motivational_quote_settings (
+        id             INT PRIMARY KEY DEFAULT 1,
+        enabled        BOOLEAN NOT NULL DEFAULT TRUE,
+        send_time      VARCHAR(5) NOT NULL DEFAULT '09:00',
+        current_cycle  INT NOT NULL DEFAULT 1,
+        last_sent_date DATE,
+        last_quote_id  INT REFERENCES motivational_quotes(id) ON DELETE SET NULL,
+        CHECK (id = 1)
+      );
+      INSERT INTO motivational_quote_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+      CREATE TABLE IF NOT EXISTS motivational_quote_log (
+        id         SERIAL PRIMARY KEY,
+        quote_id   INT NOT NULL REFERENCES motivational_quotes(id) ON DELETE CASCADE,
+        cycle      INT NOT NULL,
+        sent_date  DATE NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_quote_log_cycle ON motivational_quote_log(cycle);
+
+      CREATE TABLE IF NOT EXISTS marketing_demos (
+        id              SERIAL PRIMARY KEY,
+        demo_no         VARCHAR(20)  UNIQUE NOT NULL,
+        customer        VARCHAR(200) NOT NULL,
+        contact_person  VARCHAR(200),
+        product         VARCHAR(200) NOT NULL,
+        demo_date       DATE         NOT NULL,
+        type            VARCHAR(50),
+        conducted_by    VARCHAR(200),
+        status          VARCHAR(30)  NOT NULL DEFAULT 'Requested'
+                          CHECK (status IN ('Requested','Scheduled','Completed','Follow-Up','Converted to Order','Cancelled')),
+        next_follow_up  DATE,
+        created_date    DATE         NOT NULL DEFAULT CURRENT_DATE,
+        created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_marketing_demos_status ON marketing_demos(status);
+
+      CREATE TABLE IF NOT EXISTS marketing_demo_activities (
+        id             SERIAL PRIMARY KEY,
+        demo_id        INT NOT NULL REFERENCES marketing_demos(id) ON DELETE CASCADE,
+        activity_date  DATE NOT NULL,
+        outcome        VARCHAR(30),
+        next_follow_up DATE,
+        note           TEXT,
+        logged_by      VARCHAR(200),
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_demo_activities_demo ON marketing_demo_activities(demo_id);
+    `);
+
+    // Seed default lead sources + products (only if empty, so admin edits/deletes are never overwritten)
+    await db.query(`
+      INSERT INTO marketing_lead_sources (name) VALUES
+        ('Trade Fair'),('Google Ads'),('LinkedIn'),('Email Campaign'),
+        ('Referral'),('Cold Call'),('Website'),('Webinar'),('Social Media')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_products (name) VALUES
+        ('Sandman'),('Sandman +VComp'),('DigiSmart'),('Gateway'),('Energy Analytics')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_business_areas (name) VALUES
+        ('Automotive'),('Heavy Engineering'),('Railways'),('Defence'),
+        ('General Engineering'),('Pipe Fittings'),('Pumps & Valves')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_foundry_types (name) VALUES
+        ('Steel'),('Automotive'),('Cast Iron'),('Railway'),
+        ('Other Metal'),('Machinery'),('DI Pipe'),('Sanitary / Municipal')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_sand_types (name) VALUES
+        ('Green Sand'),('Alphaset Sand'),('No-Bake Sand'),('Lost Foam Sand'),('Permanent Mould Sand')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_demo_types (name) VALUES
+        ('On-Site'),('Online'),('Virtual')
+      ON CONFLICT (name) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_product_phases (product_id, phase_number, title, weeks, description, steps)
+      SELECT id, 0, 'Phase 0: Kickoff', NULL, 'Start → SandMan Proposal → Receipt of PO → SandMan Data Audit',
+        ARRAY['Start','SandMan Proposal shared with customer','PO received from customer','SandMan Data Audit completed','Kickoff meeting scheduled']
+      FROM marketing_products WHERE name='Sandman'
+      ON CONFLICT (product_id, phase_number) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_product_phases (product_id, phase_number, title, weeks, description, steps)
+      SELECT id, 1, 'Phase 1: Data Collection', '4–6 Weeks', 'Virtual Kickoff Meeting · Data collection (Historical 6 months + SCADA handshaking)',
+        ARRAY['Virtual Kickoff Meeting','Data collection - Historical 6 months','SCADA handshaking','Sensor mapping','Baseline report','Data cleanup','QA pass 1','QA pass 2','Client review call','Sign-off doc drafted','Sign-off doc signed','Handover to analysis team']
+      FROM marketing_products WHERE name='Sandman'
+      ON CONFLICT (product_id, phase_number) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_product_phases (product_id, phase_number, title, weeks, description, steps)
+      SELECT id, 2, 'Phase 2: Analysis & Modelling', '4–5 Weeks', 'Documentation · Data Analysis Modelling · Data Science Team Review · Data Validation Checklist',
+        ARRAY['Documentation','Data Analysis Modelling','Data Science Team Review','Data Validation Checklist','Final model sign-off']
+      FROM marketing_products WHERE name='Sandman'
+      ON CONFLICT (product_id, phase_number) DO NOTHING;
+    `);
+    await db.query(`
+      INSERT INTO marketing_product_phases (product_id, phase_number, title, weeks, description, steps)
+      SELECT id, 3, 'Phase 3: Go-Live', '1–2 Weeks', 'Sandmix Implementation · Virtual Meeting · Sign Off',
+        ARRAY['Sandmix Implementation','Virtual Meeting','Sign Off','Post go-live support call','Handover to CS team','Training session','Documentation delivered','Final closure']
+      FROM marketing_products WHERE name='Sandman'
+      ON CONFLICT (product_id, phase_number) DO NOTHING;
+    `);
+    console.log('✅ marketing_leads tables ready');
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('❌ Migration failed:', err.message);

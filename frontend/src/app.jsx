@@ -1,18 +1,21 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth }           from "./context/AuthContext.jsx";
 import SetPassword           from "./SetPassword.jsx";
 import * as authApi          from "./api/auth.js";
 import * as annApi           from "./api/announcements.js";
 import FirstTimePasswordReset from './FirstTimePasswordReset.jsx';
+import { useModalHotkeys } from "./components/shared.jsx";
 
 const ANN_TYPE={
-  feature:{label:"New Feature",color:"#4f46e5",bg:"#ede9fe"},
+  feature:{label:"New Feature",color:"#2563eb",bg:"#dbeafe"},
   update: {label:"Update",     color:"#0891b2",bg:"#e0f2fe"},
 };
 
 function AnnouncementPopup({announcements,onDismiss}){
   const [idx,setIdx]=useState(0);
+  const total0=announcements.length;
+  useModalHotkeys(onDismiss,()=>{ if(idx<total0-1) setIdx(i=>i+1); else onDismiss(); },{enabled:total0>0});
   if(!announcements.length) return null;
   const a=announcements[idx];
   const meta=ANN_TYPE[a.type]||ANN_TYPE.update;
@@ -23,7 +26,7 @@ function AnnouncementPopup({announcements,onDismiss}){
       <div style={{background:"#fff",borderRadius:16,width:460,maxWidth:"92vw",boxShadow:"0 32px 80px rgba(0,0,0,0.35)",overflow:"hidden",animation:"annpop .2s ease"}}>
         <style>{`@keyframes annpop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
         {/* Header */}
-        <div style={{background:"linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%)",padding:"18px 22px",position:"relative",overflow:"hidden"}}>
+        <div style={{background:"linear-gradient(135deg,#1d4ed8 0%,#6d28d9 60%,#1d4ed8 100%)",padding:"18px 22px",position:"relative",overflow:"hidden"}}>
           <div style={{position:"absolute",top:-24,right:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
           <div style={{position:"absolute",bottom:-28,right:50,width:72,height:72,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
           <div style={{display:"flex",alignItems:"center",gap:10,position:"relative"}}>
@@ -58,7 +61,7 @@ function AnnouncementPopup({announcements,onDismiss}){
           {idx<total-1?(
             <button onClick={()=>setIdx(i=>i+1)} style={{padding:"8px 20px",borderRadius:8,border:"none",background:meta.color,color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Next →</button>
           ):(
-            <button onClick={onDismiss} style={{padding:"9px 28px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${meta.color},#7c3aed)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 4px 14px ${meta.color}55`}}>Got it!</button>
+            <button onClick={onDismiss} style={{padding:"9px 28px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${meta.color},#1d4ed8)`,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 4px 14px ${meta.color}55`}}>Got it!</button>
           )}
         </div>
       </div>
@@ -125,6 +128,11 @@ function Shell({user,onLogout}){
   const [unreadAnn,setUnreadAnn]=useState([]);
   const navigate=useNavigate();
   const location=useLocation();
+  const contentRef=useRef(null);
+
+  useEffect(()=>{
+    if(contentRef.current) contentRef.current.scrollTop=0;
+  },[location.pathname]);
 
   useEffect(()=>{
     const fetch = () => annApi.getUnread().then(r=>setUnreadAnn(r.data||[])).catch(()=>{});
@@ -185,17 +193,17 @@ function Shell({user,onLogout}){
   return(
     <div style={{display:"flex",height:"100%",overflow:"hidden",background:"#f4f6f9",fontFamily:"system-ui,sans-serif",fontSize:14,color:"#111827"}}>
       <div style={{width:sideW,minWidth:sideW,background:"#0f1117",display:"flex",flexDirection:"column",flexShrink:0,transition:"width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)",overflow:"hidden"}}>
-        <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          {!collapsed?(
-            <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0,width:"100%"}}>
-              <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(79,70,229,0.35)",flexShrink:0}}>✅</div>
-              <div style={{minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
-                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work · Pulse · Intelligence</div>
+        <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:collapsed?"center":"flex-start",gap:9,flexShrink:0}}>
+          <img src="/logo-icon.png" alt="MPulse" style={{height:34,width:"auto",flexShrink:0}}/>
+          {!collapsed&&(
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:19,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",lineHeight:1.1}}>
+                <span style={{color:"#3b82f6"}}>M</span><span style={{color:"#fff"}}>Pulse</span>
+              </div>
+              <div style={{fontSize:9.5,color:"#94a3b8",whiteSpace:"nowrap",marginTop:1}}>
+                Work <span style={{color:"#3b82f6"}}>•</span> Pulse <span style={{color:"#60a5fa"}}>•</span> Intelligence
               </div>
             </div>
-          ):(
-            <div style={{width:32,height:32,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
           )}
         </div>
         <div style={{padding:collapsed?"6px 0":"4px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:collapsed?"center":"flex-end",flexShrink:0}}>
@@ -214,10 +222,10 @@ function Shell({user,onLogout}){
             const isActive=activeKey===item.key;
             return(
               <div key={item.key} onClick={()=>navigate(item.path)} title={collapsed?item.label:""}
-                style={{display:"flex",alignItems:"center",gap:collapsed?0:11,padding:collapsed?"10px 0":"10px 12px",justifyContent:collapsed?"center":"flex-start",borderRadius:8,cursor:"pointer",userSelect:"none",position:"relative",background:isActive?"#4f46e5":"transparent",transition:"background 0.15s",margin:collapsed?"0 6px":"0"}}
+                style={{display:"flex",alignItems:"center",gap:collapsed?0:11,padding:collapsed?"10px 0":"10px 12px",justifyContent:collapsed?"center":"flex-start",borderRadius:8,cursor:"pointer",userSelect:"none",position:"relative",background:isActive?"#2563eb":"transparent",transition:"background 0.15s",margin:collapsed?"0 6px":"0"}}
                 onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background="rgba(255,255,255,0.06)";}}
                 onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}}>
-                {isActive&&!collapsed&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:18,background:"#a5b4fc",borderRadius:"0 3px 3px 0"}}/>}
+                {isActive&&!collapsed&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:18,background:"#93c5fd",borderRadius:"0 3px 3px 0"}}/>}
                 <div style={{flexShrink:0}}>{icons[item.key]?.(true)}</div>
                 {!collapsed&&<span style={{fontSize:13,fontWeight:isActive?600:400,color:"#fff",whiteSpace:"nowrap"}}>{item.label}</span>}
               </div>
@@ -227,11 +235,11 @@ function Shell({user,onLogout}){
         <div style={{padding:collapsed?"10px 0":"10px 12px",borderTop:"1px solid rgba(255,255,255,0.05)",flexShrink:0}}>
           {collapsed?(
             <div style={{display:"flex",justifyContent:"center"}}>
-              <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#312e81,#4f46e5)",color:"#c7d2fe",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={user.name}>{user.name[0].toUpperCase()}</div>
+              <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a8a,#2563eb)",color:"#bfdbfe",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}} title={user.name}>{user.name[0].toUpperCase()}</div>
             </div>
           ):(
             <div style={{display:"flex",alignItems:"center",gap:9}}>
-              <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#312e81,#4f46e5)",color:"#c7d2fe",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name[0].toUpperCase()}</div>
+              <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a8a,#2563eb)",color:"#bfdbfe",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{user.name[0].toUpperCase()}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:600,color:"#e5e7eb",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.name}</div>
                 <div style={{fontSize:10,color:"#4b5563",marginTop:1}}>{user.role}</div>
@@ -248,19 +256,19 @@ function Shell({user,onLogout}){
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
         <div style={{height:52,background:"#fff",borderBottom:"1px solid #e4e7ec",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 22px",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:3,height:18,background:"#4f46e5",borderRadius:2}}/>
+            <div style={{width:3,height:18,background:"#2563eb",borderRadius:2}}/>
             <span style={{fontSize:15,fontWeight:700,color:"#111827",letterSpacing:"-0.02em"}}>{title}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{display:"flex",alignItems:"center",gap:8,background:"#f8f9fb",borderRadius:8,padding:"5px 10px",border:"1px solid #e4e7ec"}}>
-              <div style={{width:22,height:22,borderRadius:"50%",background:"#312e81",color:"#a5b4fc",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.name[0]}</div>
+              <div style={{width:22,height:22,borderRadius:"50%",background:"#1e3a8a",color:"#93c5fd",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.name[0]}</div>
               <span style={{fontSize:12,color:"#374151",fontWeight:500}}>{user.name}</span>
-              <span style={{fontSize:10,padding:"1px 7px",borderRadius:20,background:"#ede9fe",color:"#5b21b6",fontWeight:600}}>{user.role}</span>
+              <span style={{fontSize:10,padding:"1px 7px",borderRadius:20,background:"#dbeafe",color:"#5b21b6",fontWeight:600}}>{user.role}</span>
             </div>
             <button onClick={onLogout} style={{padding:"5px 12px",fontSize:12,borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",cursor:"pointer",fontWeight:500}}>Sign out</button>
           </div>
         </div>
-        <div style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
+        <div ref={contentRef} style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
           <Routes>
             <Route path="/dashboard"  element={accessCfg[user.role]?.dashboard?.view ?<Dashboard/>     :<AccessDenied/>}/>
             <Route path="/marketing"  element={accessCfg[user.role]?.marketing?.view ?<MarketingHub/>  :<AccessDenied/>}/>
@@ -327,26 +335,26 @@ function Login({onLogin}){
     <div style={{minHeight:"100%",background:"linear-gradient(135deg,#0f0f1a 0%,#1a1040 40%,#0f172a 100%)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"system-ui,sans-serif"}}>
       <div>
         <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:52,height:52,borderRadius:14,background:"rgba(79,70,229,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(79,70,229,0.4)"}}>✅</div>
+          <div style={{width:52,height:52,borderRadius:14,background:"rgba(37,99,235,0.6)",border:"1px solid rgba(129,140,248,0.4)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,boxShadow:"0 8px 24px rgba(37,99,235,0.4)"}}>✅</div>
           <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",letterSpacing:"-0.02em"}}>MPulse</div>
-          <div style={{fontSize:13,color:"#818cf8",marginTop:4}}>Project Management & Analysis</div>
+          <div style={{fontSize:13,color:"#60a5fa",marginTop:4}}>Project Management & Analysis</div>
         </div>
         <div style={{background:"rgba(255,255,255,0.05)",backdropFilter:"blur(24px)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:20,padding:"36px 32px",width:400,boxShadow:"0 32px 80px rgba(0,0,0,0.4)"}}>
-          <div style={{fontSize:17,fontWeight:700,color:"#e0e7ff",marginBottom:4}}>Welcome back</div>
+          <div style={{fontSize:17,fontWeight:700,color:"#dbeafe",marginBottom:4}}>Welcome back</div>
           <div style={{fontSize:13,color:"#6b7280",marginBottom:22}}>Sign in to your account to continue</div>
           <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:16}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              <label style={{color:"#a5b4fc",fontSize:12}}>Email Address</label>
+              <label style={{color:"#93c5fd",fontSize:12}}>Email Address</label>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Enter your email" autoComplete="off" onKeyDown={e=>e.key==="Enter"&&go()} style={iS}/>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              <label style={{color:"#a5b4fc",fontSize:12}}>Password</label>
+              <label style={{color:"#93c5fd",fontSize:12}}>Password</label>
               <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Enter your password" onKeyDown={e=>e.key==="Enter"&&go()} style={iS}/>
             </div>
           </div>
           {sessionMsg&&<div style={{background:"rgba(234,179,8,0.15)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fde68a",marginBottom:12}}>{sessionMsg}</div>}
           {err&&<div style={{background:"rgba(220,38,38,0.15)",border:"1px solid rgba(220,38,38,0.3)",borderRadius:7,padding:"8px 12px",fontSize:12,color:"#fca5a5",marginBottom:12}}>{err}</div>}
-          <button onClick={go} disabled={loading} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:11,borderRadius:9,border:"none",background:"#4f46e5",color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 14px rgba(79,70,229,0.4)",opacity:loading?0.8:1}}>
+          <button onClick={go} disabled={loading} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:11,borderRadius:9,border:"none",background:"#2563eb",color:"#fff",fontSize:14,fontWeight:600,cursor:loading?"not-allowed":"pointer",boxShadow:"0 4px 14px rgba(37,99,235,0.4)",opacity:loading?0.8:1}}>
             {loading?"Signing in…":"Sign in →"}
           </button>
           <div style={{marginTop:16,textAlign:"center",fontSize:12,color:"#4b5563"}}>Forgot your password? Contact your administrator.</div>
