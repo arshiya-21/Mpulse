@@ -35,6 +35,7 @@ const EMP_SELECT = `
   SELECT
     e.id, e.name, e.email, e.status, e.invite_status,
     e.department_id, e.role_id, e.manager_id, e.secondary_department_id,
+    e.receives_daily_quote,
     e.created_at, e.updated_at,
     d.name  AS department,
     d2.name AS secondary_department,
@@ -363,6 +364,23 @@ router.post('/:id/resend-credentials', verify, requireRole('Admin', 'Manager'), 
   } catch (err) {
     console.error('❌ POST /employees/:id/resend-credentials error:', err);
     res.status(500).json({ error: 'Failed to resend credentials' });
+  }
+});
+
+// ── PUT: Toggle daily motivational quote opt-in (Admin / Manager) ─
+router.put('/:id/quote-opt-in', verify, requireRole('Admin', 'Manager'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { enabled } = req.body;
+    const { rows } = await db.query(
+      'UPDATE employees SET receives_daily_quote = $1, updated_at = NOW() WHERE id = $2 RETURNING id, receives_daily_quote',
+      [!!enabled, id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Employee not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('❌ PUT /employees/:id/quote-opt-in error:', err);
+    res.status(500).json({ error: 'Failed to update quote opt-in' });
   }
 });
 

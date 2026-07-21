@@ -4,7 +4,6 @@ const ExcelJS = require('exceljs');
 const db      = require('../config/db');
 const { verify, requireRole } = require('../middleware/auth');
 const { sendMotivationalQuoteEmail } = require('../utils/mailer');
-const { skipTodayIfTimeAlreadyPassed } = require('../utils/motivationalQuote');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -51,8 +50,7 @@ router.put('/settings', verify, requireRole('Admin'), async (req, res) => {
        WHERE id = 1 RETURNING *`,
       [enabled, send_time]
     );
-    const cfg = await skipTodayIfTimeAlreadyPassed(rows[0]);
-    res.json(cfg);
+    res.json(rows[0]);
   } catch (err) {
     console.error('PUT /motivational-quotes/settings error:', err);
     res.status(500).json({ error: 'Failed to update settings' });

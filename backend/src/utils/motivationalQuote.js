@@ -54,7 +54,7 @@ async function isWorkingDayToday() {
   return todayIdx >= startIdx && todayIdx <= endIdx;
 }
 
-// force=true bypasses the enabled/working-day/time/already-sent-today checks (used by "Send Now")
+// force=true bypasses the enabled/working-day/time/already-sent-today checks (used by "Test")
 async function runDailyQuote({ force = false } = {}) {
   const { rows: cfgRows } = await db.query('SELECT * FROM motivational_quote_settings WHERE id = 1');
   const cfg = cfgRows[0];
@@ -64,49 +64,46 @@ async function runDailyQuote({ force = false } = {}) {
     if (toIsoDate(cfg.last_sent_date) === todayIST()) {
       return { skipped: true, reason: 'Already sent today' };
     }
-    if (nowISTTime() < cfg.send_time) return { skipped: true, reason: 'Not yet the scheduled send time' };
+    // Strict equality, not "time has passed" — the cron ticks every minute (needed since the
+    // send time is configurable from the UI, not a fixed cron pattern), but only the one tick
+    // that matches exactly is allowed to actually send. Every other minute is a single cheap
+    // SELECT + string compare, no retry loop.
+    if (nowISTTime() !== cfg.send_time) return { skipped: true, reason: 'Not the scheduled send time' };
     if (!(await isWorkingDayToday())) return { skipped: true, reason: 'Not a working day' };
   }
 
+  const { rows: recipients } = await db.query(
+    `SELECT email FROM employees WHERE receives_daily_quote = TRUE AND status = 'active' AND email IS NOT NULL AND email != ''`
+  );
+  if (recipients.length === 0) return { skipped: true, reason: 'No recipients selected — check the "Quote" column in Master Data → Employees' };
+
   const { quote, cycle } = await pickQuote();
 
-  const { rows: employees } = await db.query(
-    `SELECT email FROM employees WHERE status = 'active' AND email IS NOT NULL AND email != ''`
-  );
-  if (employees.length === 0) return { skipped: true, reason: 'No active employees with an email on file' };
-
-  await sendMotivationalQuoteEmail({ ccEmails: employees.map(e => e.email), quoteText: quote.text });
+  let sent = 0;
+  for (const r of recipients) {
+    try {
+      await sendMotivationalQuoteEmail({ toEmail: r.email, quoteText: quote.text });
+      sent++;
+    } catch (e) {
+      console.error(`⚠️  Motivational quote to ${r.email} failed:`, e.message);
+    }
+  }
 
   const today = todayIST();
   await db.query('INSERT INTO motivational_quote_log (quote_id, cycle, sent_date) VALUES ($1, $2, $3)', [quote.id, cycle, today]);
   await db.query('UPDATE motivational_quote_settings SET last_sent_date = $1, last_quote_id = $2 WHERE id = 1', [today, quote.id]);
 
-  console.log(`✅ Daily quote sent in one email, CC'd to ${employees.length} employee(s) — cycle ${cycle}`);
-  return { sent: employees.length, total: employees.length, quote: quote.text, cycle };
+  console.log(`✅ Daily quote sent individually to ${sent}/${recipients.length} recipient(s) — cycle ${cycle}`);
+  return { sent, total: recipients.length, quote: quote.text, cycle };
 }
 
 function startMotivationalQuoteCron() {
-  // Runs every minute and only actually sends once the configured send_time
-  // has passed and nothing has gone out yet today — this lets the send time
-  // stay configurable from the UI without needing to reschedule the cron job.
+  // Still checks every minute (needed since the send time is configurable from the UI, not a
+  // fixed cron pattern) — but only ever sends on the one tick that exactly matches send_time.
   cron.schedule('* * * * *', () => {
     runDailyQuote().catch(e => console.error('❌ Motivational quote cron error:', e.message));
   }, { timezone: 'Asia/Kolkata' });
-  console.log('⏰ Motivational quote cron scheduled (checks every minute against the configured send time)');
+  console.log('⏰ Motivational quote cron scheduled (sends only on the exact configured minute)');
 }
 
-// Call right after saving settings (enabling, or changing send_time). If the send time has
-// already passed for today, mark today as "handled" WITHOUT actually sending — otherwise the
-// very next cron tick would fire an unexpected immediate send. Normal daily sending resumes
-// at the configured time on the next working day.
-async function skipTodayIfTimeAlreadyPassed(cfg) {
-  if (!cfg.enabled) return cfg;
-  const today = todayIST();
-  if (toIsoDate(cfg.last_sent_date) === today) return cfg; // already sent or already marked
-  if (nowISTTime() < cfg.send_time) return cfg; // still upcoming today — let it send normally
-  if (!(await isWorkingDayToday())) return cfg; // not a working day anyway — nothing to skip
-  await db.query('UPDATE motivational_quote_settings SET last_sent_date = $1 WHERE id = 1', [today]);
-  return { ...cfg, last_sent_date: today };
-}
-
-module.exports = { startMotivationalQuoteCron, runDailyQuote, pickQuote, skipTodayIfTimeAlreadyPassed };
+module.exports = { startMotivationalQuoteCron, runDailyQuote, pickQuote };

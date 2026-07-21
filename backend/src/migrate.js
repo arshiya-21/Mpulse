@@ -794,6 +794,9 @@ module.exports = async function migrate() {
       );
       CREATE INDEX IF NOT EXISTS idx_quote_log_cycle ON motivational_quote_log(cycle);
 
+      ALTER TABLE employees
+        ADD COLUMN IF NOT EXISTS receives_daily_quote BOOLEAN NOT NULL DEFAULT FALSE;
+
       CREATE TABLE IF NOT EXISTS marketing_demos (
         id              SERIAL PRIMARY KEY,
         demo_no         VARCHAR(20)  UNIQUE NOT NULL,

@@ -202,8 +202,13 @@ function Employees(){
   const [form,setForm]=useState(blank);
   const ROLE_BG={Admin:"#fef2f2",Manager:"#eff6ff",User:"#f8fafc"};
   const ROLE_C={Admin:"#991b1b",Manager:"#1d4ed8",User:"#475569"};
-
   useEffect(()=>{load();},[]);
+  function toggleQuoteRecipient(emp){
+    const enabled=!emp.receives_daily_quote;
+    empApi.setQuoteOptIn(emp.id,enabled).then(()=>{
+      setEmps(prev=>prev.map(x=>x.id===emp.id?{...x,receives_daily_quote:enabled}:x));
+    }).catch(()=>show("Failed to update quote recipient"));
+  }
   // Poll every 30s while any employee has a pending reset — auto-updates status to Accepted
   useEffect(()=>{
     const hasPending=emps.some(e=>e.invite_status==='reset_requested');
@@ -303,7 +308,7 @@ function Employees(){
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
               <thead><tr style={{background:"#f8f9fb"}}>
-                {["Employee","Email","Department","Role","Manager","Status","Invite",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec",whiteSpace:"nowrap"}}>{h}</th>)}
+                {["Employee","Email","Department","Role","Manager","Status","Invite","Quote",""].map(h=><th key={h} style={{padding:"10px 14px",textAlign:"left",fontSize:11,fontWeight:700,textTransform:"uppercase",color:"#9ca3af",borderBottom:"1px solid #e4e7ec",whiteSpace:"nowrap"}}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map(e=>(
@@ -337,6 +342,9 @@ function Employees(){
                         ?<span style={{fontSize:11,color:"#1d4ed8",fontWeight:500}}>🔄 Reset Sent</span>
                         :<span style={{fontSize:11,color:"#059669",fontWeight:500}}>✅ Accepted</span>}
                     </td>
+                    <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",textAlign:"center"}}>
+                      <input type="checkbox" title="Receives the daily motivational quote" checked={!!e.receives_daily_quote} onChange={()=>toggleQuoteRecipient(e)}/>
+                    </td>
                     <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                       {(empPerm.update||empPerm.delete)&&<div style={{display:"flex",gap:2}}>
                         {empPerm.update&&<button onClick={()=>openEdit(e)} title="Edit employee" style={{padding:5,borderRadius:6,border:"none",background:"transparent",cursor:"pointer",fontSize:13}}>✏️</button>}
@@ -346,7 +354,7 @@ function Employees(){
                     </td>
                   </tr>
                 ))}
-                {filtered.length===0&&<tr><td colSpan={8} style={{padding:20,textAlign:"center",color:"#9ca3af"}}>No employees found</td></tr>}
+                {filtered.length===0&&<tr><td colSpan={9} style={{padding:20,textAlign:"center",color:"#9ca3af"}}>No employees found</td></tr>}
               </tbody>
             </table>
           </div>

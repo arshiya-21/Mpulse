@@ -9,3 +9,4 @@ export const remove        = (id)      => api.delete(`/employees/${id}`);
 export const genInvite          = (id) => api.post(`/employees/${id}/invite`);
 export const resendCredentials  = (id) => api.post(`/employees/${id}/resend-credentials`);
 export const sendResetLink      = (id) => api.post(`/employees/${id}/send-reset-link`);
+export const setQuoteOptIn      = (id, enabled) => api.put(`/employees/${id}/quote-opt-in`, { enabled });
