@@ -193,17 +193,17 @@ function Shell({user,onLogout}){
   return(
     <div style={{display:"flex",height:"100%",overflow:"hidden",background:"#f4f6f9",fontFamily:"system-ui,sans-serif",fontSize:14,color:"#111827"}}>
       <div style={{width:sideW,minWidth:sideW,background:"#0f1117",display:"flex",flexDirection:"column",flexShrink:0,transition:"width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)",overflow:"hidden"}}>
-        <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:collapsed?"center":"flex-start",gap:9,flexShrink:0}}>
-          <img src="/logo-icon.png" alt="MPulse" style={{height:34,width:"auto",flexShrink:0}}/>
-          {!collapsed&&(
-            <div style={{minWidth:0}}>
-              <div style={{fontSize:19,fontWeight:800,letterSpacing:0,whiteSpace:"nowrap",lineHeight:1.1}}>
-                <span style={{color:"#3b82f6"}}>M</span><span style={{color:"#fff"}}>Pulse</span>
-              </div>
-              <div style={{fontSize:9.5,color:"#94a3b8",whiteSpace:"nowrap",marginTop:1}}>
-                Work <span style={{color:"#3b82f6"}}>•</span> Pulse <span style={{color:"#60a5fa"}}>•</span> Intelligence
+        <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {!collapsed?(
+            <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0,width:"100%"}}>
+              <div style={{width:32,height:32,background:"linear-gradient(135deg,#2563eb,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(37,99,235,0.35)",flexShrink:0}}>✅</div>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
+                <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work · Pulse · Intelligence</div>
               </div>
             </div>
+          ):(
+            <div style={{width:32,height:32,background:"linear-gradient(135deg,#2563eb,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
           )}
         </div>
         <div style={{padding:collapsed?"6px 0":"4px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:collapsed?"center":"flex-end",flexShrink:0}}>

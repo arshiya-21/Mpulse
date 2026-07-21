@@ -1,9 +1,6 @@
 const { Resend } = require('resend');
 const db         = require('../config/db');
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const LOGO_URL = `${FRONTEND_URL}/logo.png`;
-
 // ── Fetch email config from email_settings table ──────────
 async function getEmailConfig() {
   const { rows } = await db.query(`SELECT * FROM email_settings WHERE id = 1 LIMIT 1`);
@@ -28,7 +25,8 @@ async function sendNewUserEmail({ toName, toEmail, tempPassword, loginUrl, isRes
         
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
-          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
         </div>
 
         <!-- Body -->
@@ -124,7 +122,8 @@ async function sendInviteEmail({ toName, toEmail, inviteUrl, expiresIn = '48 hou
         
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
-          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
         </div>
 
         <!-- Body -->
@@ -190,7 +189,8 @@ async function sendVisitScheduledEmail({ toEmail, ccEmails = [], customerName, c
 
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
-          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
           <div style="font-size:13px;color:#93c5fd;margin-top:4px;">New Customer Visit Scheduled</div>
         </div>
 
@@ -266,7 +266,8 @@ async function sendVisitDueEmail({ toName, toEmail, customerName, contactPerson,
 
         <!-- Header -->
         <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
-          <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
           <div style="font-size:13px;color:#93c5fd;margin-top:4px;">${meta.icon} Visit Reminder</div>
         </div>
 
@@ -365,7 +366,8 @@ async function sendWorklogDigestEmail({ toName, toEmail, date, employees }) {
 
       <!-- Header -->
       <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
-        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+        <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
         <div style="font-size:13px;color:#93c5fd;margin-top:4px;">Daily Work Log Digest</div>
       </div>
 
@@ -441,7 +443,8 @@ async function sendNoLogAlertEmail({ toName, toEmail, date, teamMembers = [] }) 
 
       <!-- Header -->
       <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;">
-        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;margin-bottom:4px;"/>
+        <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
         <div style="font-size:13px;color:#93c5fd;margin-top:4px;">Daily Work Log Alert</div>
       </div>
 
@@ -521,7 +524,8 @@ async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingT
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
       <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
-        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;"/>
+        <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
       </div>
       <div style="padding:32px;">
         <div style="display:inline-block;padding:5px 14px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700;margin-bottom:16px;">${heading}</div>
@@ -555,7 +559,8 @@ async function sendMotivationalQuoteEmail({ toEmail, ccEmails = [], quoteText })
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
       <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:26px 32px;text-align:center;">
-        <img src="${LOGO_URL}" alt="MPulse" style="height:42px;"/>
+        <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.02em;">MPulse</div>
       </div>
       <div style="padding:38px 32px;text-align:center;">
         <div style="font-size:30px;margin-bottom:14px;">✨</div>
