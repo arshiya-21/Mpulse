@@ -519,22 +519,22 @@ async function sendMeetingReminderEmail({ toEmail, toName, projectName, meetingT
     : `📅 Meeting Reminder — ${projectName} at ${meetingTime}`;
 
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;">
-      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:24px 32px;">
-        <img src="${LOGO_URL}" alt="MPulse" style="height:40px;margin-bottom:10px;display:block;"/>
-        <h2 style="color:#fff;margin:0;font-size:20px;">${heading}</h2>
-        <p style="color:#93c5fd;margin:6px 0 0;font-size:13px;">${subhead}</p>
+    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#172554,#1e3a8a);padding:28px 32px;text-align:center;">
+        <img src="${LOGO_URL}" alt="MPulse" style="height:52px;"/>
       </div>
-      <div style="padding:24px 32px;">
-        <p style="font-size:14px;color:#374151;">Hi ${toName},</p>
-        <p style="font-size:14px;color:#374151;">${bodyText}</p>
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin:20px 0;">
+      <div style="padding:32px;">
+        <div style="display:inline-block;padding:5px 14px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700;margin-bottom:16px;">${heading}</div>
+        <p style="font-size:16px;font-weight:600;color:#111827;margin:0 0 4px;">Hi ${toName},</p>
+        <p style="font-size:14px;color:#4b5563;line-height:1.7;margin:0 0 4px;">${bodyText}</p>
+        <p style="font-size:13px;color:#6b7280;margin:0 0 20px;">${subhead}</p>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin:0 0 20px;">
           <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;font-weight:700;">Meeting Link</div>
           <a href="${meetingLink}" style="font-size:14px;color:#2563eb;font-weight:600;word-break:break-all;">${meetingLink}</a>
         </div>
         <a href="${meetingLink}" style="display:inline-block;padding:10px 24px;background:#2563eb;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">Join Meeting →</a>
       </div>
-      <div style="padding:14px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
+      <div style="padding:16px 32px;background:#f8f9fb;border-top:1px solid #e4e7ec;text-align:center;">
         <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} MPM Infosoft · MPulse Platform</p>
       </div>
     </div>
