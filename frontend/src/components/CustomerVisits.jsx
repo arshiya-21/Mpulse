@@ -5,7 +5,8 @@ import * as custApi     from "../api/customers.js";
 import * as empApi      from "../api/employees.js";
 import * as settingsApi from "../api/settings.js";
 import { uploadFile }   from "../api/uploads.js";
-import { useToast, Toast, Spinner, LoadingBox, Modal, Tooltip, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, Pager, PAGE_SIZE } from "./shared.jsx";
+import { useToast, Toast, Spinner, LoadingBox, Modal, Tooltip, selS, inputS, labelS, VISIT_STATUSES, VISIT_CHANNELS, STATUS_STYLE, fmtDate, visitDisplayStatus, Pager, PAGE_SIZE } from "./shared.jsx";
+import VisitAnalysis from "./VisitAnalysis.jsx";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 function fileUrl(p)  { return p ? `${API_ORIGIN}${p}` : ''; }
@@ -23,6 +24,7 @@ export default function CustomerVisits(){
   const [adminEmail,setAdminEmail]= useState("");
   const [loading,setLoading]     = useState(true);
   const [saving,setSaving]       = useState(false);
+  const [view,setView]           = useState("visits"); // "visits" | "analysis"
 
   // Schedule / Edit modal
   const [modal,setModal]         = useState(false);
@@ -194,17 +196,20 @@ export default function CustomerVisits(){
     return true;
   });
 
+  const displayStatuses = visits.map(visitDisplayStatus);
   const kpi={
-    total:visits.length, planned:visits.filter(v=>v.status==="Planned").length,
-    inprog:visits.filter(v=>v.status==="In Progress").length,
-    done:visits.filter(v=>v.status==="Completed").length,
-    cancelled:visits.filter(v=>v.status==="Cancelled").length,
+    total:visits.length, planned:displayStatuses.filter(s=>s==="Planned").length,
+    inprog:displayStatuses.filter(s=>s==="In Progress").length,
+    done:displayStatuses.filter(s=>s==="Completed").length,
+    overdue:displayStatuses.filter(s=>s==="Overdue").length,
+    cancelled:displayStatuses.filter(s=>s==="Cancelled").length,
   };
   const kpis=[
-    {label:"Total",       value:kpi.total,     icon:"🗂️",accent:"#2563eb",bg:"#dbeafe"},
+    {label:"Total",       value:kpi.total,     icon:"🗂️",accent:"#4f46e5",bg:"#ede9fe"},
     {label:"Planned",     value:kpi.planned,   icon:"📅",accent:"#1d4ed8",bg:"#dbeafe"},
     {label:"In Progress", value:kpi.inprog,    icon:"🚗",accent:"#c2410c",bg:"#fff7ed"},
     {label:"Completed",   value:kpi.done,      icon:"✅",accent:"#059669",bg:"#ecfdf5"},
+    {label:"Overdue",     value:kpi.overdue,   icon:"⚠️",accent:"#d97706",bg:"#fffbeb"},
     {label:"Cancelled",   value:kpi.cancelled, icon:"🚫",accent:"#64748b",bg:"#f1f5f9"},
   ];
   const chIcon={"Email":"📧","WhatsApp":"💬","Phone Call":"📞","SMS":"📱","On-Site Request":"🏢"};
@@ -215,12 +220,30 @@ export default function CustomerVisits(){
 
   return(
     <div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:16}}>
-        <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div style={{display:"flex",gap:2,background:"#fff",border:"1px solid #e4e7ec",borderRadius:8,padding:3}}>
+          <button onClick={()=>setView("visits")}
+            style={{padding:"7px 14px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",
+              background:view==="visits"?"#4f46e5":"transparent",color:view==="visits"?"#fff":"#6b7280"}}>
+            🗂️ Visits
+          </button>
+          <button onClick={()=>setView("analysis")}
+            style={{padding:"7px 14px",borderRadius:6,border:"none",fontSize:13,fontWeight:600,cursor:"pointer",
+              background:view==="analysis"?"#4f46e5":"transparent",color:view==="analysis"?"#fff":"#6b7280"}}>
+            📊 Analysis
+          </button>
+        </div>
+        <button onClick={openAdd} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Schedule Visit</button>
       </div>
 
+      {view === "analysis" && (
+        <VisitAnalysis visits={visits} employees={employees} customers={customers} />
+      )}
+
+      {view === "visits" && (
+      <>
       {/* KPIs */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:14}}>
         {kpis.map((k,i)=>(
           <div key={i} style={{background:"#fff",border:"1px solid #e4e7ec",borderRadius:9,padding:"12px 14px",boxShadow:"0 1px 2px rgba(0,0,0,.05)",borderLeft:"3px solid "+k.accent,display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:30,height:30,borderRadius:7,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{k.icon}</div>
@@ -255,7 +278,7 @@ export default function CustomerVisits(){
               </tr></thead>
               <tbody>
                 {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((v,i)=>{
-                  const ss=STATUS_STYLE[v.status]||{bg:"#f0f2f5",c:"#374151"};
+                  const dStatus=visitDisplayStatus(v); const ss=STATUS_STYLE[dStatus]||{bg:"#f0f2f5",c:"#374151"};
                   return(
                     <tr key={v.id} style={{background:i%2===0?"#fff":"#fafafa"}}>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
@@ -270,13 +293,13 @@ export default function CustomerVisits(){
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12,whiteSpace:"nowrap"}}>{fmtDate(v.planned_date)}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",color:"#6b7280",fontSize:12}}>{v.duration||"—"}</td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5",fontSize:12}}>{v.assigned_to_name||"—"}</td>
-                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:ss.bg,color:ss.c}}>{v.status}</span></td>
+                      <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}><span style={{padding:"3px 9px",borderRadius:20,fontSize:11,fontWeight:600,background:ss.bg,color:ss.c}}>{dStatus}</span></td>
                       <td style={{padding:"11px 14px",borderBottom:"1px solid #f0f2f5"}}>
                         <div style={{display:"flex",gap:2,alignItems:"center"}}>
                           {v.proof_file&&(
                             <Tooltip text={`View: ${fileName(v.proof_file)}`}>
                               <a href={fileUrl(v.proof_file)} target="_blank" rel="noreferrer"
-                                style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#2563eb",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
+                                style={{padding:"3px 6px",borderRadius:5,border:"1px solid #d1d5db",background:"#f9fafb",color:"#4f46e5",fontSize:11,textDecoration:"none",fontWeight:600}}>📎</a>
                             </Tooltip>
                           )}
                           {canRelog&&v.assigned_to&&(
@@ -304,6 +327,8 @@ export default function CustomerVisits(){
           </div>
           <Pager page={page} setPage={setPage} total={filtered.length}/>
         </div>
+      )}
+      </>
       )}
 
       {/* ── Schedule / Edit Modal (wider) ── */}
@@ -398,7 +423,7 @@ export default function CustomerVisits(){
         </div>
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",padding:"14px 24px",borderTop:"1px solid #f0f2f5"}}>
           <button onClick={()=>setModal(false)} disabled={saving||uploading} style={{padding:"9px 16px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#4b5563",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
-          <button onClick={save} disabled={saving||uploading} style={{padding:"9px 18px",borderRadius:6,border:"none",background:(saving||uploading)?"#60a5fa":"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:(saving||uploading)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <button onClick={save} disabled={saving||uploading} style={{padding:"9px 18px",borderRadius:6,border:"none",background:(saving||uploading)?"#818cf8":"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:(saving||uploading)?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:6}}>
             {saving&&<Spinner size={13} color="#fff"/>}{saving?(editing?"Saving…":"Scheduling…"):(editing?"Save Changes":"Schedule Visit")}
           </button>
         </div>
@@ -445,9 +470,9 @@ export default function CustomerVisits(){
                     {ccTags.length>0&&(
                       <div style={{display:"flex",flexWrap:"wrap",gap:5,padding:"7px 10px",borderRadius:7,border:"1px solid #e4e7ec",background:"#f8f9fb"}}>
                         {ccTags.map(t=>(
-                          <span key={t} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:"#dbeafe",color:"#2563eb",fontSize:12,fontWeight:600}}>
+                          <span key={t} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,background:"#ede9fe",color:"#4f46e5",fontSize:12,fontWeight:600}}>
                             {t}
-                            <button onClick={()=>removeTag(t)} style={{background:"none",border:"none",cursor:"pointer",color:"#1d4ed8",fontSize:13,padding:0,lineHeight:1}}>×</button>
+                            <button onClick={()=>removeTag(t)} style={{background:"none",border:"none",cursor:"pointer",color:"#7c3aed",fontSize:13,padding:0,lineHeight:1}}>×</button>
                           </span>
                         ))}
                       </div>
@@ -492,7 +517,7 @@ export default function CustomerVisits(){
             <div style={{flexShrink:0,display:"flex",gap:8,justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5",background:"#fff"}}>
               <button onClick={()=>setNotifyModal(false)} style={{padding:"9px 18px",borderRadius:6,border:"1px solid #e4e7ec",background:"#fff",color:"#6b7280",fontSize:13,fontWeight:600,cursor:"pointer"}}>Skip</button>
               <button onClick={sendNotification} disabled={sending||!adminEmail}
-                style={{padding:"9px 22px",borderRadius:6,border:"none",background:adminEmail?"#2563eb":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:adminEmail&&!sending?"pointer":"not-allowed"}}>
+                style={{padding:"9px 22px",borderRadius:6,border:"none",background:adminEmail?"#4f46e5":"#94a3b8",color:"#fff",fontSize:13,fontWeight:600,cursor:adminEmail&&!sending?"pointer":"not-allowed"}}>
                 {sending?"Sending…":"📤 Send Notification"}
               </button>
             </div>
@@ -511,7 +536,7 @@ export default function CustomerVisits(){
                 <div style={{fontWeight:700,fontSize:15,color:"#111827"}}>{viewVisit.customer_name||"—"}</div>
                 <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{viewVisit.contact_person||"—"}</div>
               </div>
-              <span style={{marginLeft:"auto",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:(STATUS_STYLE[viewVisit.status]||{}).bg||"#f0f2f5",color:(STATUS_STYLE[viewVisit.status]||{}).c||"#374151"}}>{viewVisit.status}</span>
+              <span style={{marginLeft:"auto",padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:(STATUS_STYLE[visitDisplayStatus(viewVisit)]||{}).bg||"#f0f2f5",color:(STATUS_STYLE[visitDisplayStatus(viewVisit)]||{}).c||"#374151"}}>{visitDisplayStatus(viewVisit)}</span>
             </div>
 
             {/* Details grid */}
@@ -564,12 +589,12 @@ export default function CustomerVisits(){
             {viewVisit.proof_file&&(
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"#f8f9fb",borderRadius:7,border:"1px solid #e4e7ec"}}>
                 <span style={{fontSize:13}}>📎</span>
-                <a href={fileUrl(viewVisit.proof_file)} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#2563eb",fontWeight:500,textDecoration:"none"}}>{fileName(viewVisit.proof_file)}</a>
+                <a href={fileUrl(viewVisit.proof_file)} target="_blank" rel="noreferrer" style={{fontSize:13,color:"#4f46e5",fontWeight:500,textDecoration:"none"}}>{fileName(viewVisit.proof_file)}</a>
               </div>
             )}
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",padding:"12px 24px",borderTop:"1px solid #f0f2f5"}}>
-            <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#2563eb",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
+            <button onClick={()=>setViewVisit(null)} style={{padding:"8px 14px",borderRadius:6,border:"none",background:"#4f46e5",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer"}}>Close</button>
           </div>
         </Modal>
       )}

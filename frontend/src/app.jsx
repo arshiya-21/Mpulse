@@ -196,14 +196,14 @@ function Shell({user,onLogout}){
         <div style={{padding:collapsed?"16px 0":"16px 14px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {!collapsed?(
             <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0,width:"100%"}}>
-              <div style={{width:32,height:32,background:"linear-gradient(135deg,#2563eb,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(37,99,235,0.35)",flexShrink:0}}>✅</div>
+              <div style={{width:32,height:32,background:"linear-gradient(135deg,#1d4ed8,#3b82f6)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:"0 4px 12px rgba(37,99,235,0.35)",flexShrink:0}}>✅</div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",whiteSpace:"nowrap"}}>MPulse</div>
                 <div style={{fontSize:10,color:"#4b5563",marginTop:1,whiteSpace:"nowrap"}}>Work · Pulse · Intelligence</div>
               </div>
             </div>
           ):(
-            <div style={{width:32,height:32,background:"linear-gradient(135deg,#2563eb,#7c3aed)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
+            <div style={{width:32,height:32,background:"linear-gradient(135deg,#1d4ed8,#3b82f6)",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>✅</div>
           )}
         </div>
         <div style={{padding:collapsed?"6px 0":"4px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:collapsed?"center":"flex-end",flexShrink:0}}>

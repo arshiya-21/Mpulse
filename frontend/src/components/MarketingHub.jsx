@@ -252,7 +252,7 @@ function PhaseStepper({phase,totalPhases}){
 }
 
 const COUNTRY_OPTIONS=["India","USA","UAE","Germany","Japan","China","UK","Australia"];
-const STATE_OPTIONS=["Tamil Nadu","Maharashtra","Gujarat","Karnataka","Rajasthan","Telangana","Andhra Pradesh","Punjab","Haryana","West Bengal","Madhya Pradesh","Uttar Pradesh"];
+const STATE_OPTIONS=["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
 const REGION_OPTIONS=["South","North","East","West"];
 
 const sectionHeaderStyle={fontSize:12,fontWeight:700,color:"#374151",background:"#f8f9fb",padding:"10px 24px",borderTop:"1px solid #e5e7eb",borderBottom:"1px solid #e5e7eb",textTransform:"uppercase",letterSpacing:0.4};

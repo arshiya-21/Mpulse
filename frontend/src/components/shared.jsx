@@ -189,7 +189,20 @@ export const STATUS_STYLE = {
   'Pending':     { bg:'#fef9c3', c:'#92400e' },
   'Rescheduled': { bg:'#dbeafe', c:'#5b21b6' },
   'Cancelled':   { bg:'#fee2e2', c:'#991b1b' },
+  'Overdue':     { bg:'#fef3c7', c:'#92400e' },
 };
+
+// A visit is Overdue when its planned date has passed and it was never closed out.
+export function isVisitOverdue(v) {
+  if (!v.planned_date) return false;
+  if (v.status === 'Completed' || v.status === 'Cancelled') return false;
+  return new Date(v.planned_date) < new Date(new Date().toDateString());
+}
+
+// Status used for KPIs/analysis — same as v.status, except Overdue overrides it.
+export function visitDisplayStatus(v) {
+  return isVisitOverdue(v) ? 'Overdue' : v.status;
+}
 
 // ── Work log types ─────────────────────────────────────────────
 export const WTYPES = ['On Demand','Planned','Ad-hoc','Maintenance'];
