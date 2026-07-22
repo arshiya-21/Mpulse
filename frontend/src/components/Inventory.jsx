@@ -1159,8 +1159,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
               <th style={thStyle}>Code</th>
               <th style={thStyle}>Item Name</th>
               <th style={thStyle}>Category</th>
-              <th style={thStyle}>Unit</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Opening</th>
+              <th style={{ ...thStyle, textAlign: "right" }}>Quantity</th>
               <th style={{ ...thStyle, textAlign: "right" }}>Min Stock</th>
               <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
               <th style={{ ...thStyle, textAlign: "right" }}>Sell Price</th>
@@ -1175,7 +1174,6 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
                 <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700, whiteSpace: "nowrap" }}>{item.code}</td>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{item.name}</td>
                 <td style={{ ...tdStyle, color: "#6b7280" }}>{item.category}</td>
-                <td style={{ ...tdStyle, color: "#6b7280" }}>{item.unit}</td>
                 <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>{item.stock}</td>
                 <td style={{ ...tdStyle, textAlign: "right", color: "#9ca3af" }}>{item.min}</td>
                 <td style={{ ...tdStyle, textAlign: "right", color: "#059669" }}>₹{item.cost.toLocaleString("en-IN")}</td>
@@ -1202,7 +1200,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
             ))}
             {filteredRows.length === 0 && (
               <tr>
-                <td colSpan={11} style={{ ...tdStyle, textAlign: "center", color: "#9ca3af", padding: 32 }}>
+                <td colSpan={10} style={{ ...tdStyle, textAlign: "center", color: "#9ca3af", padding: 32 }}>
                   No items match your search.
                 </td>
               </tr>
