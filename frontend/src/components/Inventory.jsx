@@ -1031,7 +1031,7 @@ function ItemModal({ onClose, onSave, nextItemCode, initial, supplierOptions = [
           </select>
         </div>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>DATE ADDED</label>
+          <label style={labelStyle}>DATE PURCHASED</label>
           <input type="date" style={inputStyle} value={dateAdded} onChange={(e) => setDateAdded(e.target.value)} />
         </div>
       </div>
@@ -1165,6 +1165,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
               <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
               <th style={{ ...thStyle, textAlign: "right" }}>Sell Price</th>
               <th style={thStyle}>Supplier</th>
+              <th style={thStyle}>Date Purchased</th>
               <th style={thStyle} />
             </tr>
           </thead>
@@ -1180,6 +1181,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
                 <td style={{ ...tdStyle, textAlign: "right", color: "#059669" }}>₹{item.cost.toLocaleString("en-IN")}</td>
                 <td style={{ ...tdStyle, textAlign: "right", color: "#059669" }}>₹{item.sell.toLocaleString("en-IN")}</td>
                 <td style={{ ...tdStyle, color: "#6b7280" }}>{item.supplier}</td>
+                <td style={{ ...tdStyle, color: "#6b7280", whiteSpace: "nowrap" }}>{item.dateAdded || "—"}</td>
                 <td style={tdStyle}>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
@@ -1200,7 +1202,7 @@ function ItemsCatalogTab({ rows, onAddNew, onEdit, onDelete }) {
             ))}
             {filteredRows.length === 0 && (
               <tr>
-                <td colSpan={10} style={{ ...tdStyle, textAlign: "center", color: "#9ca3af", padding: 32 }}>
+                <td colSpan={11} style={{ ...tdStyle, textAlign: "center", color: "#9ca3af", padding: 32 }}>
                   No items match your search.
                 </td>
               </tr>
