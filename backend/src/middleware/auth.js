@@ -18,7 +18,13 @@ async function verify(req, res, next) {
       [decoded.userId]
     );
     if (!rows[0]) return res.status(401).json({ error: 'User not found or inactive' });
-    req.user = { ...decoded, role: rows[0].role_name };
+    // Every data-scoping check across the API only special-cases 'Admin'/'Manager'/'User' —
+    // any custom role (Marketing, CRM User, etc.) would otherwise fall through those checks
+    // unmatched and end up with no restriction at all (i.e. behave like Admin). Custom roles
+    // exist purely to grant extra module access (via the separate permissions/access-config
+    // system, keyed off roleName below) — for data scoping they're always just a "User".
+    const roleName = rows[0].role_name;
+    req.user = { ...decoded, role: ['Admin', 'Manager'].includes(roleName) ? roleName : 'User', roleName };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });

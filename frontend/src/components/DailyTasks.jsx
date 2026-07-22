@@ -11,6 +11,9 @@ import { exportXLSX } from "../api/reports.js";
 
 export default function DailyTasks(){
   const {user}=useAuth();
+  // Anyone other than Admin/Manager (User, Marketing, or any other custom role that's really
+  // just "User" + extra module access) only ever sees/logs their own tasks.
+  const isSelfOnly=user.role!=="Admin"&&user.role!=="Manager";
   const [tasks,setTasks]=useState([]);
   const [employees,setEmployees]=useState([]);
   const [departments,setDepartments]=useState([]);
@@ -37,7 +40,7 @@ export default function DailyTasks(){
   const [cats,setCats]=useState([...DEFAULT_CATS].sort((a,b)=>a.localeCompare(b)));
   const [dailyTarget,setDailyTarget]=useState(510);
   const [utilExpr,setUtilExpr]=useState("spent_mins / daily_target * 100");
-  const blank={task_date:fmt(today),employee_id:(user.role==="User"||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"Completed",description:""};
+  const blank={task_date:fmt(today),employee_id:(isSelfOnly||user.role==="Admin")?String(user.id):"",project_id:"",category:"",work_type:"On Demand",spent_mins:"",status:"Completed",description:""};
   const [form,setForm]=useState(blank);
 
   // Read-only viewer — Escape-to-close only, no submit action.
@@ -68,7 +71,7 @@ export default function DailyTasks(){
   }
 
   const filtered=[...tasks].sort((a,b)=>String(b.task_date||"").localeCompare(String(a.task_date||""))||(a.employee_name||"").localeCompare(b.employee_name||"")).filter(t=>{
-    if(user.role==="User"&&String(t.employee_id)!==String(user.id))return false;
+    if(isSelfOnly&&String(t.employee_id)!==String(user.id))return false;
     if(catF&&t.category!==catF)return false;
     if(tatF==="Delay"&&t.tat_days===0)return false;
     if(tatF==="On Time"&&t.tat_days>0)return false;
@@ -169,7 +172,7 @@ export default function DailyTasks(){
               <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={selS}/>
             </div>
           </div>
-          {user.role!=="User"&&(
+          {!isSelfOnly&&(
             <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:140}}>
               <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Department</div>
               <select value={deptF} onChange={e=>{setDeptF(e.target.value);setEmpF("");}} style={selS}>
@@ -178,7 +181,7 @@ export default function DailyTasks(){
               </select>
             </div>
           )}
-          {user.role!=="User"&&(
+          {!isSelfOnly&&(
             <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150}}>
               <div style={{fontSize:11,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Employee</div>
               <select value={empF} onChange={e=>setEmpF(e.target.value)} style={{...selS,color:deptF?"#111827":"#9ca3af"}} disabled={!deptF}>
@@ -263,7 +266,7 @@ export default function DailyTasks(){
         <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Date</label><input type="date" value={form.task_date} onChange={e=>setForm({...form,task_date:e.target.value})} style={inputS}/></div>
-            {user.role!=="User"&&(
+            {!isSelfOnly&&(
               <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={labelS}>Employee</label>
                 <select value={form.employee_id} onChange={e=>setForm({...form,employee_id:e.target.value,project_id:""})} style={inputS}>
                   <option value="">Select employee</option>
@@ -273,7 +276,7 @@ export default function DailyTasks(){
             )}
             <div style={{display:"flex",flexDirection:"column",gap:4,gridColumn:"span 2"}}><label style={labelS}>Project</label>
               {(()=>{
-                const selEmpId=user.role==="User"?String(user.id):form.employee_id;
+                const selEmpId=isSelfOnly?String(user.id):form.employee_id;
                 const projPool=selEmpId
                   ?projects.filter(p=>String(p.owner_id)===selEmpId||(p.assignees||[]).some(a=>String(a.id)===selEmpId))
                   :projects;

@@ -7,7 +7,30 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 const API_ORIGIN=(import.meta.env.VITE_API_URL||'http://localhost:4000/api').replace(/\/api\/?$/,'');
-function fileUrl(p){ return p?`${API_ORIGIN}${p}`:''; }
+function fileUrl(p){
+  if(!p) return '';
+  const clean = p.startsWith('/api/uploads/') ? p.slice(4) : p; // strip stray /api prefix from legacy records
+  return `${API_ORIGIN}${clean}`;
+}
+// The HTML `download` attribute is silently ignored by browsers for cross-origin URLs (the API can
+// be on a different host than the frontend), which makes the link just navigate/preview instead of
+// saving the file. Fetching as a blob and saving from that always forces a real download.
+async function downloadFile(url,filename){
+  try{
+    const res=await fetch(url);
+    const blob=await res.blob();
+    const blobUrl=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=blobUrl;
+    a.download=filename||'file';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  }catch{
+    alert("Failed to download file.");
+  }
+}
 const inputStyle={width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:14,color:"#111827",boxSizing:"border-box"};
 const cardStyle={background:"#fff",borderRadius:10,border:"1px solid #e5e7eb",padding:"16px 20px"};
 const thStyle={textAlign:"left",fontSize:11,fontWeight:700,color:"#fff",background:"#9ca3af",textTransform:"uppercase",letterSpacing:0.4,padding:"10px 14px",borderBottom:"1px solid #e5e7eb",whiteSpace:"nowrap"};
@@ -213,11 +236,11 @@ function KpiCard({label,value,sub,accent,icon,drillKey,activeDrill,onToggle}){
 function DrillPanel({title,icon,data,columns,periodLabel,onClose}){
   return(
     <div style={{...cardStyle,padding:0,overflow:"hidden",marginBottom:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#1e2a56",color:"#fff"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700}}>{icon} {title}</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#eff6ff",borderBottom:"1px solid #bfdbfe",color:"#1d4ed8"}}>
+        <div style={{fontSize:14,fontWeight:700}}>{title}</div>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,0.7)",fontWeight:600}}>{data.length} records · {periodLabel}</span>
-          <button onClick={onClose} style={{padding:"6px 14px",borderRadius:6,border:"none",background:"rgba(255,255,255,0.15)",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>✕ Close</button>
+          <span style={{fontSize:12,color:"#1d4ed8",fontWeight:600,opacity:0.75}}>{data.length} records · {periodLabel}</span>
+          <button onClick={onClose} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #bfdbfe",background:"#fff",color:"#1d4ed8",fontSize:12,fontWeight:600,cursor:"pointer"}}>Close</button>
         </div>
       </div>
       <div style={{overflowX:"auto"}}>
@@ -626,17 +649,39 @@ function PhaseFormPanel({product,initial,onCancel,onSave}){
   const [description,setDescription]=useState(initial?.description||"");
   const [stepsText,setStepsText]=useState((initial?.steps||[]).join("\n"));
 
-  function handleSave(){
-    if(phaseNumber===""){ alert("Please enter a phase number."); return; }
-    if(!title.trim()){ alert("Please enter a phase title."); return; }
-    onSave({
+  function buildData(){
+    if(phaseNumber===""){ alert("Please enter a phase number."); return null; }
+    if(!title.trim()){ alert("Please enter a phase title."); return null; }
+    return {
       product_id:product.id,
       phase_number:Number(phaseNumber),
       title:title.trim(),
       weeks:weeks.trim(),
       description:description.trim(),
       steps:stepsText.split("\n").map(s=>s.trim()).filter(Boolean),
-    });
+    };
+  }
+
+  function handleSave(){
+    const data=buildData();
+    if(!data) return;
+    const result=onSave(data,{keepOpen:false});
+    if(result&&result.catch) result.catch(()=>{});
+  }
+
+  function handleSaveAndNew(){
+    const data=buildData();
+    if(!data) return;
+    const result=onSave(data,{keepOpen:true});
+    if(result&&result.then){
+      result.then(()=>{
+        setPhaseNumber(String(Number(data.phase_number)+1));
+        setTitle("");
+        setWeeks("");
+        setDescription("");
+        setStepsText("");
+      }).catch(()=>{});
+    }
   }
 
   return(
@@ -666,7 +711,10 @@ function PhaseFormPanel({product,initial,onCancel,onSave}){
       </div>
       <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
         <button onClick={onCancel} style={{padding:"8px 16px",borderRadius:8,border:"1px solid #d1d5db",background:"#fff",fontWeight:600,fontSize:13,color:"#111827",cursor:"pointer"}}>Cancel</button>
-        <button onClick={handleSave} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save Phase</button>
+        {!initial&&(
+          <button onClick={handleSaveAndNew} style={{padding:"8px 16px",borderRadius:8,border:"1px solid #2563eb",background:"#fff",fontWeight:600,fontSize:13,color:"#2563eb",cursor:"pointer"}}>Save &amp; Add New Phase</button>
+        )}
+        <button onClick={handleSave} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#2563eb",fontWeight:600,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
       </div>
     </div>
   );
@@ -692,10 +740,10 @@ function ProductPhasesModal({product,onClose}){
     if(!window.confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
     marketingApi.removeProductPhase(p.id).then(load).catch(err=>alert(err?.response?.data?.error||"Failed to delete phase."));
   }
-  function handleSave(data){
+  function handleSave(data,{keepOpen=false}={}){
     const req=editingPhase?marketingApi.updateProductPhase(editingPhase.id,data):marketingApi.createProductPhase(data);
-    req.then(()=>{ setShowForm(false); setEditingPhase(null); load(); })
-      .catch(err=>alert(err?.response?.data?.error||"Failed to save phase."));
+    return req.then(()=>{ setShowForm(keepOpen); setEditingPhase(null); load(); })
+      .catch(err=>{ alert(err?.response?.data?.error||"Failed to save phase."); throw err; });
   }
 
   // Enter is left to the phase-form panel's own fields; this modal only adds Escape-to-close.
@@ -996,11 +1044,12 @@ function OrderModal({onClose,onSave,nextOrderNumber,initial,productOptions,owner
               <input style={inputStyle} value={poNo} onChange={e=>setPoNo(e.target.value)} placeholder="e.g. PO-2026-012"/>
             </div>
             <div style={{paddingBottom:2}}>
-              <label style={labelStyle}>PO Document</label>
+              <label style={labelStyle}>PO Document <span style={{fontWeight:400,color:"#9ca3af"}}>(image, PDF, Office, ZIP — max 10 MB)</span></label>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <label style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,border:"1px dashed #bfdbfe",background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:600,cursor:uploadingPo?"wait":"pointer"}}>
-                  📎 {uploadingPo?"Uploading…":poDocumentUrl?"Replace":"Upload"}
-                  <input type="file" style={{display:"none"}} disabled={uploadingPo} onChange={handlePoFile}/>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  {uploadingPo?"Uploading…":poDocumentUrl?"Replace":"Upload"}
+                  <input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style={{display:"none"}} disabled={uploadingPo} onChange={handlePoFile}/>
                 </label>
                 {poDocumentUrl&&(
                   <a href={fileUrl(poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {poDocumentName||"View file"}</a>
@@ -1526,10 +1575,14 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
                     {parseRupee(o.outstanding)>0&&<div style={{fontSize:11,color:"#6b7280"}}>⚠ {o.outstanding} due</div>}
                   </td>
                   <td style={tdStyle}>
-                    <div style={{color:"#111827"}}>{o.poNo||"—"}</div>
-                    {o.poDocumentUrl?(
-                      <a href={fileUrl(o.poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{fontSize:11,color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {o.poDocumentName||"View file"}</a>
-                    ):(
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{color:"#111827"}}>{o.poNo||"—"}</span>
+                      {o.poDocumentUrl&&(
+                        <button onClick={()=>downloadFile(fileUrl(o.poDocumentUrl),o.poDocumentName||"file")} title={`Download ${o.poDocumentName||"file"}`}
+                          style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:20,height:20,borderRadius:5,border:"none",background:"#ecfdf5",color:"#059669",fontSize:12,flexShrink:0,cursor:"pointer"}}>⬇</button>
+                      )}
+                    </div>
+                    {!o.poDocumentUrl&&(
                       <div style={{fontSize:11,color:"#6b7280"}}>⚠ Not uploaded</div>
                     )}
                   </td>
@@ -1768,13 +1821,13 @@ function ImplementationTab({records,onUpdatePhase,onAddPhases,productOptions}){
 /* ---------------- Renewals Tab ---------------- */
 const RENEWAL_STATUS_OPTIONS=["Active","Due Soon","Overdue","Renewed","Churned"];
 
-function EditRenewalModal({renewal,onClose,onSave}){
+function EditRenewalModal({renewal,onClose,onSave,ownerOptions=[]}){
   const [license,setLicense]=useState(renewal.license||"");
   const [users,setUsers]=useState(renewal.users||"");
   const [contractStart,setContractStart]=useState(renewal.contractStart||"");
   const [contractEnd,setContractEnd]=useState(renewal.contractEnd||"");
   const [value,setValue]=useState(String(renewal.value||"").replace(/[₹,]/g,""));
-  const [assignedTo,setAssignedTo]=useState(renewal.assignedTo||"");
+  const [assignedTo,setAssignedTo]=useState(renewal.assignedTo||ownerOptions[0]||"");
   const [notes,setNotes]=useState(renewal.notes||"");
 
   function handleSave(){
@@ -1784,7 +1837,7 @@ function EditRenewalModal({renewal,onClose,onSave}){
       users:users?Number(users):"",
       contractStart,contractEnd,
       value:formatRupee(Number(value)||0),
-      assignedTo:assignedTo.trim(),
+      assignedTo,
       notes:notes.trim(),
     });
   }
@@ -1806,11 +1859,11 @@ function EditRenewalModal({renewal,onClose,onSave}){
         <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:16}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
             <div>
-              <label style={labelStyle}>License</label>
+              <label style={labelStyle}>License Type <span style={{color:"#9ca3af",fontWeight:500}}>(e.g. Annual, Monthly, Perpetual)</span></label>
               <input style={inputStyle} value={license} onChange={e=>setLicense(e.target.value)} placeholder="e.g. Annual"/>
             </div>
             <div>
-              <label style={labelStyle}>Users</label>
+              <label style={labelStyle}>No. of Users</label>
               <input type="number" style={inputStyle} value={users} onChange={e=>setUsers(e.target.value)}/>
             </div>
           </div>
@@ -1827,11 +1880,14 @@ function EditRenewalModal({renewal,onClose,onSave}){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
             <div>
               <label style={labelStyle}>Order Value (₹)</label>
-              <input type="number" style={inputStyle} value={value} onChange={e=>setValue(e.target.value)}/>
+              <input type="text" inputMode="numeric" style={inputStyle} value={value?Number(value).toLocaleString("en-IN"):""}
+                onChange={e=>setValue(e.target.value.replace(/[^\d]/g,""))} placeholder="e.g. 5,00,000"/>
             </div>
             <div>
               <label style={labelStyle}>Assigned To</label>
-              <input style={inputStyle} value={assignedTo} onChange={e=>setAssignedTo(e.target.value)}/>
+              <select style={inputStyle} value={assignedTo} onChange={e=>setAssignedTo(e.target.value)}>
+                {ownerOptions.map(o=><option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
           </div>
           <div>
@@ -2460,9 +2516,10 @@ function PoReceiptReport({orders,onBack}){
                     <td style={tdStyle}><StatusPill label={o.orderStatus}/></td>
                     <td style={tdStyle}><StatusPill label={o.paymentStatus}/></td>
                     <td style={tdStyle}>{o.assignedTo}</td>
-                    <td style={{...tdStyle,fontStyle:o.poDocumentUrl?"normal":"italic"}}>
+                    <td style={{...tdStyle,fontStyle:o.poDocumentUrl?"normal":"italic",textAlign:"center"}}>
                       {o.poDocumentUrl?(
-                        <a href={fileUrl(o.poDocumentUrl)} target="_blank" rel="noopener noreferrer" style={{color:"#059669",fontWeight:600,textDecoration:"none"}}>✓ {o.poDocumentName||"View file"}</a>
+                        <button onClick={()=>downloadFile(fileUrl(o.poDocumentUrl),o.poDocumentName||"file")} title={`Download ${o.poDocumentName||"file"}`}
+                          style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:22,height:22,borderRadius:5,border:"none",background:"#ecfdf5",color:"#059669",fontSize:12,cursor:"pointer"}}>⬇</button>
                       ):(
                         <span style={{color:"#9ca3af"}}>Not uploaded</span>
                       )}
@@ -3704,7 +3761,7 @@ export default function MarketingHub(){
       )}
 
       {editingRenewal&&(
-        <EditRenewalModal renewal={editingRenewal} onClose={handleCloseRenewalEdit} onSave={handleSaveRenewalEdit}/>
+        <EditRenewalModal renewal={editingRenewal} onClose={handleCloseRenewalEdit} onSave={handleSaveRenewalEdit} ownerOptions={marketingOwners}/>
       )}
 
       {tab==="Reports"&&(

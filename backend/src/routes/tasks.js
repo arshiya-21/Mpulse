@@ -62,8 +62,9 @@ router.get('/', verify, async (req, res) => {
       } else {
         q += ` AND e.id IN (SELECT em.employee_id FROM employee_managers em WHERE em.manager_id = $${mgrParam})`;
       }
-    } else if (req.user.role === 'User') {
-      // User sees only their own tasks
+    } else if (req.user.role !== 'Admin') {
+      // Anyone other than Admin/Manager (User, Marketing, or any other custom role
+      // that's really just "User" + extra module access) sees only their own tasks
       params.push(req.user.userId);
       q += ` AND t.employee_id = $${params.length}`;
     }
@@ -80,8 +81,9 @@ router.post('/', verify, async (req, res) => {
   try {
     let { task_date, employee_id, project_id, category, work_type = 'Planned', spent_mins, status = 'In Progress', description } = req.body;
 
-    // User can only log tasks for themselves
-    if (req.user.role === 'User') {
+    // Anyone other than Admin/Manager (User, Marketing, or any other custom role
+    // that's really just "User" + extra module access) can only log tasks for themselves
+    if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
       employee_id = req.user.userId;
     }
 
@@ -119,8 +121,9 @@ router.put('/:id', verify, async (req, res) => {
   try {
     const taskId = req.params.id;
 
-    // User can only update their own tasks
-    if (req.user.role === 'User') {
+    // Anyone other than Admin/Manager (User, Marketing, or any other custom role
+    // that's really just "User" + extra module access) can only update their own tasks
+    if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
       const { rows: taskCheck } = await db.query('SELECT employee_id FROM tasks WHERE id = $1', [taskId]);
       if (!taskCheck[0] || String(taskCheck[0].employee_id) !== String(req.user.userId)) {
         return res.status(403).json({ error: 'You can only update your own tasks' });
@@ -164,8 +167,9 @@ router.delete('/:id', verify, async (req, res) => {
   try {
     const taskId = req.params.id;
 
-    // User can only delete their own tasks
-    if (req.user.role === 'User') {
+    // Anyone other than Admin/Manager (User, Marketing, or any other custom role
+    // that's really just "User" + extra module access) can only delete their own tasks
+    if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
       const { rows: taskCheck } = await db.query('SELECT employee_id FROM tasks WHERE id = $1', [taskId]);
       if (!taskCheck[0] || String(taskCheck[0].employee_id) !== String(req.user.userId)) {
         return res.status(403).json({ error: 'You can only delete your own tasks' });

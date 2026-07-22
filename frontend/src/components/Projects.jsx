@@ -15,6 +15,9 @@ const MEET_BLANK = () => ({ schedule_type:'Daily', days:[], meeting_time:nowTime
 
 export default function Projects(){
   const {user}=useAuth();
+  // Anyone other than Admin/Manager (User, Marketing, or any other custom role that's really
+  // just "User" + extra module access) only ever sees/manages their own projects.
+  const isSelfOnly=user.role!=="Admin"&&user.role!=="Manager";
   const [projects,setProjects]=useState([]);
   const [depts,setDepts]=useState([]);
   const [employees,setEmployees]=useState([]);
@@ -53,7 +56,7 @@ export default function Projects(){
       const [pR,dR,eR]=await Promise.all([projApi.getAll(),deptApi.getAll(),empApi.getAll({for_project:true})]);
       const srt=(a,k)=>[...(a||[])].sort((x,y)=>(x[k]||"").localeCompare(y[k]||""));
       setProjects(srt(pR.data,"name"));setDepts(srt(dR.data,"name"));setEmployees(srt(eR.data,"name"));
-      if(user.role==="User"){
+      if(isSelfOnly){
         const tR=await import("../api/tasks.js").then(m=>m.getAll());
         const ids=new Set((tR.data||[]).filter(t=>String(t.employee_id)===String(user.id)).map(t=>t.project_id));
         setMyTaskProjectIds(ids);
@@ -201,7 +204,7 @@ export default function Projects(){
     : depts;
 
   const filtered=[...projects].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>{
-    if(user.role==="User"){
+    if(isSelfOnly){
       const isOwner=String(p.owner_id)===String(user.id);
       const isAssignee=(p.assignees||[]).some(a=>String(a.id)===String(user.id));
       const hasTask=myTaskProjectIds.has(p.id);
@@ -274,7 +277,7 @@ export default function Projects(){
               </select>
             </div>
           )}
-          {user.role!=="User"&&(
+          {!isSelfOnly&&(
             <div style={{display:"flex",flexDirection:"column",gap:3,minWidth:120}}>
               <div style={{fontSize:10,fontWeight:700,color:"#6b7280",textTransform:"uppercase"}}>Assignee</div>
               <select value={assigneeF} onChange={e=>{setAssigneeF(e.target.value);setPage(1);}} style={{...selS,fontSize:12}}>
