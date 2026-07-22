@@ -1,7 +1,7 @@
 import { useState, useMemo, Fragment, useEffect } from "react";
 import * as marketingApi from "../api/marketing.js";
 import * as employeesApi from "../api/employees.js";
-import { useModalHotkeys } from "./shared.jsx";
+import { useModalHotkeys, Pager, PAGE_SIZE } from "./shared.jsx";
 import { uploadFile } from "../api/uploads.js";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -234,20 +234,21 @@ function KpiCard({label,value,sub,accent,icon,drillKey,activeDrill,onToggle}){
 }
 
 function DrillPanel({title,icon,data,columns,periodLabel,onClose}){
+  const [page,setPage]=useState(1);
   return(
     <div style={{...cardStyle,padding:0,overflow:"hidden",marginBottom:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#eff6ff",borderBottom:"1px solid #bfdbfe",color:"#1d4ed8"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#fff",borderBottom:"1px solid #e5e7eb",color:"#111827"}}>
         <div style={{fontSize:14,fontWeight:700}}>{title}</div>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <span style={{fontSize:12,color:"#1d4ed8",fontWeight:600,opacity:0.75}}>{data.length} records · {periodLabel}</span>
-          <button onClick={onClose} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #bfdbfe",background:"#fff",color:"#1d4ed8",fontSize:12,fontWeight:600,cursor:"pointer"}}>Close</button>
+          <span style={{fontSize:12,color:"#6b7280",fontWeight:600}}>{data.length} records · {periodLabel}</span>
+          <button onClick={onClose} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #d1d5db",background:"#fff",color:"#374151",fontSize:12,fontWeight:600,cursor:"pointer"}}>Close</button>
         </div>
       </div>
       <div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse"}}>
           <thead><tr>{columns.map(c=><th key={c.header} style={thStyle}>{c.header}</th>)}</tr></thead>
           <tbody>
-            {data.map((row,i)=>(
+            {data.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((row,i)=>(
               <tr key={i}>
                 {columns.map(c=><td key={c.header} style={{...tdStyle,...(c.style||{})}}>{c.cell(row)}</td>)}
               </tr>
@@ -256,6 +257,7 @@ function DrillPanel({title,icon,data,columns,periodLabel,onClose}){
           </tbody>
         </table>
       </div>
+      <Pager page={page} setPage={setPage} total={data.length}/>
     </div>
   );
 }
@@ -1454,6 +1456,8 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
   const [search,setSearch]=useState("");
   const [sortKey,setSortKey]=useState("orderNo");
   const [sortDir,setSortDir]=useState("desc");
+  const [page,setPage]=useState(1);
+  useEffect(()=>{setPage(1);},[statusFilter,search]);
 
   const paymentPending=orders.filter(o=>parseRupee(o.outstanding)>0);
 
@@ -1562,9 +1566,9 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o,i)=>(
+              {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((o,i)=>(
                 <tr key={o.orderNo}>
-                  <td style={{...tdStyle,color:"#9ca3af"}}>{i+1}</td>
+                  <td style={{...tdStyle,color:"#9ca3af"}}>{(page-1)*PAGE_SIZE+i+1}</td>
                   <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{o.orderNo}</td>
                   <td style={{...tdStyle,fontWeight:600}}>{o.customer}</td>
                   <td style={tdStyle}>{o.product}</td>
@@ -1602,9 +1606,7 @@ function OrdersTab({orders,onAddNew,onEdit,onDelete,onSetStatus}){
             </tbody>
           </table>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderTop:"1px solid #e5e7eb",fontSize:13,color:"#6b7280"}}>
-          <span>Showing 1–{filtered.length} of {filtered.length}</span>
-        </div>
+        <Pager page={page} setPage={setPage} total={filtered.length}/>
       </div>
     </div>
   );
@@ -1715,6 +1717,8 @@ function ImplementationTab({records,onUpdatePhase,onAddPhases,productOptions}){
   const [search,setSearch]=useState("");
   const [productFilter,setProductFilter]=useState("All Products");
   const [selectedOrderNo,setSelectedOrderNo]=useState(records[0]?.orderNo||null);
+  const [page,setPage]=useState(1);
+  useEffect(()=>{setPage(1);},[filter,productFilter,search]);
 
   const visible=useMemo(()=>{
     let rows=records;
@@ -1756,7 +1760,7 @@ function ImplementationTab({records,onUpdatePhase,onAddPhases,productOptions}){
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search customer..." style={{...inputStyle,paddingLeft:34}}/>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {visible.map(r=>{
+          {visible.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map(r=>{
             const pct=implOverallPct(r);
             const active=selected&&r.orderNo===selected.orderNo;
             return(
@@ -1780,6 +1784,7 @@ function ImplementationTab({records,onUpdatePhase,onAddPhases,productOptions}){
           })}
           {visible.length===0&&<div style={{textAlign:"center",color:"#9ca3af",fontSize:13,padding:20}}>No customers found.</div>}
         </div>
+        <Pager page={page} setPage={setPage} total={visible.length}/>
       </div>
 
       <div>
@@ -1978,6 +1983,8 @@ function RenewalsTab({renewals,onRenew,onEdit}){
   const [search,setSearch]=useState("");
   const [renewing,setRenewing]=useState(null);
   const [expanded,setExpanded]=useState(null);
+  const [page,setPage]=useState(1);
+  useEffect(()=>{setPage(1);},[statusFilter,search]);
 
   const withStatus=useMemo(()=>renewals.map(r=>({...r,computedStatus:renewalStatusFor(r),daysLeftNum:daysLeftFrom(r.contractEnd)})),[renewals]);
 
@@ -2041,14 +2048,14 @@ function RenewalsTab({renewals,onRenew,onEdit}){
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r,i)=>{
+              {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((r,i)=>{
                 const hist=r.history||[];
                 const isOpen=expanded===r.id;
                 return(
                   <Fragment key={r.id+"-frag"}>
                     <tr key={r.id} style={isOpen?{background:"#eff6ff"}:undefined}>
                       <td style={{...tdStyle,color:"#9ca3af"}}>
-                        <div>{i+1}</div>
+                        <div>{(page-1)*PAGE_SIZE+i+1}</div>
                         <button onClick={()=>setExpanded(prev=>prev===r.id?null:r.id)} style={{background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:10}}>{isOpen?"▲":"▼"}</button>
                       </td>
                       <td style={{...tdStyle,fontWeight:700,cursor:"pointer"}} onClick={()=>setExpanded(prev=>prev===r.id?null:r.id)}>{r.customer}</td>
@@ -2125,9 +2132,7 @@ function RenewalsTab({renewals,onRenew,onEdit}){
             </tbody>
           </table>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderTop:"1px solid #e5e7eb",fontSize:13,color:"#6b7280"}}>
-          <span>Showing 1–{filtered.length} of {filtered.length}</span>
-        </div>
+        <Pager page={page} setPage={setPage} total={filtered.length}/>
       </div>
 
       {renewing&&(
@@ -2680,6 +2685,8 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
   const [sortDir,setSortDir]=useState("asc");
   const [selected,setSelected]=useState([]);
   const [showChangeOwner,setShowChangeOwner]=useState(false);
+  const [page,setPage]=useState(1);
+  useEffect(()=>{setPage(1);},[statusFilter,search]);
 
   function handleOpenChangeOwner(){
     if(selected.length===0){ alert("Please select at least one lead first."); return; }
@@ -2783,7 +2790,7 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l,i)=>(
+              {filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE).map((l,i)=>(
                 <tr key={l.leadNo}>
                   <td style={tdStyle}><input type="checkbox" checked={selected.includes(l.leadNo)} onChange={()=>toggleSelect(l.leadNo)}/></td>
                   <td style={{...tdStyle,color:"#111827",fontWeight:700,whiteSpace:"nowrap"}}>Lead - {l.leadNo}</td>
@@ -2807,10 +2814,7 @@ function LeadsTab({leads,onAddNew,onEdit,onDelete,onOpenProductMaster,onOpenLead
             </tbody>
           </table>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderTop:"1px solid #e5e7eb",fontSize:13,color:"#6b7280"}}>
-          <span>Showing 1–{filtered.length} of {filtered.length}</span>
-          <span>Rows: 25</span>
-        </div>
+        <Pager page={page} setPage={setPage} total={filtered.length}/>
       </div>
 
       {showChangeOwner&&(
@@ -3411,6 +3415,13 @@ export default function MarketingHub(){
     return counts;
   },[demoTypes,demos]);
 
+  const [followUpPage,setFollowUpPage]=useState(1);
+  const [implGoLivePage,setImplGoLivePage]=useState(1);
+  const [renewalsDashPage,setRenewalsDashPage]=useState(1);
+  const [recentDemosPage,setRecentDemosPage]=useState(1);
+
+  useEffect(()=>{setFollowUpPage(1);},[win]);
+
   const filteredLeads=useMemo(()=>leads.filter(l=>inWindow(l.lastModified,win)),[leads,win]);
   const followUpLeadsFiltered=useMemo(()=>filteredLeads.filter(l=>l.status==="Follow Up"),[filteredLeads]);
   const filteredDemos=useMemo(()=>demos.filter(d=>inWindow(d.demoDate,win)),[demos,win]);
@@ -3583,7 +3594,7 @@ export default function MarketingHub(){
           </div>
 
           {activeDrill&&drillConfigs[activeDrill]&&(
-            <DrillPanel {...drillConfigs[activeDrill]} periodLabel={win.label} onClose={()=>setActiveDrill(null)}/>
+            <DrillPanel key={activeDrill+"-"+win.label} {...drillConfigs[activeDrill]} periodLabel={win.label} onClose={()=>setActiveDrill(null)}/>
           )}
 
           <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16,marginBottom:20}}>
@@ -3638,7 +3649,7 @@ export default function MarketingHub(){
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead><tr>{["Lead No","Customer","Owner","Product","Last Modified"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                   <tbody>
-                    {followUpLeadsFiltered.map(l=>(
+                    {followUpLeadsFiltered.slice((followUpPage-1)*PAGE_SIZE,followUpPage*PAGE_SIZE).map(l=>(
                       <tr key={l.leadNo}>
                         <td style={{...tdStyle,color:"#111827",fontWeight:700}}>Lead - {l.leadNo}</td>
                         <td style={{...tdStyle,fontWeight:600}}>{l.customer}</td>
@@ -3651,6 +3662,7 @@ export default function MarketingHub(){
                   </tbody>
                 </table>
               </div>
+              <Pager page={followUpPage} setPage={setFollowUpPage} total={followUpLeadsFiltered.length}/>
             </div>
 
             <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
@@ -3659,7 +3671,7 @@ export default function MarketingHub(){
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead><tr>{["Customer","Product","Progress","Phases"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                   <tbody>
-                    {implGoLiveAll.map(im=>(
+                    {implGoLiveAll.slice((implGoLivePage-1)*PAGE_SIZE,implGoLivePage*PAGE_SIZE).map(im=>(
                       <tr key={im.orderNo}>
                         <td style={{...tdStyle,fontWeight:600}}>{im.customer}</td>
                         <td style={tdStyle}><ProductPill label={im.product}/></td>
@@ -3677,6 +3689,7 @@ export default function MarketingHub(){
                   </tbody>
                 </table>
               </div>
+              <Pager page={implGoLivePage} setPage={setImplGoLivePage} total={implGoLiveAll.length}/>
             </div>
           </div>
 
@@ -3686,7 +3699,7 @@ export default function MarketingHub(){
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr>{["Customer","Product","Contract End","Days Left","Renewal Status","Value","Last Renewed"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {renewalsList.map(r=>{
+                  {renewalsList.slice((renewalsDashPage-1)*PAGE_SIZE,renewalsDashPage*PAGE_SIZE).map(r=>{
                     const daysNum=daysLeftFrom(r.contractEnd);
                     const daysLeft=daysNum<0?Math.abs(daysNum)+"d overdue":daysNum+"d left";
                     return(
@@ -3704,6 +3717,7 @@ export default function MarketingHub(){
                 </tbody>
               </table>
             </div>
+            <Pager page={renewalsDashPage} setPage={setRenewalsDashPage} total={renewalsList.length}/>
           </div>
 
           <div style={{...cardStyle,padding:0,overflow:"hidden"}}>
@@ -3712,7 +3726,7 @@ export default function MarketingHub(){
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr>{["Customer","Demo No","Outcome","Date","Remarks","By"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {recentDemos.map((d,i)=>(
+                  {recentDemos.slice((recentDemosPage-1)*PAGE_SIZE,recentDemosPage*PAGE_SIZE).map((d,i)=>(
                     <tr key={i}>
                       <td style={{...tdStyle,fontWeight:600}}>{d.customer}</td>
                       <td style={{...tdStyle,color:"#111827",fontWeight:700}}>{d.demoNo}</td>
@@ -3726,6 +3740,7 @@ export default function MarketingHub(){
                 </tbody>
               </table>
             </div>
+            <Pager page={recentDemosPage} setPage={setRecentDemosPage} total={recentDemos.length}/>
           </div>
         </>
       )}
