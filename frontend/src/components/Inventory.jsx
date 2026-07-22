@@ -1,4 +1,5 @@
 import * as inventoryApi from "../api/inventory.js";
+import * as deptApi from "../api/departments.js";
 import { useState, useMemo, useEffect } from "react";
 const stockRegisterSeed = [
   { code: "ITM-001", name: "Sandman Software License (Annual)", category: "Software License", unit: "Units", stock: 9, min: 3, cost: 15000, sell: 18000, supplier: "TechSoft Solutions", description: "" },
@@ -233,8 +234,6 @@ const categories = [
 // in the Add/Edit Item modal where a real category must be chosen.
 const itemCategories = categories.filter((c) => c !== "All Categories");
 
-const unitOptions = ["Units", "Pcs", "Nos", "Boxes", "Kg", "Litres", "Metres", "Sets", "Pairs", "Rolls", "Packets", "Reams", "Bags"];
-
 const inwardStatusOptions = ["Pending", "Received", "Partial", "Returned"];
 const outwardStatusOptions = ["Pending", "In Transit", "Delivered", "Returned"];
 
@@ -272,7 +271,8 @@ function StatusBadge({ status }) {
   );
 }
 
-const tabs = ["Dashboard", "Stock Register", "Inward", "Outward", "Items", "Suppliers"];
+const tabs = ["Dashboard", "Inward", "Outward", "Items", "Suppliers"];
+const tabLabels = { Items: "Items/Products" };
 
 function todayISO() {
   const d = new Date();
@@ -927,16 +927,22 @@ function OutwardTab({ rows, onAddNew, onEdit, onDelete }) {
 }
 
 /* ---------------- Add/Edit Item Modal ---------------- */
-function ItemModal({ onClose, onSave, nextItemCode, initial }) {
+function ItemModal({ onClose, onSave, nextItemCode, initial, supplierOptions = [], departments = [] }) {
   const [code] = useState(initial?.code || nextItemCode);
   const [category, setCategory] = useState(initial?.category || itemCategories[0]);
   const [name, setName] = useState(initial?.name || "");
-  const [unit, setUnit] = useState(initial?.unit || unitOptions[0]);
+  // Unit and Min Stock are no longer editable in this form, but their existing values are
+  // passed through unchanged (on edit) so the Low Stock feature elsewhere keeps working.
+  const unit = initial?.unit || "Units";
+  const min = initial?.min ?? 0;
   const [supplier, setSupplier] = useState(initial?.supplier || "");
+  const [departmentId, setDepartmentId] = useState(initial?.department_id ? String(initial.department_id) : "");
+  const [dateAdded, setDateAdded] = useState(initial?.dateAdded || todayISO());
+  const [invoiceNo, setInvoiceNo] = useState(initial?.invoiceNo || "");
   const [cost, setCost] = useState(initial?.cost ?? "");
   const [sell, setSell] = useState(initial?.sell ?? "");
   const [stock, setStock] = useState(initial?.stock ?? 0);
-  const [min, setMin] = useState(initial?.min ?? 0);
+  const [remarks, setRemarks] = useState(initial?.remarks || "");
   const [description, setDescription] = useState(initial?.description || "");
 
   const handleSave = () => {
@@ -949,11 +955,15 @@ function ItemModal({ onClose, onSave, nextItemCode, initial }) {
       category,
       name: name.trim(),
       unit,
-      supplier: supplier.trim(),
+      supplier,
+      department_id: departmentId || null,
+      dateAdded,
+      invoiceNo,
       cost: Number(cost) || 0,
       sell: Number(sell) || 0,
       stock: Number(stock) || 0,
-      min: Number(min) || 0,
+      min,
+      remarks,
       description,
     });
     onClose();
@@ -990,22 +1000,39 @@ function ItemModal({ onClose, onSave, nextItemCode, initial }) {
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>ITEM NAME *</label>
+        <label style={labelStyle}>ITEM / PRODUCT NAME *</label>
         <input style={inputStyle} placeholder="e.g. Sandman License (Annual)" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
       <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>UNIT</label>
-          <select style={inputStyle} value={unit} onChange={(e) => setUnit(e.target.value)}>
-            {unitOptions.map((u) => (
-              <option key={u} value={u}>{u}</option>
+          <label style={labelStyle}>PRIMARY SUPPLIER</label>
+          <select style={inputStyle} value={supplier} onChange={(e) => setSupplier(e.target.value)}>
+            <option value="">Select supplier</option>
+            {supplierOptions.map((s) => (
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
         <div style={{ flex: 1 }}>
-          <label style={labelStyle}>PRIMARY SUPPLIER</label>
-          <input style={inputStyle} placeholder="Supplier name" value={supplier} onChange={(e) => setSupplier(e.target.value)} />
+          <label style={labelStyle}>INVOICE NUMBER</label>
+          <input style={inputStyle} placeholder="e.g. INV-2026-001" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>DEPARTMENT</label>
+          <select style={inputStyle} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+            <option value="">Select department</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>DATE ADDED</label>
+          <input type="date" style={inputStyle} value={dateAdded} onChange={(e) => setDateAdded(e.target.value)} />
         </div>
       </div>
 
@@ -1020,24 +1047,28 @@ function ItemModal({ onClose, onSave, nextItemCode, initial }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>OPENING STOCK</label>
-          <input type="number" style={inputStyle} value={stock} onChange={(e) => setStock(e.target.value)} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>MIN STOCK (REORDER AT)</label>
-          <input type="number" style={inputStyle} value={min} onChange={(e) => setMin(e.target.value)} />
-        </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>QUANTITY</label>
+        <input type="number" style={inputStyle} value={stock} onChange={(e) => setStock(e.target.value)} />
       </div>
 
-      <div>
+      <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>DESCRIPTION</label>
         <textarea
           style={{ ...inputStyle, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
           placeholder="Notes about this item..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label style={labelStyle}>REMARKS</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+          placeholder="Any other remarks..."
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
         />
       </div>
     </ModalShell>
@@ -1307,6 +1338,11 @@ function fromBackendItem(r) {
     cost: Number(r.cost) || 0,
     sell: Number(r.sell_price) || 0,
     supplier: r.supplier || "",
+    department_id: r.department_id || "",
+    department: r.department || "",
+    dateAdded: r.date_added ? String(r.date_added).slice(0, 10) : "",
+    invoiceNo: r.invoice_no || "",
+    remarks: r.remarks || "",
     description: r.description || "",
   };
 }
@@ -1321,6 +1357,10 @@ function toBackendItem(item) {
     cost: item.cost,
     sell_price: item.sell,
     supplier: item.supplier,
+    department_id: item.department_id || null,
+    date_added: item.dateAdded || null,
+    invoice_no: item.invoiceNo || null,
+    remarks: item.remarks || null,
     description: item.description,
   };
 }
@@ -1612,18 +1652,16 @@ export default function Inventory() {
   const [supplierList, setSupplierList] = useState([]);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     inventoryApi.getItems().then((res) => setItems(res.data.map(fromBackendItem))).catch(console.error);
     inventoryApi.getSuppliers().then((res) => setSupplierList(res.data.map(fromBackendSupplier))).catch(console.error);
     inventoryApi.getInward().then((res) => setInwardRows(res.data.map(fromBackendInward))).catch(console.error);
     inventoryApi.getOutward().then((res) => setOutwardRows(res.data.map(fromBackendOutward))).catch(console.error);
+    deptApi.getAll().then((res) => setDepartments(res.data || [])).catch(console.error);
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All Categories");
-  const [stockPage, setStockPage] = useState(1);
-  const STOCK_PAGE_SIZE = 6;
   const totalProcurement = inwardRows.reduce((sum, r) => sum + parseRupeeValue(r.value), 0);
   const totalDispatched = outwardRows.reduce((sum, r) => sum + parseRupeeValue(r.value), 0);
   const activeItems = items.length;
@@ -1762,25 +1800,6 @@ export default function Inventory() {
     }
   };
 
-  const filteredStockRegister = useMemo(() => {
-    return items.filter((item) => {
-      const matchesCategory = categoryFilter === "All Categories" || item.category === categoryFilter;
-      const matchesSearch =
-        searchTerm.trim() === "" ||
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.supplier.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [items, searchTerm, categoryFilter]);
-
-  const stockTotalPages = Math.max(1, Math.ceil(filteredStockRegister.length / STOCK_PAGE_SIZE));
-  const stockCurrentPage = Math.min(stockPage, stockTotalPages);
-  const paginatedStockRegister = useMemo(
-    () => filteredStockRegister.slice((stockCurrentPage - 1) * STOCK_PAGE_SIZE, stockCurrentPage * STOCK_PAGE_SIZE),
-    [filteredStockRegister, stockCurrentPage]
-  );
-
   const cardStyle = { background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", padding: "16px 20px", flex: 1, minWidth: 180 };
 
   const thStyle = {
@@ -1856,7 +1875,7 @@ export default function Inventory() {
                 gap: 6,
               }}
             >
-              {tab}
+              {tabLabels[tab] || tab}
               {badgeCount > 0 && (
                 <span style={{ background: "#fed7aa", color: "#c2410c", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "1px 7px" }}>
                   {badgeCount}
@@ -1895,43 +1914,6 @@ export default function Inventory() {
             </div>
           </div>
 
-          <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 20, overflow: "hidden" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Stock Summary</div>
-              <a onClick={() => setActiveTab("Stock Register")} style={{ fontSize: 13, fontWeight: 600, color: "#2563eb", cursor: "pointer" }}>
-                View All →
-              </a>
-            </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Item Name</th>
-                    <th style={thStyle}>Category</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>In</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Out</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Stock</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Min</th>
-                    <th style={thStyle}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, i) => (
-                    <tr key={i}>
-                      <td style={{ ...tdStyle, fontWeight: 600 }}>{item.name}</td>
-                      <td style={{ ...tdStyle, color: "#6b7280" }}>{item.category}</td>
-                      <td style={{ ...tdStyle, textAlign: "right", color: "#059669", fontWeight: 700 }}>—</td>
-                      <td style={{ ...tdStyle, textAlign: "right", color: "#dc2626", fontWeight: 700 }}>—</td>
-                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>{item.stock}</td>
-                      <td style={{ ...tdStyle, textAlign: "right", color: "#9ca3af" }}>{item.min}</td>
-                      <td style={tdStyle}><StatusBadge status={item.stock <= item.min ? "Low Stock" : "In Stock"} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           <div style={{ display: "flex", gap: 16 }}>
             {[
               { title: "Recent Inward", rows: inwardRows },
@@ -1967,114 +1949,6 @@ export default function Inventory() {
         </>
       )}
 
-      {activeTab === "Stock Register" && (
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", overflow: "hidden" }}>
-          {/* Search + filter bar */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, gap: 16, background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-            <div style={{ display: "flex", gap: 12, flex: 1 }}>
-              <div style={{ position: "relative", maxWidth: 320, flex: 1 }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: 14 }}>
-                  🔍
-                </span>
-                <input
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setStockPage(1);
-                  }}
-                  placeholder="Search..."
-                  style={{ ...inputStyle, paddingLeft: 34, background: "#fff" }}
-                />
-              </div>
-              <select
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setStockPage(1);
-                }}
-                style={{ ...inputStyle, width: 200, background: "#fff" }}
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>
-              {filteredStockRegister.length} items
-            </div>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Code</th>
-                  <th style={thStyle}>Item Name</th>
-                  <th style={thStyle}>Category</th>
-                  <th style={thStyle}>Unit</th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>Stock</th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>Min Stock</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>Cost (₹)</th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>Sell (₹)</th>
-                  <th style={thStyle}>Supplier</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedStockRegister.map((item) => {
-                  const isLow = item.stock <= item.min;
-                  return (
-                    <tr key={item.code}>
-                      <td style={{ ...tdStyle, color: "#2563eb", fontWeight: 700 }}>{item.code}</td>
-                      <td style={{ ...tdStyle, fontWeight: 600 }}>{item.name}</td>
-                      <td style={{ ...tdStyle, color: "#6b7280" }}>{item.category}</td>
-                      <td style={{ ...tdStyle, color: "#6b7280" }}>{item.unit}</td>
-                      <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700, color: "#059669" }}>{item.stock}</td>
-                      <td style={{ ...tdStyle, textAlign: "right", color: "#9ca3af" }}>{item.min}</td>
-                      <td style={tdStyle}>
-                        <StatusBadge status={isLow ? "Low Stock" : "In Stock"} />
-                      </td>
-                      <td style={{ ...tdStyle, textAlign: "right" }}>₹{item.cost.toLocaleString("en-IN")}</td>
-                      <td style={{ ...tdStyle, textAlign: "right" }}>₹{item.sell.toLocaleString("en-IN")}</td>
-                      <td style={{ ...tdStyle, color: "#6b7280" }}>{item.supplier}</td>
-                    </tr>
-                  );
-                })}
-               {filteredStockRegister.length === 0 && (
-                  <tr>
-                    <td colSpan={10} style={{ ...tdStyle, textAlign: "center", color: "#9ca3af", padding: 32 }}>
-                      No items match your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredStockRegister.length > STOCK_PAGE_SIZE && (
-            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, padding: 16, borderTop: "1px solid #e5e7eb" }}>
-              <span style={{ fontSize: 13, color: "#6b7280" }}>
-                Page {stockCurrentPage} of {stockTotalPages}
-              </span>
-              <button
-                onClick={() => setStockPage((p) => Math.max(1, p - 1))}
-                disabled={stockCurrentPage === 1}
-                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: stockCurrentPage === 1 ? "#f3f4f6" : "#fff", fontWeight: 600, fontSize: 12, color: stockCurrentPage === 1 ? "#9ca3af" : "#111827", cursor: stockCurrentPage === 1 ? "not-allowed" : "pointer" }}
-              >
-                Prev
-              </button>
-              <button
-                onClick={() => setStockPage((p) => Math.min(stockTotalPages, p + 1))}
-                disabled={stockCurrentPage === stockTotalPages}
-                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", background: stockCurrentPage === stockTotalPages ? "#f3f4f6" : "#fff", fontWeight: 600, fontSize: 12, color: stockCurrentPage === stockTotalPages ? "#9ca3af" : "#111827", cursor: stockCurrentPage === stockTotalPages ? "not-allowed" : "pointer" }}
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
       {activeTab === "Inward" && (
         <InwardTab rows={inwardRows} onAddNew={() => { setEditingInward(null); setShowInwardModal(true); }} onEdit={handleEditInward} onDelete={handleDeleteInward} />
       )}
@@ -2097,7 +1971,7 @@ export default function Inventory() {
         />
       )}
 
-      {activeTab !== "Dashboard" && activeTab !== "Stock Register" && activeTab !== "Inward" && activeTab !== "Outward" && activeTab !== "Items" && activeTab !== "Suppliers" && (
+      {activeTab !== "Dashboard" && activeTab !== "Inward" && activeTab !== "Outward" && activeTab !== "Items" && activeTab !== "Suppliers" && (
         <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
           {activeTab} view coming soon.
         </div>
@@ -2134,6 +2008,8 @@ export default function Inventory() {
           onSave={handleSaveItem}
           nextItemCode={`ITM-${String(nextItemNum).padStart(3, "0")}`}
           initial={editingItem}
+          supplierOptions={supplierOptions}
+          departments={departments}
         />
       )}
 

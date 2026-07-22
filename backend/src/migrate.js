@@ -536,6 +536,11 @@ module.exports = async function migrate() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
+      ALTER TABLE inventory_items
+        ADD COLUMN IF NOT EXISTS department_id INTEGER REFERENCES departments(id),
+        ADD COLUMN IF NOT EXISTS date_added DATE NOT NULL DEFAULT CURRENT_DATE,
+        ADD COLUMN IF NOT EXISTS invoice_no VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS remarks TEXT;
 
       CREATE TABLE IF NOT EXISTS inventory_suppliers (
         id             SERIAL PRIMARY KEY,
