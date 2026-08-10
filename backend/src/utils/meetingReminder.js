@@ -3,9 +3,22 @@ const db   = require('../config/db');
 const { sendMeetingReminderEmail } = require('./mailer');
 
 const DAY_MAP = { 0:'Sun', 1:'Mon', 2:'Tue', 3:'Wed', 4:'Thu', 5:'Fri', 6:'Sat' };
+const DAY_IDX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+async function isWorkingDayToday() {
+  const { rows } = await db.query('SELECT work_days FROM system_settings WHERE id = 1');
+  const workDays = rows[0]?.work_days || 'Mon–Fri';
+  const parts = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
+  const startIdx = DAY_IDX[parts[0]] ?? 1;
+  const endIdx = DAY_IDX[parts[1]] ?? 5;
+  const todayIdx = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getDay();
+  return todayIdx >= startIdx && todayIdx <= endIdx;
+}
 
 async function runMeetingReminders() {
   try {
+    if (!(await isWorkingDayToday())) return;
+
     // Current time in Asia/Kolkata
     const now   = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     const hh    = String(now.getHours()).padStart(2, '0');
