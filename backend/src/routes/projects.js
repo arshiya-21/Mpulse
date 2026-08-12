@@ -3,7 +3,7 @@ const db      = require('../config/db');
 const ExcelJS = require('exceljs');
 const { verify, requireRole } = require('../middleware/auth');
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DAY_IDX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
 // Helper – compute TAT days server-side
 // For closed/completed projects, ref = actual closure date (closed_at if stored, else today when it was closed)
@@ -15,8 +15,33 @@ function calendarDay(d) {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 }
 
-function calcTAT(startDate, endDate, status, closedAt) {
+// Reads the Working Days range configured in Administration → Company Settings (e.g. "Mon–Fri").
+async function getWorkingDayRange() {
+  const { rows } = await db.query('SELECT work_days FROM system_settings WHERE id = 1');
+  const workDays = rows[0]?.work_days || 'Mon–Fri';
+  const parts = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
+  const startIdx = DAY_IDX[parts[0]] ?? 1;
+  const endIdx = DAY_IDX[parts[1]] ?? 5;
+  return { startIdx, endIdx };
+}
+
+// Counts only the working days between `from` and `to` (inclusive), per the configured
+// Working Days range — so "Target/Actual days" reflect working days, not calendar days.
+function countWorkingDays(from, to, startIdx, endIdx) {
+  if (from > to) return 0;
+  let count = 0;
+  const cur = new Date(from);
+  while (cur <= to) {
+    const dow = cur.getUTCDay();
+    if (dow >= startIdx && dow <= endIdx) count++;
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return count;
+}
+
+function calcTAT(startDate, endDate, status, closedAt, workRange) {
   if (!startDate || !endDate) return { target_days: 0, actual_days: 0, tat_days: 0 };
+  const { startIdx, endIdx } = workRange;
   const today = calendarDay(new Date());
   const start = new Date(startDate);
   const end   = new Date(endDate);
@@ -26,8 +51,8 @@ function calcTAT(startDate, endDate, status, closedAt) {
   } else {
     ref = today;
   }
-  const target = Math.ceil((end   - start) / MS_PER_DAY) + 1;
-  const actual = Math.max(1, Math.ceil((ref - start) / MS_PER_DAY) + 1);
+  const target = Math.max(1, countWorkingDays(start, end, startIdx, endIdx));
+  const actual = Math.max(1, countWorkingDays(start, ref, startIdx, endIdx));
   const tat    = Math.max(0, actual - target);
   return { target_days: target, actual_days: actual, tat_days: tat };
 }
@@ -103,7 +128,8 @@ router.get('/', verify, async (req, res) => {
     q += ' ORDER BY p.created_at DESC';
 
     const { rows } = await db.query(q, params);
-    res.json(rows.map(p => ({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at) })));
+    const workRange = await getWorkingDayRange();
+    res.json(rows.map(p => ({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at, workRange) })));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -128,7 +154,8 @@ router.get('/:id', verify, async (req, res) => {
       }
     }
 
-    res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status) });
+    const workRange = await getWorkingDayRange();
+    res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, null, workRange) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -246,7 +273,8 @@ router.put('/:id', verify, requireRole('Admin', 'Manager', 'User'), async (req, 
     const { rows } = await db.query(sql, params);
     if (!rows.length) return res.status(404).json({ error: 'Project not found' });
     const p = rows[0];
-    res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at) });
+    const workRange = await getWorkingDayRange();
+    res.json({ ...p, ...calcTAT(p.start_date, p.end_date, p.status, p.closed_at, workRange) });
   } catch (e) {
     console.error('❌ PUT /projects/:id error:', e.message, '| body:', JSON.stringify(req.body));
     res.status(500).json({ error: e.message });
@@ -271,7 +299,8 @@ router.get('/:id/overview', verify, async (req, res) => {
       WHERE p.id = $1
     `, [pid]);
     if (!pRows.length) return res.status(404).json({ error: 'Project not found' });
-    const project = { ...pRows[0], ...calcTAT(pRows[0].start_date, pRows[0].end_date, pRows[0].status) };
+    const workRange = await getWorkingDayRange();
+    const project = { ...pRows[0], ...calcTAT(pRows[0].start_date, pRows[0].end_date, pRows[0].status, null, workRange) };
 
     const { rows: cfg } = await db.query('SELECT daily_target_mins FROM system_settings WHERE id = 1');
     const targetMins = cfg[0]?.daily_target_mins || 510;

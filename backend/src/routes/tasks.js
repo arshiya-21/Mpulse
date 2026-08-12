@@ -2,6 +2,8 @@ const router = require('express').Router();
 const db     = require('../config/db');
 const { verify } = require('../middleware/auth');
 
+const DAY_IDX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
 // Helper: get user's department_id (fallback if not in JWT)
 async function getDeptId(req) {
   if (req.user.department_id) return req.user.department_id;
@@ -9,16 +11,45 @@ async function getDeptId(req) {
   return rows[0]?.department_id || null;
 }
 
+// Reads the Working Days range configured in Administration → Company Settings (e.g. "Mon–Fri").
+async function getWorkingDayRange() {
+  const { rows } = await db.query('SELECT work_days FROM system_settings WHERE id = 1');
+  const workDays = rows[0]?.work_days || 'Mon–Fri';
+  const parts = workDays.replace('–', '-').split('-').map(d => d.trim().slice(0, 3));
+  const startIdx = DAY_IDX[parts[0]] ?? 1;
+  const endIdx = DAY_IDX[parts[1]] ?? 5;
+  return { startIdx, endIdx };
+}
+
+// Counts only the working days strictly after `from` up to and including `to`,
+// per the configured Working Days range — mirrors the SQL generate_series check above.
+function countWorkingDaysAfter(from, to, startIdx, endIdx) {
+  let count = 0;
+  const cur = new Date(from);
+  cur.setDate(cur.getDate() + 1);
+  while (cur <= to) {
+    const dow = cur.getDay();
+    if (dow >= startIdx && dow <= endIdx) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
 // GET all with filters
 router.get('/', verify, async (req, res) => {
   try {
     const { from, to, emp_id, dept_id, category, tat, project_id } = req.query;
+    const { startIdx, endIdx } = await getWorkingDayRange();
+    const params = [startIdx, endIdx];
     let q = `
       SELECT t.id, TO_CHAR(t.task_date,'YYYY-MM-DD') AS task_date, t.employee_id, t.project_id, t.category,
              t.work_type, t.spent_mins,
              CASE
                WHEN p.is_recurring = TRUE OR p.end_date IS NULL THEN 0
-               WHEN t.task_date > p.end_date THEN (t.task_date::date - p.end_date::date)::int
+               WHEN t.task_date > p.end_date THEN (
+                 SELECT COUNT(*)::int FROM generate_series((p.end_date + 1)::date, t.task_date::date, interval '1 day') AS wd
+                 WHERE EXTRACT(DOW FROM wd) BETWEEN $1 AND $2
+               )
                ELSE 0
              END AS tat_days,
              t.status, t.description,
@@ -36,7 +67,6 @@ router.get('/', verify, async (req, res) => {
       LEFT JOIN departments d ON d.id = e.department_id
       WHERE 1=1
     `;
-    const params = [];
     if (from)       { params.push(from);       q += ` AND t.task_date    >= $${params.length}`; }
     if (to)         { params.push(to);         q += ` AND t.task_date    <= $${params.length}`; }
     if (emp_id)     { params.push(emp_id);     q += ` AND t.employee_id  = $${params.length}`; }
@@ -103,8 +133,11 @@ router.post('/', verify, async (req, res) => {
     const projEnd    = pr[0]?.end_date ? new Date(pr[0].end_date) : null;
     const isRecurring = pr[0]?.is_recurring || false;
     const taskDt     = new Date(task_date);
-    const tat_days   = (!isRecurring && projEnd && taskDt > projEnd)
-      ? Math.ceil((taskDt - projEnd) / 86400000) : 0;
+    let tat_days = 0;
+    if (!isRecurring && projEnd && taskDt > projEnd) {
+      const { startIdx, endIdx } = await getWorkingDayRange();
+      tat_days = countWorkingDaysAfter(projEnd, taskDt, startIdx, endIdx);
+    }
 
     const { rows } = await db.query(`
       INSERT INTO tasks (task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, description)
@@ -142,7 +175,25 @@ router.put('/:id', verify, async (req, res) => {
       }
     }
 
-    const { task_date, employee_id, project_id, category, work_type, spent_mins, tat_days, status, description } = req.body;
+    const { task_date, employee_id, project_id, category, work_type, spent_mins, status, description } = req.body;
+
+    // Recompute tat_days server-side (working-days-aware) against the resolved task_date/project,
+    // rather than trusting whatever the client sends — keeps the stored value (used by the
+    // On Time/Delayed filter) in sync any time the date or project changes on edit.
+    const { rows: currentRows } = await db.query('SELECT task_date, project_id FROM tasks WHERE id = $1', [taskId]);
+    if (!currentRows.length) return res.status(404).json({ error: 'Task not found' });
+    const resolvedDate    = task_date || currentRows[0].task_date;
+    const resolvedProject = project_id || currentRows[0].project_id;
+    const { rows: pr } = await db.query('SELECT end_date, is_recurring FROM projects WHERE id = $1', [resolvedProject]);
+    const projEnd     = pr[0]?.end_date ? new Date(pr[0].end_date) : null;
+    const isRecurring = pr[0]?.is_recurring || false;
+    const taskDt       = new Date(resolvedDate);
+    let tat_days = 0;
+    if (!isRecurring && projEnd && taskDt > projEnd) {
+      const { startIdx, endIdx } = await getWorkingDayRange();
+      tat_days = countWorkingDaysAfter(projEnd, taskDt, startIdx, endIdx);
+    }
+
     const { rows } = await db.query(`
       UPDATE tasks SET
         task_date   = COALESCE($1, task_date),
@@ -151,7 +202,7 @@ router.put('/:id', verify, async (req, res) => {
         category    = COALESCE($4, category),
         work_type   = COALESCE($5, work_type),
         spent_mins  = COALESCE($6, spent_mins),
-        tat_days    = COALESCE($7, tat_days),
+        tat_days    = $7,
         status      = COALESCE($8, status),
         description = $10
       WHERE id = $9
