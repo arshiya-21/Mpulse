@@ -413,7 +413,7 @@ export default function Projects(){
                     ? <div style={{fontSize:13,fontWeight:600,color:"#5b21b6"}}>↻ Recurring</div>
                     : <>
                         <div style={{fontSize:15,fontWeight:700,color:isOverdue?"#c2410c":"#d97706"}}>{fmtDate(pv.end_date)}</div>
-                        {tat>0&&<div style={{fontSize:11,color:"#c2410c",marginTop:2}}>+{tat}d overdue</div>}
+                        {isOverdue&&<div style={{fontSize:11,color:"#c2410c",marginTop:2}}>+{tat}d overdue</div>}
                       </>
                   }
                 </div>

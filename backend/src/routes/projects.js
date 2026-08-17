@@ -375,8 +375,11 @@ router.get('/:id/export', verify, async (req, res) => {
       ORDER BY t.task_date DESC, e.name
     `, [id]);
 
+    // Excel worksheet names can't contain : \ / ? * [ ] or exceed 31 characters
+    const safeSheetName = proj[0].name.replace(/[:\\/?*[\]]/g, ' ').trim().slice(0, 31) || 'Sessions';
+
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(proj[0].name.slice(0, 31));
+    const ws = wb.addWorksheet(safeSheetName);
     ws.columns = [
       { header: 'Date',        key: 'date',        width: 14 },
       { header: 'Employee',    key: 'employee',     width: 22 },
